@@ -21,8 +21,6 @@ class _ArchivePageState extends State<ArchivePage> {
     _audioFiles = _getAudioFiles();
   }
 
-  final List<int> entries = List<int>.generate(50, (index) => index + 1);
-
   Future<List<File>> _getAudioFiles() async {
     Directory dir = await getApplicationDocumentsDirectory();
     return dir.listSync().whereType<File>().toList();
@@ -43,24 +41,12 @@ class _ArchivePageState extends State<ArchivePage> {
       },
       trailing: IconButton(
         onPressed: () {
+          //TODO: add possibility to play the audio here as well?
           /* PLAY AUDIO */
         },
         icon: Icon(Icons.play_arrow),
       ),
     );
-    // return TextButton(
-    //   onPressed: () {
-    //     Navigator.push(
-    //       context,
-    //       MaterialPageRoute(
-    //         builder: (context) => AnalyzePage(
-    //           audioUrl: audioUrl,
-    //         ),
-    //       ),
-    //     );
-    //   },
-    //   child: Text(name),
-    // );
   }
 
   @override
@@ -82,9 +68,8 @@ class _ArchivePageState extends State<ArchivePage> {
             return ListView.separated(
               itemBuilder: (context, index) {
                 return Container(
-                  //TODO: add possibility to play the audio here as well?
                   height: 50,
-                  color: Colors.cyanAccent,
+                  color: Colors.blue,
                   child: _audioTile("Entry ${p.basename(files[index].path)}", files[index].path),
                 );
               },
