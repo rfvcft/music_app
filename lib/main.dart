@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:music_app/home.dart';
+import 'package:music_app/screens/home.dart';
 
 void main() {
   runApp(const MusicApp());
@@ -12,7 +12,7 @@ class MusicApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Music App',
       theme: ThemeData(
         // This is the theme of your application.
         //

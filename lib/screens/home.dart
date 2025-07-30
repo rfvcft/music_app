@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:music_app/archive.dart';
-import 'package:music_app/audio.dart';
-import 'package:music_app/import.dart';
-import 'package:music_app/settings.dart';
+import 'package:music_app/screens/archive.dart';
+import 'package:music_app/screens/audio.dart';
+import 'package:music_app/screens/import.dart';
+import 'package:music_app/screens/settings.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key, required this.title});

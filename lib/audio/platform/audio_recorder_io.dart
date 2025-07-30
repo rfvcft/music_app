@@ -34,6 +34,10 @@ mixin AudioRecorderMixin {
 
   Future<String> _getPath() async {
     final dir = await getApplicationDocumentsDirectory();
+    print("\n\n\n\n\n");
+    print("BLAHBLAHBLAH");
+    print(dir.path);
+    print("\n\n\n\n\n");
     return p.join(
       dir.path,
       'audio_${DateTime.now().millisecondsSinceEpoch}.m4a',

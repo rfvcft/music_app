@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:music_app/audio_player.dart';
-import 'package:music_app/audio_recorder.dart';
+import 'package:music_app/audio/audio_player.dart';
+import 'package:music_app/audio/audio_recorder.dart';
 
 class AudioPage extends StatefulWidget {
   const AudioPage({super.key});
