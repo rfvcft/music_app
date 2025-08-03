@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:music_app/screens/home.dart';
 
-import 'essentia.dart';
 
 void main() {
   runApp(const MusicApp());
-
-  final samples = [5.0, -3.0, 1.0, -1.0];
-  final rms = computeRms(samples);
-  print('RMS-Wert: $rms');
 }
 
 class MusicApp extends StatelessWidget {

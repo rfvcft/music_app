@@ -1,8 +1,9 @@
-FROM ubuntu:22.04
+# Stage 1: Build binaries
+FROM ubuntu:22.04 AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# tools and dependencies
+# install tools and dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl unzip build-essential python3 python3-pip python-is-python3 python3-setuptools git wget pkg-config cmake ca-certificates && \
     rm -rf /var/lib/apt/lists/*
@@ -18,9 +19,6 @@ RUN curl -LO ${ANDROID_NDK_URL} && \
     unzip android-ndk-${ANDROID_NDK_VERSION}-linux.zip && \
     rm android-ndk-${ANDROID_NDK_VERSION}-linux.zip
 
-ENV ANDROID_NDK_HOME=/build/android-ndk-${ANDROID_NDK_VERSION}
-ENV PATH=${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
-
 # essentia version
 ENV ESSENTIA_VERSION=v2.1_beta5
 
@@ -29,20 +27,40 @@ RUN git clone --branch ${ESSENTIA_VERSION} --depth 1 https://github.com/MTG/esse
 
 WORKDIR /build/essentia
 
-# Set environment for cross-compiling to Android arm64-v8a
+# set Android NDK root variable and add to path
 ENV ANDROID_NDK_ROOT=/build/android-ndk-${ANDROID_NDK_VERSION}
-ENV PATH=$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
+ENV PATH=${ANDROID_NDK_ROOT}/toolchains/llvm/prebuilt/linux-x86_64/bin:${PATH}
 
+# set environment for cross-compiling to Android arm64-v8a
 ENV CC=aarch64-linux-android21-clang
 ENV CXX=aarch64-linux-android21-clang++
 
-COPY _entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# static waf build of essentia
+RUN ./waf configure \
+      --cross-compile-android \
+      --build-static \
+      --static-dependencies \
+      --fft=KISS \
+      --prefix=/build/static/arm64-v8a && \
+    ./waf build && \
+    ./waf install
 
+# copy the essentia FFI wrapper into the image
 COPY essentia_ffi_wrapper /build/essentia_ffi_wrapper
 
-ENTRYPOINT ["/entrypoint.sh"]
+WORKDIR /build/dynamic/arm64-v8a
 
-# output directory
-VOLUME ["/build/essentia-install"]
+# dynamic cmake build of essentia FFI wrapper and the precompiled static essentia build
+RUN cmake /build/essentia_ffi_wrapper \
+      -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_ROOT"/build/cmake/android.toolchain.cmake \
+      -DANDROID_ABI=arm64-v8a \
+      -DANDROID_PLATFORM=android-21 \
+      -DCMAKE_BUILD_TYPE=Release && \
+    cmake --build .
+
+
+# Stage 2: Output cross-compiled binary
+FROM scratch AS output
+
+COPY --from=builder /build/dynamic/arm64-v8a/libessentia_ffi.so /build/arm64-v8a/libessentia_ffi.so
 

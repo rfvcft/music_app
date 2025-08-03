@@ -6,8 +6,9 @@ final DynamicLibrary essentiaLib = Platform.isAndroid
     ? DynamicLibrary.open("libessentia_ffi.so")
     : DynamicLibrary.process(); // for statically linked iOS-FFI
 
-final _computeRms = essentiaLib
-    .lookupFunction<Float Function(Pointer<Float>, Int32), double Function(Pointer<Float>, int)>('compute_rms');
+final _computeRms = essentiaLib.lookupFunction<Float Function(Pointer<Float>, Int32), double Function(Pointer<Float>, int)>('compute_rms');
+
+final _init = essentiaLib.lookupFunction<Void Function(), void Function()>('init_essentia');
 
 double computeRms(List<double> samples) {
   final ptr = malloc<Float>(samples.length);
@@ -17,4 +18,8 @@ double computeRms(List<double> samples) {
   final result = _computeRms(ptr, samples.length);
   malloc.free(ptr);
   return result;
+}
+
+void init() {
+  _init();
 }
