@@ -1,9 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle; // for access to assets
+
+import 'package:music_app/screens/visualize.dart';
+
+
+// Available options for backend simulator: 
+const List<String> audioNames = [ 
+  'c_major_scale', 
+  'cant_help_falling_in_love', 
+  'dont_stop_believing', 
+  'heathens', 
+  'hey_jude',
+  'nur_ein_wort',
+  'on_the_nature_of_daylight',
+  'rolling_in_the_deep',
+];
 
 class AnalyzePage extends StatefulWidget {
   const AnalyzePage({super.key, required this.audioUrl});
 
-  final String audioUrl;
+  final String audioUrl; // audio path for archive audio. Will eventually be processed by Essentia
 
   @override
   State<AnalyzePage> createState() => _AnalyzePageState();
@@ -11,35 +27,72 @@ class AnalyzePage extends StatefulWidget {
 
 class _AnalyzePageState extends State<AnalyzePage> {
   bool _isProcessing = false;
-  String? _errorMessage;
-  String? _analysisResult;
+  
 
-  Future<void> _processAudio() async {
+  Future<void> _analyzeAndGoToVisualizer(String audioName) async {
     setState(() {
       _isProcessing = true;
-      _errorMessage = null;
-      _analysisResult = null;
     });
 
-    try {
-      // TODO: Call your C++ backend here via Platform Channels
-      // For now, simulate analysis delay:
-      await Future.delayed(const Duration(seconds: 2));
+    // ================ SIMULATING ESSENTIA =====================
+    // Path to audio
+    String assetPath = 'assets/analyzed_examples/input/${audioName}.m4a';
+    print(assetPath);
 
-      // Simulated result
-      String result = "(SIMULATED) Detected Key: C Major";
+    // Get key and duration of audio
+    String meta = await rootBundle.loadString('assets/analyzed_examples/output/${audioName}/meta.csv');
+    String musicalKey = '';
+    double duration = 0.0;
 
-      setState(() {
-        _isProcessing = false;
-        _analysisResult = result;
-      });
-    } catch (e) {
-      setState(() {
-        _isProcessing = false;
-        _errorMessage = 'Failed to process audio: $e';
-      });
+    final lines = meta.split('\n');
+    for (final line in lines) {
+      if (line.trim().isEmpty) continue;
+
+      final parts = line.split(',');
+      if (parts.length != 2) continue;
+
+      final field = parts[0].trim();
+      final value = parts[1].trim();
+
+      if (field == 'key') {
+        musicalKey = value;
+      } else if (field == 'duration') {
+        duration = double.tryParse(value) ?? 0.0;
+      }
     }
+
+    // Load chromagram
+    String hpcp = await rootBundle.loadString('assets/analyzed_examples/output/${audioName}/hpcp.csv');
+    final List<List<double>> chromagram = [];
+
+    final rows = hpcp.split('\n');
+    for (final line in rows) {
+      if (line.trim().isEmpty) continue;
+
+      final row = line.split(',').map((s) => double.parse(s.trim())).toList();
+      chromagram.add(row);
+    }
+
+    // Simulate processing
+    await Future.delayed(const Duration(seconds: 1));
+
+    // ======================= END SIMULATING ESSENTIA ========================================
+
+    if (!mounted) return; // Guard against using context if widget is disposed
+
+    setState(() {
+      _isProcessing = false;
+    });
+
+    // Move simulated results to visualizer page
+    Navigator.push(context, MaterialPageRoute(builder: (context) => Visualizer(
+        audioUrl: assetPath,
+        duration: duration, 
+        musicalKey: musicalKey, 
+        chromagram: chromagram,
+      )));
   }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -49,30 +102,22 @@ class _AnalyzePageState extends State<AnalyzePage> {
         title: const Text("Analyze Audio"),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center, 
-          children: [
-            Text("Audio path: ${widget.audioUrl}"),
-            const SizedBox(height: 20),
-            _isProcessing
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: _processAudio,
-                    child: const Text('Analyze Audio'),
-                  ),
-            const SizedBox(height: 20),
-            if (_errorMessage != null)
-              Text(
-                _errorMessage!,
-                style: const TextStyle(color: Colors.red),
+        child: _isProcessing
+            ? const CircularProgressIndicator()
+            : SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ...audioNames.map((name) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4.0),
+                          child: ElevatedButton(
+                            onPressed: () => _analyzeAndGoToVisualizer(name),
+                            child: Text('Analyze "$name"'),
+                          ),
+                        )),
+                  ],
+                ),
               ),
-            if (_analysisResult != null)
-              Text(
-                _analysisResult!,
-                style: const TextStyle(color: Colors.green, fontSize: 18),
-              ),
-          ],
-        ),
       ),
     );
   }
