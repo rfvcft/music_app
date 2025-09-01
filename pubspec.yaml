@@ -62,7 +62,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-  # for input - output examples analyzed by Essentia (directoreis are not recursively added)
+  # for input - output examples analyzed by Essentia (directories are not recursively added)
     - assets/analyzed_examples/input/
     - assets/analyzed_examples/output/c_major_scale/ 
     - assets/analyzed_examples/output/cant_help_falling_in_love/
@@ -72,6 +72,8 @@ flutter:
     - assets/analyzed_examples/output/nur_ein_wort/
     - assets/analyzed_examples/output/on_the_nature_of_daylight/
     - assets/analyzed_examples/output/rolling_in_the_deep/
+  # for audio buffers 
+    - assets/buffers/
 
 
   # An image asset can refer to one or more resolution-specific "variants", see
