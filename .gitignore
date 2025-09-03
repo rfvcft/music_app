@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Essentia related
+essentia/essentia_github_repo/
+essentia/ios/c_api_build/
+essentia/ios/essentia_installation/
