@@ -16,6 +16,14 @@
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		B5E3D3B2C4242E6AA0C4A705 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F01F8CDB8765653E3396CE9 /* Pods_RunnerTests.framework */; };
+		F360C7FB2E5DE8BD00D8B380 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F360C7FA2E5DE8BD00D8B380 /* Accelerate.framework */; };
+		F37354F92E62424600B96523 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F37354F82E62424600B96523 /* AVFoundation.framework */; };
+		F37354FB2E62430400B96523 /* AudioBufferLoader.mm in Sources */ = {isa = PBXBuildFile; fileRef = F37354FA2E62430400B96523 /* AudioBufferLoader.mm */; };
+		F373550B2E63001C00B96523 /* AudioBufferLoader.mm in Sources */ = {isa = PBXBuildFile; fileRef = F37354FA2E62430400B96523 /* AudioBufferLoader.mm */; };
+		F373550E2E6301E400B96523 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F373550D2E6301E400B96523 /* AVFoundation.framework */; };
+		F373550F2E63093C00B96523 /* libAudioBufferLoader.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F37355002E62FD4900B96523 /* libAudioBufferLoader.a */; };
+		F37355112E64A0AD00B96523 /* libessentia.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F37355102E64A0AD00B96523 /* libessentia.a */; };
+		F37355132E64A1A600B96523 /* libessentia_c_api.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F37355122E64A1A600B96523 /* libessentia_c_api.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -37,6 +45,15 @@
 			files = (
 			);
 			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F37354FE2E62FD4900B96523 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "include/$(PRODUCT_NAME)";
+			dstSubfolderSpec = 16;
+			files = (
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -64,6 +81,13 @@
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E3D85E9752D6CBF2068BCA0F /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
 		E89286C83033393C70ED95E5 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
+		F360C7FA2E5DE8BD00D8B380 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		F37354F82E62424600B96523 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		F37354FA2E62430400B96523 /* AudioBufferLoader.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = AudioBufferLoader.mm; path = AudioLoader/src/AudioBufferLoader.mm; sourceTree = "<group>"; };
+		F37355002E62FD4900B96523 /* libAudioBufferLoader.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libAudioBufferLoader.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		F373550D2E6301E400B96523 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk/System/Library/Frameworks/AVFoundation.framework; sourceTree = DEVELOPER_DIR; };
+		F37355102E64A0AD00B96523 /* libessentia.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libessentia.a; path = ../essentia/ios/essentia_installation/lib/libessentia.a; sourceTree = SOURCE_ROOT; };
+		F37355122E64A1A600B96523 /* libessentia_c_api.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libessentia_c_api.a; path = ../essentia/ios/c_api_build/libessentia_c_api.a; sourceTree = SOURCE_ROOT; };
 		F89EF2F5E598B5EAFA222156 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -72,6 +96,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F373550F2E63093C00B96523 /* libAudioBufferLoader.a in Frameworks */,
+				F37354F92E62424600B96523 /* AVFoundation.framework in Frameworks */,
+				F37355132E64A1A600B96523 /* libessentia_c_api.a in Frameworks */,
+				F360C7FB2E5DE8BD00D8B380 /* Accelerate.framework in Frameworks */,
+				F37355112E64A0AD00B96523 /* libessentia.a in Frameworks */,
 				6D820169179004458610753A /* Pods_Runner.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -81,6 +110,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				B5E3D3B2C4242E6AA0C4A705 /* Pods_RunnerTests.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F37354FD2E62FD4900B96523 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F373550E2E6301E400B96523 /* AVFoundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -123,6 +160,7 @@
 			children = (
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
+				F37355002E62FD4900B96523 /* libAudioBufferLoader.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -130,6 +168,9 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				F37355122E64A1A600B96523 /* libessentia_c_api.a */,
+				F37355102E64A0AD00B96523 /* libessentia.a */,
+				F37354FA2E62430400B96523 /* AudioBufferLoader.mm */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
@@ -145,6 +186,9 @@
 		9FD67B29A8175928E93E805D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F37354F82E62424600B96523 /* AVFoundation.framework */,
+				F373550D2E6301E400B96523 /* AVFoundation.framework */,
+				F360C7FA2E5DE8BD00D8B380 /* Accelerate.framework */,
 				F89EF2F5E598B5EAFA222156 /* Pods_Runner.framework */,
 				4F01F8CDB8765653E3396CE9 /* Pods_RunnerTests.framework */,
 			);
@@ -161,7 +205,6 @@
 				18BB1753A17EC60C02FF9D5E /* Pods-RunnerTests.release.xcconfig */,
 				5A07853F9406A1811FA4D089 /* Pods-RunnerTests.profile.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -209,6 +252,23 @@
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
 			productType = "com.apple.product-type.application";
 		};
+		F37354FF2E62FD4900B96523 /* AudioBufferLoader */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F373550A2E62FD4A00B96523 /* Build configuration list for PBXNativeTarget "AudioBufferLoader" */;
+			buildPhases = (
+				F37354FC2E62FD4900B96523 /* Sources */,
+				F37354FD2E62FD4900B96523 /* Frameworks */,
+				F37354FE2E62FD4900B96523 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AudioBufferLoader;
+			productName = AudioBufferLoader;
+			productReference = F37355002E62FD4900B96523 /* libAudioBufferLoader.a */;
+			productType = "com.apple.product-type.library.static";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -227,6 +287,9 @@
 						CreatedOnToolsVersion = 7.3.1;
 						LastSwiftMigration = 1100;
 					};
+					F37354FF2E62FD4900B96523 = {
+						CreatedOnToolsVersion = 16.4;
+					};
 				};
 			};
 			buildConfigurationList = 97C146E91CF9000F007C117D /* Build configuration list for PBXProject "Runner" */;
@@ -244,6 +307,7 @@
 			targets = (
 				97C146ED1CF9000F007C117D /* Runner */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
+				F37354FF2E62FD4900B96523 /* AudioBufferLoader */,
 			);
 		};
 /* End PBXProject section */
@@ -377,8 +441,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F37354FB2E62430400B96523 /* AudioBufferLoader.mm in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F37354FC2E62FD4900B96523 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F373550B2E63001C00B96523 /* AudioBufferLoader.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -471,13 +544,30 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = GF44G3C9DH;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.musicApp;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../essentia/ios/essentia_installation/lib",
+					"$(SRCROOT)/../essentia/ios/c_api_build",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					"\"audioplayers_darwin\"",
+					"-framework",
+					"\"path_provider_foundation\"",
+					"-framework",
+					"\"record_ios\"",
+					"-Wl,-u,_delete_analysis_result",
+					"-Wl,-u,_essentia_analyze_buffer",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.4821904021934;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -653,13 +743,41 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = GF44G3C9DH;
 				ENABLE_BITCODE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/audioplayers_darwin/audioplayers_darwin.framework/Headers\"",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/path_provider_foundation/path_provider_foundation.framework/Headers\"",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/record_ios/record_ios.framework/Headers\"",
+					"$(SRCROOT)/Runner/EssentiaCAPI/include/**",
+					"$(SRCROOT)/Runner/Essentia/include/**",
+					"$(SRCROOT)/Runner/AudioLoader/include",
+					"$(SRCROOT)/../essentia/essentia_c_api/include",
+					"$(SRCROOT)/../essentia/ios/essentia_installation/include",
+				);
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.musicApp;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../essentia/ios/essentia_installation/lib",
+					"$(SRCROOT)/../essentia/ios/c_api_build",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					"\"audioplayers_darwin\"",
+					"-framework",
+					"\"path_provider_foundation\"",
+					"-framework",
+					"\"record_ios\"",
+					"-Wl,-u,_delete_analysis_result",
+					"-Wl,-u,_essentia_analyze_buffer",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.4821904021934;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -675,19 +793,107 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = GF44G3C9DH;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.musicApp;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../essentia/ios/essentia_installation/lib",
+					"$(SRCROOT)/../essentia/ios/c_api_build",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					"\"audioplayers_darwin\"",
+					"-framework",
+					"\"path_provider_foundation\"",
+					"-framework",
+					"\"record_ios\"",
+					"-Wl,-u,_delete_analysis_result",
+					"-Wl,-u,_essentia_analyze_buffer",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.4821904021934;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Release;
+		};
+		F37355062E62FD4A00B96523 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = GF44G3C9DH;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				"HEADER_SEARCH_PATHS[arch=*]" = "$(PROJECT_DIR)/ios/Runner/AudioLoader/include";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F37355072E62FD4A00B96523 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = GF44G3C9DH;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_FAST_MATH = YES;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		F37355082E62FD4A00B96523 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = GF44G3C9DH;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_FAST_MATH = YES;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Profile;
 		};
 /* End XCBuildConfiguration section */
 
@@ -718,6 +924,16 @@
 				97C147061CF9000F007C117D /* Debug */,
 				97C147071CF9000F007C117D /* Release */,
 				249021D4217E4FDB00AE95B9 /* Profile */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F373550A2E62FD4A00B96523 /* Build configuration list for PBXNativeTarget "AudioBufferLoader" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F37355062E62FD4A00B96523 /* Debug */,
+				F37355072E62FD4A00B96523 /* Release */,
+				F37355082E62FD4A00B96523 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
