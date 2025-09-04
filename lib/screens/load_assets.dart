@@ -97,7 +97,7 @@ class _LoadAssetsState extends State<LoadAssets> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text("Analyze Audio"),
+        title: const Text("Load assets"),
       ),
       body: Center(
         child: _isProcessing
@@ -110,7 +110,7 @@ class _LoadAssetsState extends State<LoadAssets> {
                           padding: const EdgeInsets.symmetric(vertical: 4.0),
                           child: ElevatedButton(
                             onPressed: () => _loadAssetAndGoToVisualizer(name),
-                            child: Text('Analyze "$name"'),
+                            child: Text('Load "$name"'),
                           ),
                         )),
                   ],
