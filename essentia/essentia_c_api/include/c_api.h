@@ -5,9 +5,6 @@ extern "C" {
 #endif
 
 
-void essentia_init();
-void essentia_shutdown();
-
 // Analysis result struct for FFI (chromagram is row-major: chromagram[i * chroma_n_bins + j])
 typedef struct {
 	char* key;            // C string (must be freed)
