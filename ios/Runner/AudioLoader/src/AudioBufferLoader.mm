@@ -21,7 +21,10 @@ float* loadAudioBufferFromM4A(const char* filePath, int* outLength) {
 																	   sampleRate:44100.0
 																		 channels:1
 																	  interleaved:NO];
-		AVAudioPCMBuffer* pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:desiredFormat frameCapacity:(AVAudioFrameCount)audioFile.length];
+		// Calculate expected number of frames for the new sample rate
+		double originalDuration = (double)audioFile.length / audioFile.fileFormat.sampleRate;
+		AVAudioFrameCount expectedFrames = (AVAudioFrameCount)(originalDuration * desiredFormat.sampleRate);
+		AVAudioPCMBuffer* pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:desiredFormat frameCapacity:expectedFrames];
 		AVAudioConverter* converter = [[AVAudioConverter alloc] initFromFormat:audioFile.processingFormat toFormat:desiredFormat];
 		AVAudioPCMBuffer* tempBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:audioFile.processingFormat frameCapacity:(AVAudioFrameCount)audioFile.length];
 		[audioFile readIntoBuffer:tempBuffer error:&error];
@@ -42,6 +45,15 @@ float* loadAudioBufferFromM4A(const char* filePath, int* outLength) {
 
 		float* floatData = pcmBuffer.floatChannelData[0];
 		int length = (int)pcmBuffer.frameLength;
+		// Updated logging for clarity
+		NSLog(@"Original frame count (audioFile.length): %lld", audioFile.length);
+		NSLog(@"Converted buffer frame count: %d", length);
+		NSLog(@"Original sample rate: %.2f Hz", audioFile.fileFormat.sampleRate);
+		double originalDurationSec = (double)audioFile.length / audioFile.fileFormat.sampleRate;
+		NSLog(@"Original duration: %.3f seconds", originalDurationSec);
+		double convertedDurationSec = (double)length / desiredFormat.sampleRate;
+		NSLog(@"Converted duration (using new sample rate): %.3f seconds", convertedDurationSec);
+		// end updated logging
 		float* outBuffer = (float*)malloc(sizeof(float) * length);
 		memcpy(outBuffer, floatData, sizeof(float) * length);
 		*outLength = length;

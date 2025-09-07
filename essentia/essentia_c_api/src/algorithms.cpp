@@ -1,12 +1,15 @@
 #include <essentia/algorithmfactory.h>
 #include <essentia/essentia.h>
 
-
 #include <iostream>
 #include <vector>
 #include <fstream>
 #include <string>
 #include "algorithms.h"
+
+
+// IMPORTANT: All audio buffers and processing in this file assume a sampling rate of 44.1kHz (the standard sampling rate in Essentia).
+// Ensure your input audio is resampled to 44 100 Hz before using these functions.
 
 // Loads audio buffer from .raw file
 std::vector<essentia::Real> loadAudioBufferFromFile(const std::string& filePath) {
@@ -36,7 +39,7 @@ std::vector<essentia::Real> audioBufferToVector(const float* buffer, int buffer_
 }
 
 
-// Compute duration from audio buffer, assuming samplingrate 44100
+// Compute duration from audio buffer, assuming samplingrate 44.1kHz
 float computeDuration(const std::vector<essentia::Real>& audio){
     return audio.size() / 44100.0f;
 }

@@ -15,8 +15,7 @@ This guide explains how to build the backend for our app. We need to complete th
 
 
 On iOS, we use the Apple framework **AVFoundation** for loading audio buffers.
-The audio buffer is returned as a float* buffer for C compatability.
-The source files and headers are located in:
+The audio buffer is returned as a float* buffer for C compatability. The buffer must use a **sampling rate** of **44.1 kHz**, the standard sampling rate in Essentia. The source files and headers are located in:
 
 ```text
 ios/Runner/AudioLoader/
