@@ -2,14 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart' as ap;
 
-
 class Visualizer extends StatefulWidget {
   const Visualizer({
-    super.key, 
-    required this.audioUrl, 
+    super.key,
+    required this.audioUrl,
     required this.duration,
     required this.musicalKey,
-    required this.chromagram, 
+    required this.chromagram,
   });
 
   final String audioUrl;
@@ -17,13 +16,11 @@ class Visualizer extends StatefulWidget {
   final String musicalKey;
   final List<List<double>> chromagram;
 
-
   @override
   State<Visualizer> createState() => _VisualizerState();
 }
 
 class _VisualizerState extends State<Visualizer> {
-  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,7 +60,6 @@ class _VisualizerState extends State<Visualizer> {
       ),
     );
   }
-
 }
 
 class SimpleAudioPlayer extends StatefulWidget {
@@ -77,22 +73,23 @@ class SimpleAudioPlayer extends StatefulWidget {
 
 class _SimpleAudioPlayerState extends State<SimpleAudioPlayer> {
   final ap.AudioPlayer _player = ap.AudioPlayer()..setReleaseMode(ap.ReleaseMode.stop);
-  ap.PlayerState _playerState = ap.PlayerState.stopped;
 
+  @override
+  void setState(VoidCallback fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _player.onPlayerStateChanged.listen((state) {
-      setState(() {
-        _playerState = state;
-      });
+      setState(() {});
     });
 
     _player.onPlayerComplete.listen((_) {
-      setState(() {
-        _playerState = ap.PlayerState.completed;
-      });
+      setState(() {});
     });
 
     _player.setSource(_resolveSource(widget.audioUrl));

@@ -3,13 +3,12 @@ import 'package:flutter/services.dart' show rootBundle; // for access to assets
 
 import 'package:music_app/screens/visualize.dart';
 
-
-// Available options for backend simulator: 
-const List<String> audioNames = [ 
-  'c_major_scale', 
-  'cant_help_falling_in_love', 
-  'dont_stop_believing', 
-  'heathens', 
+// Available options for backend simulator:
+const List<String> audioNames = [
+  'c_major_scale',
+  'cant_help_falling_in_love',
+  'dont_stop_believing',
+  'heathens',
   'hey_jude',
   'nur_ein_wort',
   'on_the_nature_of_daylight',
@@ -25,7 +24,6 @@ class LoadAssets extends StatefulWidget {
 
 class _LoadAssetsState extends State<LoadAssets> {
   bool _isProcessing = false;
-  
 
   Future<void> _loadAssetAndGoToVisualizer(String audioName) async {
     setState(() {
@@ -34,11 +32,11 @@ class _LoadAssetsState extends State<LoadAssets> {
 
     // ================ SIMULATING ESSENTIA =====================
     // Path to audio
-    String assetPath = 'assets/analyzed_examples/input/${audioName}.m4a';
+    String assetPath = 'assets/analyzed_examples/input/$audioName.m4a';
     print(assetPath);
 
     // Get key and duration of audio
-    String meta = await rootBundle.loadString('assets/analyzed_examples/output/${audioName}/meta.csv');
+    String meta = await rootBundle.loadString('assets/analyzed_examples/output/$audioName/meta.csv');
     String musicalKey = '';
     double duration = 0.0;
 
@@ -60,7 +58,7 @@ class _LoadAssetsState extends State<LoadAssets> {
     }
 
     // Load chromagram
-    String hpcp = await rootBundle.loadString('assets/analyzed_examples/output/${audioName}/hpcp.csv');
+    String hpcp = await rootBundle.loadString('assets/analyzed_examples/output/$audioName/hpcp.csv');
     final List<List<double>> chromagram = [];
 
     final rows = hpcp.split('\n');
@@ -83,14 +81,18 @@ class _LoadAssetsState extends State<LoadAssets> {
     });
 
     // Move simulated results to visualizer page
-    Navigator.push(context, MaterialPageRoute(builder: (context) => Visualizer(
-        audioUrl: assetPath,
-        duration: duration, 
-        musicalKey: musicalKey, 
-        chromagram: chromagram,
-      )));
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Visualizer(
+          audioUrl: assetPath,
+          duration: duration,
+          musicalKey: musicalKey,
+          chromagram: chromagram,
+        ),
+      ),
+    );
   }
-  
 
   @override
   Widget build(BuildContext context) {
@@ -106,13 +108,15 @@ class _LoadAssetsState extends State<LoadAssets> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    ...audioNames.map((name) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4.0),
-                          child: ElevatedButton(
-                            onPressed: () => _loadAssetAndGoToVisualizer(name),
-                            child: Text('Load "$name"'),
-                          ),
-                        )),
+                    ...audioNames.map(
+                      (name) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: ElevatedButton(
+                          onPressed: () => _loadAssetAndGoToVisualizer(name),
+                          child: Text('Load "$name"'),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
