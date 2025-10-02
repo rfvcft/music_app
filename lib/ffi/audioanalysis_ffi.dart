@@ -2,9 +2,9 @@ import 'dart:ffi' as ffi;
 import 'dart:io';
 import 'package:ffi/ffi.dart';
 
-// C struct mapping for EssentiaAnalysisResult from essentia/essentia_c_api/c_api.h
+// C struct mapping for AudioAnalysisResult from audioanalysis/include/capi.h
 @ffi.Packed(8)
-final class EssentiaAnalysisResult extends ffi.Struct {
+final class CAudioAnalysisResult extends ffi.Struct {
 	external ffi.Pointer<ffi.Char> key;
 	@ffi.Float()
 	external double duration;
@@ -24,18 +24,17 @@ typedef _LoadAudioBufferFromM4ADart = ffi.Pointer<ffi.Float> Function(
 typedef _FreeAudioBuffer = ffi.Void Function(ffi.Pointer<ffi.Float> buffer);
 typedef _FreeAudioBufferDart = void Function(ffi.Pointer<ffi.Float> buffer);
 
-typedef _EssentiaAnalyzeBuffer = ffi.Pointer<EssentiaAnalysisResult> Function(
+typedef _AnalyzeAudioBuffer = ffi.Pointer<CAudioAnalysisResult> Function(
 		ffi.Pointer<ffi.Float> buffer, ffi.Int32 bufferLength);
-typedef _EssentiaAnalyzeBufferDart = ffi.Pointer<EssentiaAnalysisResult> Function(
+typedef _AnalyzeAudioBufferDart = ffi.Pointer<CAudioAnalysisResult> Function(
 		ffi.Pointer<ffi.Float> buffer, int bufferLength);
 
 typedef _DeleteAnalysisResult = ffi.Void Function(
-		ffi.Pointer<EssentiaAnalysisResult> result);
+		ffi.Pointer<CAudioAnalysisResult> result);
 typedef _DeleteAnalysisResultDart = void Function(
-		ffi.Pointer<EssentiaAnalysisResult> result);
+		ffi.Pointer<CAudioAnalysisResult> result);
 
 class AudioLoaderFfi {
-
 	late final ffi.DynamicLibrary _audioLoaderLib = _loadLibrary();
 	late final _LoadAudioBufferFromM4ADart loadAudioBufferFromM4A = _audioLoaderLib
 			.lookupFunction<_LoadAudioBufferFromM4A, _LoadAudioBufferFromM4ADart>('loadAudioBufferFromM4A');
@@ -77,46 +76,47 @@ class AudioLoaderFfi {
 	}
 }
 
-class EssentiaAnalyzerFfi {
-	late final ffi.DynamicLibrary _essentiaLib = _loadLibrary();
-	late final _EssentiaAnalyzeBufferDart essentiaAnalyzeBuffer = _essentiaLib
-		.lookupFunction<_EssentiaAnalyzeBuffer, _EssentiaAnalyzeBufferDart>('essentia_analyze_buffer');
-	late final _DeleteAnalysisResultDart deleteAnalysisResult = _essentiaLib
+class AudioAnalysisFfi {
+	late final ffi.DynamicLibrary _audioanalysisLib = _loadLibrary();
+	late final _AnalyzeAudioBufferDart analyzeAudioBuffer = _audioanalysisLib
+		.lookupFunction<_AnalyzeAudioBuffer, _AnalyzeAudioBufferDart>('analyze_audio_buffer');
+	late final _DeleteAnalysisResultDart deleteAnalysisResult = _audioanalysisLib
 		.lookupFunction<_DeleteAnalysisResult, _DeleteAnalysisResultDart>('delete_analysis_result');
 
-	EssentiaAnalyzerFfi();
+	AudioAnalysisFfi();
 
 	static ffi.DynamicLibrary _loadLibrary() {
 		if (Platform.isIOS) {
 			return ffi.DynamicLibrary.process();
 		} else if (Platform.isAndroid) {
-			throw UnimplementedError('EssentiaAnalyzerFfi is not implemented for Android');
+			throw UnimplementedError('AudioAnalysisFfi is not implemented for Android');
 		} else {
-			throw UnsupportedError('EssentiaAnalyzerFfi only supports iOS and Android');
+			throw UnsupportedError('AudioAnalysisFfi only supports iOS and Android');
 		}
 	}
 
 	/// Analyzes an audio buffer and returns the analysis result pointer.
-	ffi.Pointer<EssentiaAnalysisResult> analyzeBuffer(ffi.Pointer<ffi.Float> bufferPtr, int length) {
-		final resultPtr = essentiaAnalyzeBuffer(bufferPtr, length);
-		if (resultPtr == ffi.Pointer<EssentiaAnalysisResult>.fromAddress(0)) {
-			throw Exception('Essentia analysis failed');
+	ffi.Pointer<CAudioAnalysisResult> analyzeBuffer(ffi.Pointer<ffi.Float> bufferPtr, int length) {
+		final resultPtr = analyzeAudioBuffer(bufferPtr, length);
+		if (resultPtr == ffi.Pointer<CAudioAnalysisResult>.fromAddress(0)) {
+			throw Exception('Audio analysis failed');
 		}
 		return resultPtr;
 	}
 
-	void freeResult(ffi.Pointer<EssentiaAnalysisResult> resultPtr) {
+	void freeResult(ffi.Pointer<CAudioAnalysisResult> resultPtr) {
 		deleteAnalysisResult(resultPtr);
 	}
 }
 
+/// Loads audio file, analyzes it, converts the result to Dart types, and cleans up.
 class AudioProcessingFfi {
 	final AudioLoaderFfi audioLoader;
-	final EssentiaAnalyzerFfi analyzer;
+	final AudioAnalysisFfi analyzer;
 
-	AudioProcessingFfi({AudioLoaderFfi? audioLoader, EssentiaAnalyzerFfi? analyzer})
+	AudioProcessingFfi({AudioLoaderFfi? audioLoader, AudioAnalysisFfi? analyzer})
 			: audioLoader = audioLoader ?? AudioLoaderFfi(),
-				analyzer = analyzer ?? EssentiaAnalyzerFfi();
+				analyzer = analyzer ?? AudioAnalysisFfi();
 
 	/// Loads an .m4a file and analyzes it with Essentia. Returns a Dart map with results.
 	Map<String, dynamic> loadAndAnalyze(String filePath) {

@@ -17,13 +17,12 @@
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		B5E3D3B2C4242E6AA0C4A705 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F01F8CDB8765653E3396CE9 /* Pods_RunnerTests.framework */; };
 		F360C7FB2E5DE8BD00D8B380 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F360C7FA2E5DE8BD00D8B380 /* Accelerate.framework */; };
+		F365DF112E8F08DD00F52B52 /* libaudioanalysis.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F365DF102E8F08DC00F52B52 /* libaudioanalysis.a */; };
 		F37354F92E62424600B96523 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F37354F82E62424600B96523 /* AVFoundation.framework */; };
 		F37354FB2E62430400B96523 /* AudioBufferLoader.mm in Sources */ = {isa = PBXBuildFile; fileRef = F37354FA2E62430400B96523 /* AudioBufferLoader.mm */; };
 		F373550B2E63001C00B96523 /* AudioBufferLoader.mm in Sources */ = {isa = PBXBuildFile; fileRef = F37354FA2E62430400B96523 /* AudioBufferLoader.mm */; };
 		F373550E2E6301E400B96523 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F373550D2E6301E400B96523 /* AVFoundation.framework */; };
 		F373550F2E63093C00B96523 /* libAudioBufferLoader.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F37355002E62FD4900B96523 /* libAudioBufferLoader.a */; };
-		F37355112E64A0AD00B96523 /* libessentia.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F37355102E64A0AD00B96523 /* libessentia.a */; };
-		F37355132E64A1A600B96523 /* libessentia_c_api.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F37355122E64A1A600B96523 /* libessentia_c_api.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -82,12 +81,11 @@
 		E3D85E9752D6CBF2068BCA0F /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
 		E89286C83033393C70ED95E5 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
 		F360C7FA2E5DE8BD00D8B380 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		F365DF102E8F08DC00F52B52 /* libaudioanalysis.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libaudioanalysis.a; path = ../audioanalysis/build/ios/libaudioanalysis.a; sourceTree = SOURCE_ROOT; };
 		F37354F82E62424600B96523 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		F37354FA2E62430400B96523 /* AudioBufferLoader.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = AudioBufferLoader.mm; path = AudioLoader/src/AudioBufferLoader.mm; sourceTree = "<group>"; };
 		F37355002E62FD4900B96523 /* libAudioBufferLoader.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libAudioBufferLoader.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		F373550D2E6301E400B96523 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk/System/Library/Frameworks/AVFoundation.framework; sourceTree = DEVELOPER_DIR; };
-		F37355102E64A0AD00B96523 /* libessentia.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libessentia.a; path = ../essentia/ios/essentia_installation/lib/libessentia.a; sourceTree = SOURCE_ROOT; };
-		F37355122E64A1A600B96523 /* libessentia_c_api.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libessentia_c_api.a; path = ../essentia/ios/c_api_build/libessentia_c_api.a; sourceTree = SOURCE_ROOT; };
 		F89EF2F5E598B5EAFA222156 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -97,10 +95,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				F373550F2E63093C00B96523 /* libAudioBufferLoader.a in Frameworks */,
+				F365DF112E8F08DD00F52B52 /* libaudioanalysis.a in Frameworks */,
 				F37354F92E62424600B96523 /* AVFoundation.framework in Frameworks */,
-				F37355132E64A1A600B96523 /* libessentia_c_api.a in Frameworks */,
 				F360C7FB2E5DE8BD00D8B380 /* Accelerate.framework in Frameworks */,
-				F37355112E64A0AD00B96523 /* libessentia.a in Frameworks */,
 				6D820169179004458610753A /* Pods_Runner.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -168,8 +165,7 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
-				F37355122E64A1A600B96523 /* libessentia_c_api.a */,
-				F37355102E64A0AD00B96523 /* libessentia.a */,
+				F365DF102E8F08DC00F52B52 /* libaudioanalysis.a */,
 				F37354FA2E62430400B96523 /* AudioBufferLoader.mm */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
@@ -555,6 +551,7 @@
 					"$(inherited)",
 					"$(SRCROOT)/../essentia/ios/essentia_installation/lib",
 					"$(SRCROOT)/../essentia/ios/c_api_build",
+					"$(SRCROOT)/../audioanalysis/build/ios",
 				);
 				OTHER_LDFLAGS = (
 					"$(inherited)",
@@ -564,8 +561,8 @@
 					"\"path_provider_foundation\"",
 					"-framework",
 					"\"record_ios\"",
+					"-Wl,-u,_analyze_audio_buffer",
 					"-Wl,-u,_delete_analysis_result",
-					"-Wl,-u,_essentia_analyze_buffer",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.4821904021934;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -750,11 +747,8 @@
 					"\"${PODS_CONFIGURATION_BUILD_DIR}/audioplayers_darwin/audioplayers_darwin.framework/Headers\"",
 					"\"${PODS_CONFIGURATION_BUILD_DIR}/path_provider_foundation/path_provider_foundation.framework/Headers\"",
 					"\"${PODS_CONFIGURATION_BUILD_DIR}/record_ios/record_ios.framework/Headers\"",
-					"$(SRCROOT)/Runner/EssentiaCAPI/include/**",
-					"$(SRCROOT)/Runner/Essentia/include/**",
 					"$(SRCROOT)/Runner/AudioLoader/include",
-					"$(SRCROOT)/../essentia/essentia_c_api/include",
-					"$(SRCROOT)/../essentia/ios/essentia_installation/include",
+					"$(SRCROOT)/../audioanalysis/include",
 				);
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -765,6 +759,7 @@
 					"$(inherited)",
 					"$(SRCROOT)/../essentia/ios/essentia_installation/lib",
 					"$(SRCROOT)/../essentia/ios/c_api_build",
+					"$(SRCROOT)/../audioanalysis/build/ios",
 				);
 				OTHER_LDFLAGS = (
 					"$(inherited)",
@@ -774,8 +769,8 @@
 					"\"path_provider_foundation\"",
 					"-framework",
 					"\"record_ios\"",
+					"-Wl,-u,_analyze_audio_buffer",
 					"-Wl,-u,_delete_analysis_result",
-					"-Wl,-u,_essentia_analyze_buffer",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.4821904021934;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -804,6 +799,7 @@
 					"$(inherited)",
 					"$(SRCROOT)/../essentia/ios/essentia_installation/lib",
 					"$(SRCROOT)/../essentia/ios/c_api_build",
+					"$(SRCROOT)/../audioanalysis/build/ios",
 				);
 				OTHER_LDFLAGS = (
 					"$(inherited)",
@@ -813,8 +809,8 @@
 					"\"path_provider_foundation\"",
 					"-framework",
 					"\"record_ios\"",
+					"-Wl,-u,_analyze_audio_buffer",
 					"-Wl,-u,_delete_analysis_result",
-					"-Wl,-u,_essentia_analyze_buffer",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.4821904021934;
 				PRODUCT_NAME = "$(TARGET_NAME)";

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:music_app/ffi/audio_processing_ffi.dart';
+import 'package:music_app/ffi/audioanalysis_ffi.dart';
 
 import 'dart:io';
 import 'package:flutter/services.dart' show rootBundle;
