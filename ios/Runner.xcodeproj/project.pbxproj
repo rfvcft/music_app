@@ -549,8 +549,6 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SRCROOT)/../essentia/ios/essentia_installation/lib",
-					"$(SRCROOT)/../essentia/ios/c_api_build",
 					"$(SRCROOT)/../audioanalysis/build/ios",
 				);
 				OTHER_LDFLAGS = (
@@ -757,8 +755,6 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SRCROOT)/../essentia/ios/essentia_installation/lib",
-					"$(SRCROOT)/../essentia/ios/c_api_build",
 					"$(SRCROOT)/../audioanalysis/build/ios",
 				);
 				OTHER_LDFLAGS = (
@@ -797,8 +793,6 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SRCROOT)/../essentia/ios/essentia_installation/lib",
-					"$(SRCROOT)/../essentia/ios/c_api_build",
 					"$(SRCROOT)/../audioanalysis/build/ios",
 				);
 				OTHER_LDFLAGS = (
