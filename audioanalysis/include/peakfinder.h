@@ -13,7 +13,7 @@ public:
 
     // Parameters
     int sampleRate = 44100; // sampleRate of audio buffer, in Hz
-    int maxPeaks = 4; // maximum number of peaks to detect
+    int maxPeaks = 100; // maximum number of peaks to detect
 
     void computePeaks();
 

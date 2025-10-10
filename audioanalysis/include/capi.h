@@ -10,8 +10,8 @@ typedef struct {
 	char* key;            // C string (must be freed)
 	float duration;       // Duration in seconds
 	float* chromagram;    // Flat array, size: n_frames * n_bins (must be freed)
-	int chroma_n_frames;  // Number of frames (rows)
-	int chroma_n_bins;    // Number of bins (columns)
+	int chroma_n_frames;  // Number of frames
+	int chroma_n_bins;    // Number of bins
 } CAudioAnalysisResult;
 
 // Analyze a float* buffer and return results. Must be freed with delete_analysis_result.

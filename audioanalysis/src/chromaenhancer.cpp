@@ -10,10 +10,23 @@ ChromaEnhancer::ChromaEnhancer(const std::vector<std::vector<float>>& inputChrom
                                : chromaMatrix(inputChroma), enhancedChromaMatrix(outputChroma){}
 
 void ChromaEnhancer::computeEnhancement() {
+    copyMatrix();
     convertToLogScale();
-    dropNoise();
-    if (enhanceSmooth) enhanceSmoothly();
-    if (normalize) normalizeChromaFrames();
+    dropLowAmplitudes();
+    dropShortTimeExcitations();
+    //normalizeChromaFrames();
+}
+
+void ChromaEnhancer::copyMatrix() {
+    size_t numFrames = chromaMatrix.size();
+    if (numFrames == 0) return;
+    size_t numBins = chromaMatrix[0].size();
+    enhancedChromaMatrix.resize(numFrames, std::vector<float>(numBins, 0.0f));
+    for (size_t t = 0; t < numFrames; ++t) {
+        for (size_t k = 0; k < numBins; ++k) {
+            enhancedChromaMatrix[t][k] = chromaMatrix[t][k];
+        }
+    }
 }
 
 void ChromaEnhancer::convertToLogScale() {
@@ -41,7 +54,7 @@ void ChromaEnhancer::convertToLogScale() {
     }
 }
 
-void ChromaEnhancer::dropNoise() {
+void ChromaEnhancer::dropLowAmplitudes() {
     size_t numFrames = chromaMatrix.size();
     if (numFrames == 0) return;
     size_t numBins = chromaMatrix[0].size();
@@ -57,28 +70,36 @@ void ChromaEnhancer::dropNoise() {
     }
 }
 
-void ChromaEnhancer::enhanceSmoothly() {
+void ChromaEnhancer::dropShortTimeExcitations() {
     size_t numFrames = chromaMatrix.size();
     if (numFrames == 0) return;
     size_t numBins = chromaMatrix[0].size();
 
-    for (size_t t = 0; t < numFrames; ++t) {
-        for (size_t k = 0; k < numBins; ++k) {
-            float v = enhancedChromaMatrix[t][k];
-            // Other thresholding
-            v = smoothEnhancer(v);
-            enhancedChromaMatrix[t][k] = v;
+    int minDurationFrames = 10; // Minimum duration in frames to keep a chroma activation
+    float intensityThreshold = 0.05f;
+
+    for (size_t k = 0; k < numBins; ++k) {
+        int count = 0;
+        for (size_t t = 0; t < numFrames; ++t) {
+            if (enhancedChromaMatrix[t][k] > intensityThreshold) {
+                count++;
+            } else {
+                if (count > 0 && count < minDurationFrames) {
+                    // Zero out the short activation
+                    for (int back = 1; back <= count; ++back) {
+                        enhancedChromaMatrix[t - back][k] = 0.0f;
+                    }
+                }
+                count = 0;
+            }
+        }
+        // Handle case where activation goes till the end
+        if (count > 0 && count < minDurationFrames) {
+            for (int back = 1; back <= count; ++back) {
+                enhancedChromaMatrix[numFrames - back][k] = 0.0f;
+            }
         }
     }
-}
-
-// Smooth function from f(0) = f(a) = 0 to f(b) = f(1) = 1
-float ChromaEnhancer::smoothEnhancer(float x) {
-    float a = 0.0f;
-    float b = 0.6f;
-    if (x < a) return 0.0f;
-    else if (x > b) return 1.0f;
-    else return 0.5f *(1.0f - std::cos(M_PI * (x - a) / (b - a)));
 }
 
 
@@ -88,29 +109,11 @@ void ChromaEnhancer::normalizeChromaFrames() {
     if (numFrames == 0) return;
     size_t numBins = enhancedChromaMatrix[0].size();
 
-    float sumTotal = 0.0f;
     for (size_t t = 0; t < numFrames; ++t) {
-        float frameSum = 0.0f;
-        for (size_t k = 0; k < numBins; ++k) {
-            frameSum += enhancedChromaMatrix[t][k];
-        }
-        sumTotal += frameSum;
-    }
-    float avgFrameSum = sumTotal / static_cast<float>(numFrames);
-    // avgFrameSum now holds the average sum of chroma values per frame
-    float percentage = 0.2f;
-    float normalizeThreshold = percentage * avgFrameSum;
-    for (size_t t = 0; t < numFrames; ++t) {
-        float frameSum = 0.0f;
-        for (size_t k = 0; k < numBins; ++k) {
-            frameSum += enhancedChromaMatrix[t][k];
-        }
-        if (frameSum > normalizeThreshold && frameSum > 0.0f) {
-            float maxVal = *std::max_element(enhancedChromaMatrix[t].begin(), enhancedChromaMatrix[t].end());
-            if (maxVal > 0.0f) {
-                for (size_t k = 0; k < numBins; ++k) {
-                    enhancedChromaMatrix[t][k] /= maxVal;
-                }
+        float maxVal = *std::max_element(enhancedChromaMatrix[t].begin(), enhancedChromaMatrix[t].end());
+        if (maxVal > 0.0f) {
+            for (size_t k = 0; k < numBins; ++k) {
+                enhancedChromaMatrix[t][k] /= maxVal;
             }
         }
     }

@@ -12,9 +12,7 @@ public:
     );
 
     // Parameters
-    float threshold = 0.88f; // Values below threshold are dropped (on log scale). 1.0 = drop everything, 0.0 = keep everything. 0.82 is a good value
-    bool enhanceSmooth = false; // Enhance values using a non-linear smooth function
-    bool normalize = false; // normalize each frame with max norm
+    float threshold = 0.85f; // Values below threshold are dropped (on log scale). 1.0 = drop everything, 0.0 = keep everything. 0.85 is a good value
 
     void computeEnhancement();
 
@@ -22,9 +20,10 @@ private:
     const std::vector<std::vector<float>>& chromaMatrix; 
     std::vector<std::vector<float>>& enhancedChromaMatrix; 
 
+    void copyMatrix();
     void convertToLogScale();
-    void dropNoise();
-    void enhanceSmoothly();
-    float smoothEnhancer(float x);
+    void normalizeMatrix();
+    void dropLowAmplitudes();
+    void dropShortTimeExcitations();
     void normalizeChromaFrames();
 };

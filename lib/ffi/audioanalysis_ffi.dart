@@ -2,7 +2,7 @@ import 'dart:ffi' as ffi;
 import 'dart:io';
 import 'package:ffi/ffi.dart';
 
-// C struct mapping for AudioAnalysisResult from audioanalysis/include/capi.h
+// C struct mapping for CAudioAnalysisResult from audioanalysis/include/capi.h
 @ffi.Packed(8)
 final class CAudioAnalysisResult extends ffi.Struct {
 	external ffi.Pointer<ffi.Char> key;
@@ -15,7 +15,7 @@ final class CAudioAnalysisResult extends ffi.Struct {
 	external int chroma_n_bins;
 }
 
-
+// Function signatures for loading audio 
 typedef _LoadAudioBufferFromM4A = ffi.Pointer<ffi.Float> Function(
 		ffi.Pointer<ffi.Char> filePath, ffi.Pointer<ffi.Int32> outLength);
 typedef _LoadAudioBufferFromM4ADart = ffi.Pointer<ffi.Float> Function(
@@ -24,6 +24,7 @@ typedef _LoadAudioBufferFromM4ADart = ffi.Pointer<ffi.Float> Function(
 typedef _FreeAudioBuffer = ffi.Void Function(ffi.Pointer<ffi.Float> buffer);
 typedef _FreeAudioBufferDart = void Function(ffi.Pointer<ffi.Float> buffer);
 
+// Function signatures for audio analysis
 typedef _AnalyzeAudioBuffer = ffi.Pointer<CAudioAnalysisResult> Function(
 		ffi.Pointer<ffi.Float> buffer, ffi.Int32 bufferLength);
 typedef _AnalyzeAudioBufferDart = ffi.Pointer<CAudioAnalysisResult> Function(
@@ -34,6 +35,8 @@ typedef _DeleteAnalysisResult = ffi.Void Function(
 typedef _DeleteAnalysisResultDart = void Function(
 		ffi.Pointer<CAudioAnalysisResult> result);
 
+
+/// Loads audio files to audio buffer
 class AudioLoaderFfi {
 	late final ffi.DynamicLibrary _audioLoaderLib = _loadLibrary();
 	late final _LoadAudioBufferFromM4ADart loadAudioBufferFromM4A = _audioLoaderLib
@@ -75,7 +78,8 @@ class AudioLoaderFfi {
 		}
 	}
 }
-
+  
+/// Analyzes audio buffers using our custom library "audioanalysis"
 class AudioAnalysisFfi {
 	late final ffi.DynamicLibrary _audioanalysisLib = _loadLibrary();
 	late final _AnalyzeAudioBufferDart analyzeAudioBuffer = _audioanalysisLib
@@ -118,7 +122,7 @@ class AudioProcessingFfi {
 			: audioLoader = audioLoader ?? AudioLoaderFfi(),
 				analyzer = analyzer ?? AudioAnalysisFfi();
 
-	/// Loads an .m4a file and analyzes it with Essentia. Returns a Dart map with results.
+	/// Loads an .m4a file and analyzes it. Returns a Dart map with results.
 	Map<String, dynamic> loadAndAnalyze(String filePath) {
     // Load audio buffer
 		final audio = audioLoader.loadAudio(filePath);
@@ -128,11 +132,13 @@ class AudioProcessingFfi {
     // Analyze buffer
 		final resultPtr = analyzer.analyzeBuffer(bufferPtr, length);
 		final result = resultPtr.ref;
+
+    // Convert C types to Dart types
 		final key = result.key == ffi.Pointer<ffi.Char>.fromAddress(0)
 				? ''
 				: result.key.cast<Utf8>().toDartString();
 		final duration = result.duration;
-
+    
     // Unflatten 1D chromagram
 		final chromaFrames = result.chroma_n_frames;
 		final chromaBins = result.chroma_n_bins;

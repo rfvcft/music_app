@@ -18,7 +18,7 @@ public:
 
     // Parameters
     int sampleRate = 44100; // samplerate of audio buffer, in Hz
-    int frameSize = 8192; // size of each frame
+    int frameSize = 8192; // size of each frame. MUST BE A POWER OF 2 FOR FFT
     int hopSize = 1024; // hop size to next frame
 
     void computeNextFrame();

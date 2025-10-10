@@ -7,6 +7,7 @@ extern "C" {
 #endif
 
 CAudioAnalysisResult* analyze_audio_buffer(const float* buffer, int buffer_length){
+    // Analyze audio buffer
     AudioAnalysisResult result;
     AudioAnalyzer analyzer(buffer, buffer_length, result); 
     analyzer.analyze();

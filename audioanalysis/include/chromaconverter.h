@@ -17,7 +17,7 @@ public:
     int referencePitchClass = 9; // reference pitch class for A (0=C, 1=C#, ..., 9=A, ..., 11=B)
     float minFrequency = 100.0f; // minimum frequency to consider, in Hz
     float maxFrequency = 5000.0f; // maximum frequency to consider, in Hz
-    bool useSmoothTransition = false; // Use smooth transition at semitone boundaries
+    bool useSmoothTransition = true; // Use smooth transition at semitone boundaries
 
     void computeChroma();
 
