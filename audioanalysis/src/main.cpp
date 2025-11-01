@@ -35,6 +35,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+#if defined(__APPLE__)
     // Load audio buffer to memory
     std::vector<float> audio = loadRawFile(argv[1]);
 
@@ -43,7 +44,10 @@ int main(int argc, char** argv) {
     int audio_buffer_length = audio.size();
 
     // Analyze
-    CAudioAnalysisResult* resultPtr = analyze_audio_buffer(audio_buffer, audio_buffer_length); 
+    CAudioAnalysisResult* resultPtr = analyze_audio_buffer(audio_buffer, audio_buffer_length);
+#elif defined(__ANDROID__) || defined(__linux__)
+    CAudioAnalysisResult* resultPtr = analyze_audio_file(argv[1]);
+#endif
 
     // Log results
     std::cout << "Detected Key: " << (resultPtr->key[0] ? resultPtr->key : "Unknown") << std::endl;

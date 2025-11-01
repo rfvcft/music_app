@@ -33,8 +33,13 @@ if (PLATFORM STREQUAL "macos")
     target_link_libraries(analyze "-framework Accelerate")
 
 elseif (PLATFORM STREQUAL "linux")
-    add_executable(analyze ${AUDIOANALYSIS_SOURCES} src/main.cpp)
-    target_include_directories(analyze PRIVATE ../third_party/pocketfft)
+    # Compile main.cpp as executable for Linux by
+    #   1. creating a build directory and navigating into it
+    #   2. running cmake -DPLATFORM=linux /path/to/audioanalysis
+    #   3. running cmake --build .
+    #   4. running cmake --install .
+    add_executable(analyze ${AUDIOANALYSIS_SOURCES} src/audioloader.cpp src/main.cpp)
+    target_include_directories(analyze PRIVATE ../third_party/pocketfft ../third_party/dr_libs)
 
 elseif(PLATFORM STREQUAL "ios")
     # Get the path to the iOS SDK
@@ -66,8 +71,12 @@ elseif(PLATFORM STREQUAL "android")
         set(ANDROID_NATIVE_API_LEVEL 21)
     endif()
 
-    add_library(audioanalysis SHARED ${AUDIOANALYSIS_SOURCES})
-    target_include_directories(audioanalysis PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/pocketfft)
+    add_library(audioanalysis SHARED ${AUDIOANALYSIS_SOURCES} src/audioloader.cpp)
+    target_include_directories(
+            audioanalysis PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/pocketfft
+            ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/dr_libs
+    )
 else() 
     message(FATAL_ERROR "Unknown platform: ${PLATFORM}. Supported platforms are: macos, ios, linux, android.")
     
