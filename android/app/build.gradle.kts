@@ -24,22 +24,10 @@ android {
         applicationId = "com.example.music_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 21
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-
-        externalNativeBuild {
-            cmake {
-                arguments = (
-                    "-DPLATFORM=android",
-                    "-DANDROID_STL=c++_static",
-                    "-DANDROID_PLATFORM=android-${minSdk}",
-                    "-DCMAKE_TOOLCHAIN_FILE=\$ANDROID_NDK/build/cmake/android.toolchain.cmake",
-                )
-                targets("audioanalysis")
-            }
-        }
     }
 
     buildTypes {
@@ -47,26 +35,6 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
-
-            externalNativeBuild {
-                cmake {
-                    arguments("-DCMAKE_BUILD_TYPE=Release")
-                }
-            }
-        }
-
-        debug {
-            externalNativeBuild {
-                cmake {
-                    arguments("-DCMAKE_BUILD_TYPE=Debug")
-                }
-            }
-        }
-    }
-
-    externalNativeBuild {
-        cmake {
-            path = file("../../audioanalysis/CMakeLists.txt")
         }
     }
 }
