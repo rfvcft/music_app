@@ -1,7 +1,7 @@
 # Dockerfile for building Android native libraries using Android NDK
 #
 # Usage:
-# Install Docker
+# Install Docker or Podman (replace 'docker' with 'podman' in the commands below if using Podman).
 #
 # Build the image once by running:
 #   docker build -t "audioanalysis_builder" /path/to/directory/containing/this/Dockerfile
@@ -9,11 +9,13 @@
 # approximately 2.5GB of disk space.
 #
 # Cross-compile audioanalysis for android by running:
-#   docker run --rm -it -v /path/to/music_app:/app -v /build_audioanalysis audioanalysis_builder:latest
+#   docker run --rm -v /path/to/music_app:/app -v /build_audioanalysis audioanalysis_builder:latest
 # Specify a build type (Debug or Release, default: Debug) and whether to clean old make files before
 # building (default: false) by adding the following flags to the above command:
 #   -e BUILD_TYPE=Release
 #   -e CLEAN_BUILD=true
+# When using Podman, you may add the flag `--userns=keep-id` to the above command to ensure the
+# generated files are owned by you. With Docker they will always be owned by root.
 
 FROM debian:bookworm-slim
 
