@@ -35,10 +35,10 @@ class _BackendPageState extends State<BackendPage> {
   /// Workaround for using assets with native code/FFI.
   /// Copies the asset from the Flutter bundle to a temporary file,
   /// so it can be accessed by native libraries expecting a file path.
-  Future<String> _copyAssetToTemp(String assetName) async {
-    final byteData = await rootBundle.load('assets/analyzed_examples/input/$assetName.m4a');
+  Future<String> _copyAssetToTemp(String assetName, String suffix) async {
+    final byteData = await rootBundle.load('assets/analyzed_examples/input/$assetName.$suffix');
     final tempDir = await getTemporaryDirectory();
-    final file = File('${tempDir.path}/$assetName.m4a');
+    final file = File('${tempDir.path}/$assetName.$suffix');
     await file.writeAsBytes(byteData.buffer.asUint8List());
     return file.path;
   }
@@ -48,7 +48,7 @@ class _BackendPageState extends State<BackendPage> {
   Future<void> _analyze(String assetName) async {
     setState(() => _loading = true);
     try {
-      final filePath = await _copyAssetToTemp(assetName);
+      final filePath = Platform.isIOS ? await _copyAssetToTemp(assetName, "m4a") : await _copyAssetToTemp(assetName, "wav");
       // Use AudioProcessingFfi to load and analyze audio
       final audioProcessor = AudioProcessingFfi();
       final result = audioProcessor.loadAndAnalyze(filePath);

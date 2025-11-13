@@ -1,6 +1,13 @@
 #include "capi.h"
 #include "audioanalyzer.h"
 
+#include <cstring>
+
+#if defined(__ANDROID__) || defined(__linux__)
+#include "audioloader.h"
+#include <vector>
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,6 +40,15 @@ CAudioAnalysisResult* analyze_audio_buffer(const float* buffer, int buffer_lengt
     }
     return c_result;
 }
+
+#if defined(__ANDROID__) || defined(__linux__)
+CAudioAnalysisResult* analyze_audio_file(const char* file_path) {
+    std::vector<float> audio_buffer(0);
+    AudioLoader loader(file_path, audio_buffer);
+    loader.load();
+    return analyze_audio_buffer(audio_buffer.data(), audio_buffer.size());
+}
+#endif
 
 void delete_analysis_result(CAudioAnalysisResult* result) {
     if (result) {

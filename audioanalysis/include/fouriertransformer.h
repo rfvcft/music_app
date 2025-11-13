@@ -2,8 +2,10 @@
 #include <vector>
 #include <complex>
 
-#ifdef __APPLE__
+#if defined(__APPLE__)
 #include <Accelerate/Accelerate.h>
+#elif defined(__ANDROID__)
+#include "../../third_party/pocketfft/pocketfft_hdronly.h"
 #endif
 
 // Computes the FFT and magnitude spectrum of a frame.
@@ -29,11 +31,16 @@ private:
     std::vector<float>& magnitudes;  
     std::vector<float>& frequencies; 
 
-#ifdef __APPLE__
+#if defined(__APPLE__)
     void accelerateFFT();
     FFTSetup fftSetup = nullptr;
     std::vector<float> real;
     std::vector<float> imag;
+#elif defined(__ANDROID__)
+    void pocketFFT();
+    pocketfft::shape_t input_shape;
+    const pocketfft::stride_t input_stride{sizeof(float)};
+    const pocketfft::stride_t output_stride{sizeof(std::complex<float>)};
 #endif
 
     void primitiveFFT();
