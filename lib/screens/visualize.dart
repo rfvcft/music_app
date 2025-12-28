@@ -37,9 +37,12 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   final ap.AudioPlayer _player = ap.AudioPlayer()..setReleaseMode(ap.ReleaseMode.stop);
 
   void play() async {
+    if (!mounted) return;
     await _player.seek(Duration(milliseconds: (initialTime * 1000).toInt()));
     await _player.resume();
-    _ticker.start();
+    if (!_ticker.isActive) {
+      _ticker.start();
+    }
   }
 
   void pause() {
@@ -52,20 +55,23 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     _ticker = Ticker((elapsed) {
+      if (!mounted) return;
       setState(() {
         currentTime = initialTime + elapsed.inMilliseconds / 1000.0;
         if (currentTime >= widget.duration) {
           currentTime = 0.0;
           pause();
         }
-      });   
+      });
     });
 
     _player.onPlayerStateChanged.listen((state) {
+      if (!mounted) return;
       setState(() {});
     });
 
     _player.onPlayerComplete.listen((_) {
+      if (!mounted) return;
       setState(() {});
       _ticker.stop();
     });
@@ -75,6 +81,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
   @override
   void dispose() {
+    _ticker.stop();    // <--- Stop the ticker first!
     _ticker.dispose();
     _player.dispose();
     super.dispose();
@@ -106,16 +113,13 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           double durationPx = widget.duration * oneSecondPx; // Total duration in pixels
           double currentTimePx = currentTime * oneSecondPx; // Current time in pixels
 
-          double currentLinePx = availableHeight * (2/3); // Current time line position (y coord)
-          double pitchLinePx = currentLinePx + oneSecondPx; // One second below current time line (y coord)
-
+          double currentLinePx = availableHeight * (1/3); // Distance of current line from bottom 
+          double pitchLinePx = currentLinePx - oneSecondPx; // Distance of pitch line from bottom 
           double deltaWidthPx = availableWidth / 15; // Horizontal offset for vertical lines (x coord difference)
 
-          return SizedBox.expand(
-            child: Stack(
-              children: [
-                // Play button (top left by default)
-                PlayButton(
+
+          List<Widget> baseWidgets = [];
+          Widget playButton = PlayButton(
                   isPlaying: isPlaying,
                   onPressed: () {
                     if (isPlaying) {
@@ -124,9 +128,9 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                       play();
                     }
                   },
-                ),
-                // Show key and duration (top right)
-                Positioned(
+                );
+          
+          Widget keyDurationInfo = Positioned(
                   top: 16,
                   right: 16,
                   child: Column(
@@ -146,51 +150,91 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                       ),
                     ],
                   ),
-                ),
-                // Current position of audio 
-                Positioned(
-                  top: currentLinePx, 
+                );
+          
+          Widget currentLine = Positioned(
+                  bottom: currentLinePx, 
                   left: deltaWidthPx,
                   right: deltaWidthPx,
                   child: Container(
                     height: 1, 
                     color: Colors.pink,
                   ),
-                ),
-                // Pitch class line (one second below current position line)
-                Positioned(
-                  top: pitchLinePx, 
+                );
+          
+          Widget pitchLine = Positioned(
+                  bottom: pitchLinePx, 
                   left: deltaWidthPx,
                   right: deltaWidthPx,
                   child: Container(
                     height: 1, 
-                    color: Colors.black,
+                    color: Colors.grey,
                   ),
-                ),
-                // Moving reference time axis 
-                Positioned(
+                );
+          baseWidgets.addAll([currentLine, pitchLine, keyDurationInfo, playButton]);
+
+          for (int i = 1; i <= 12; i++) {
+            Widget verticalPitchLine = Positioned(
+              left: (i + 1) * deltaWidthPx,
+              top: 0,
+              bottom: pitchLinePx,
+              child: Container(
+                width: 1,
+                color: Colors.grey,
+              ),
+            );
+            baseWidgets.add(verticalPitchLine);
+          }
+
+          List<Widget> dynamicWidgets = [];
+          Widget timeAxis = Positioned(
                   left: availableWidth / 2, 
-                  bottom: availableHeight - currentLinePx,
-                  height: durationPx,
+                  bottom: currentLinePx,
                   child: Transform.translate(
-                      offset: Offset(0, currentTimePx),
-                      child: Container(
+                    offset: Offset(0, currentTimePx),
+                    child: Container(
                       width: 1,
+                      height: durationPx,
                       color: Colors.purple,
                     ),
                   ),
+                ); 
+
+          Widget intensityBar = Positioned(
+                  left: availableWidth / 2 + 40,
+                  bottom: currentLinePx, 
+                  child: Transform.translate(
+                    offset: Offset(0, currentTimePx), 
+                    child: IntensityBar(
+                      values: widget.chromagram[0],
+                      width: 10, 
+                      height: durationPx,
+                    ),
+                  ),
+                );
+          dynamicWidgets.addAll([timeAxis, intensityBar]);
+            
+          for (int i = 0; i < 12; i++) {
+            double width = deltaWidthPx / 2;
+            Widget pitchIntensityBar = Positioned(
+              left: (13 - i) * deltaWidthPx - width / 2,
+              bottom: currentLinePx, 
+              child: Transform.translate(
+                offset: Offset(0, currentTimePx), 
+                child: IntensityBar(
+                  values: widget.chromagram[i],
+                  width: width, 
+                  height: durationPx,
                 ),
-                IntensityBar(
-                  values: widget.chromagram[0],
-                ),
-                Positioned(
-                  left: availableWidth / 2,
-                  top: availableHeight - 1,
-                  width: 4, 
-                  height: 4,
-                  child: Container(color: Colors.red),
-                ),
-              ],
+              ),
+            );
+            dynamicWidgets.add(pitchIntensityBar);
+          }
+
+          List<Widget> allWidgets = dynamicWidgets + baseWidgets;
+          return SizedBox.expand(
+            child: Stack(
+              children: allWidgets,
             ),
           );
         },
@@ -227,8 +271,8 @@ class IntensityBar extends StatelessWidget {
   const IntensityBar({
     super.key,
     required this.values,
-    this.width = 20,
-    this.height = 400,
+    required this.width,
+    required this.height,
   });
 
   @override
@@ -247,15 +291,16 @@ class _IntensityBarPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final barHeight = size.height / values.length;
+    final rectWidth = size.width;
+    final rectHeight = size.height / values.length;
     for (int i = 0; i < values.length; i++) {
       final intensity = values[i].clamp(0.0, 1.0);
-      final color = Color.lerp(Colors.black, Colors.white, intensity)!;
+      final color = Color.lerp(Colors.white, Colors.black, intensity)!;
       final rect = Rect.fromLTWH(
-        300, // x position of top left
-        i*barHeight,            // y position of top left
-        size.width,     // width of rect
-        barHeight,   // height of rect
+        0, // left
+        (values.length - 1 - i)*rectHeight,     // top
+        rectWidth,    // width of rect
+        rectHeight,   // height of rect
       );
       final paint = Paint()..color = color;
       canvas.drawRect(rect, paint);
