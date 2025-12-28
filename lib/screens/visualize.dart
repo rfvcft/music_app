@@ -171,7 +171,18 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                     color: Colors.grey,
                   ),
                 );
-          baseWidgets.addAll([currentLine, pitchLine, keyDurationInfo, playButton]);
+
+          Widget chromaBlocker = Positioned(
+            top: availableHeight - pitchLinePx,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: availableHeight,
+              color: Colors.white,
+            ),
+          );
+
+          baseWidgets.addAll([currentLine, pitchLine, keyDurationInfo, playButton, chromaBlocker]);
 
           for (int i = 1; i <= 12; i++) {
             Widget verticalPitchLine = Positioned(
@@ -188,7 +199,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
           List<Widget> dynamicWidgets = [];
           Widget timeAxis = Positioned(
-                  left: availableWidth / 2, 
+                  left: availableWidth - deltaWidthPx / 2, 
                   bottom: currentLinePx,
                   child: Transform.translate(
                     offset: Offset(0, currentTimePx),
@@ -199,20 +210,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                     ),
                   ),
                 ); 
-
-          Widget intensityBar = Positioned(
-                  left: availableWidth / 2 + 40,
-                  bottom: currentLinePx, 
-                  child: Transform.translate(
-                    offset: Offset(0, currentTimePx), 
-                    child: IntensityBar(
-                      values: widget.chromagram[0],
-                      width: 10, 
-                      height: durationPx,
-                    ),
-                  ),
-                );
-          dynamicWidgets.addAll([timeAxis, intensityBar]);
+          dynamicWidgets.add(timeAxis);
             
           for (int i = 0; i < 12; i++) {
             double width = deltaWidthPx / 2;
