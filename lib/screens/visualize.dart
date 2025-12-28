@@ -97,112 +97,103 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text("Chromagram visualizer"),
       ),
-      body: SizedBox.expand(
-        child: Stack(
-          children: [
-            // Play button (top left by default)
-            PlayButton(
-              isPlaying: isPlaying,
-              onPressed: () {
-                if (isPlaying) {
-                  pause();
-                } else {
-                  play();
-                }
-              },
-            ),
-            // Show key and duration (top right)
-            Positioned(
-              top: 16,
-              right: 16,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'Key: ${widget.musicalKey}',
-                    style: Theme.of(context).textTheme.bodyLarge,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final availableWidth = constraints.maxWidth;
+          final availableHeight = constraints.maxHeight;
+
+          double oneSecondPx = availableHeight / 6; // One second in pixels
+          double durationPx = widget.duration * oneSecondPx; // Total duration in pixels
+          double currentTimePx = currentTime * oneSecondPx; // Current time in pixels
+
+          double currentLinePx = availableHeight * (2/3); // Current time line position (y coord)
+          double pitchLinePx = currentLinePx + oneSecondPx; // One second below current time line (y coord)
+
+          double deltaWidthPx = availableWidth / 15; // Horizontal offset for vertical lines (x coord difference)
+
+          return SizedBox.expand(
+            child: Stack(
+              children: [
+                // Play button (top left by default)
+                PlayButton(
+                  isPlaying: isPlaying,
+                  onPressed: () {
+                    if (isPlaying) {
+                      pause();
+                    } else {
+                      play();
+                    }
+                  },
+                ),
+                // Show key and duration (top right)
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Key: ${widget.musicalKey}',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                      Text(
+                        'Duration: ${widget.duration.toStringAsFixed(2)} s',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                      Text(
+                        'Dimensions of chromagram: (${widget.numPitches}, ${widget.numFrames})',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ],
                   ),
-                  Text(
-                    'Duration: ${widget.duration.toStringAsFixed(2)} s',
-                    style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                // Current position of audio 
+                Positioned(
+                  top: currentLinePx, 
+                  left: deltaWidthPx,
+                  right: deltaWidthPx,
+                  child: Container(
+                    height: 1, 
+                    color: Colors.pink,
                   ),
-                  Text(
-                    'Dimensions of chromagram: (${widget.numPitches}, ${widget.numFrames})',
-                    style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                // Pitch class line (one second below current position line)
+                Positioned(
+                  top: pitchLinePx, 
+                  left: deltaWidthPx,
+                  right: deltaWidthPx,
+                  child: Container(
+                    height: 1, 
+                    color: Colors.black,
                   ),
-                ],
-              ),
+                ),
+                // Moving reference time axis 
+                Positioned(
+                  left: availableWidth / 2, 
+                  bottom: availableHeight - currentLinePx,
+                  height: durationPx,
+                  child: Transform.translate(
+                      offset: Offset(0, currentTimePx),
+                      child: Container(
+                      width: 1,
+                      color: Colors.purple,
+                    ),
+                  ),
+                ),
+                IntensityBar(
+                  values: widget.chromagram[0],
+                ),
+                Positioned(
+                  left: availableWidth / 2,
+                  top: availableHeight - 1,
+                  width: 4, 
+                  height: 4,
+                  child: Container(color: Colors.red),
+                ),
+              ],
             ),
-            // --- Current position of audio (green horizontal line) ---
-            HorizontalLine(
-              bottomOffset: 244,
-              color: Colors.green,
-            ),
-            VerticalLine(
-              visualLengthTotal: widget.visualLengthTotal,
-              translateOffset: visualCurrentTime,
-              color: Colors.blue,
-            ),
-            // --- Bottom line of visualization (grey horizontal line) ---
-            HorizontalLine(
-              bottomOffset: 244 - widget.visualLengthSecond,
-              color: Colors.grey,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class HorizontalLine extends StatelessWidget {
-  final double bottomOffset;
-  final Color color;
-
-  const HorizontalLine({
-    super.key,
-    required this.bottomOffset,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      left: 16,
-      right: 16,
-      bottom: bottomOffset,
-      child: Container(
-        height: 1,
-        color: color,
-      ),
-    );
-  }
-}
-
-class VerticalLine extends StatelessWidget {
-  final double visualLengthTotal;
-  final double translateOffset;
-  final Color color;
-  
-  const VerticalLine({
-    super.key,
-    required this.visualLengthTotal,
-    required this.translateOffset,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      left: MediaQuery.of(context).size.width / 2, 
-      bottom: 244,
-      height: visualLengthTotal,
-      child: Transform.translate(
-        offset: Offset(0, translateOffset), 
-        child: Container(
-          width: 1,
-          color: color,
-        ),
+          );
+        },
       ),
     );
   }
@@ -226,6 +217,54 @@ class PlayButton extends StatelessWidget {
       onPressed: onPressed,
     );
   }
+}
+
+class IntensityBar extends StatelessWidget {
+  final List<double> values; // values in range 0..1
+  final double width;
+  final double height;
+
+  const IntensityBar({
+    super.key,
+    required this.values,
+    this.width = 20,
+    this.height = 400,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size(width, height),
+      painter: _IntensityBarPainter(values),
+    );
+  }
+}
+
+class _IntensityBarPainter extends CustomPainter {
+  final List<double> values;
+
+  _IntensityBarPainter(this.values);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final barHeight = size.height / values.length;
+    for (int i = 0; i < values.length; i++) {
+      final intensity = values[i].clamp(0.0, 1.0);
+      final color = Color.lerp(Colors.black, Colors.white, intensity)!;
+      final rect = Rect.fromLTWH(
+        300, // x position of top left
+        i*barHeight,            // y position of top left
+        size.width,     // width of rect
+        barHeight,   // height of rect
+      );
+      final paint = Paint()..color = color;
+      canvas.drawRect(rect, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _IntensityBarPainter oldDelegate) =>
+      oldDelegate.values != values;
 }
 
 
