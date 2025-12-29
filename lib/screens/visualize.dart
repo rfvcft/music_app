@@ -5,22 +5,22 @@ import 'package:flutter/scheduler.dart';
 import 'package:audioplayers/audioplayers.dart' as ap;
 
 class Visualizer extends StatefulWidget {
-  const Visualizer({
+  Visualizer({
     super.key,
     required this.audioUrl,
     required this.duration,
     required this.musicalKey,
     required this.chromagram,
-  });
+  })  : numPitches = chromagram.length,
+        numFrames = chromagram[0].length;
 
   final String audioUrl; // URL or asset path to audio file
   final double duration; // Duration of audio in seconds
   final String musicalKey; // Musical key of the audio
   final List<List<double>> chromagram; // Chromagram: List of 12 pitch classes, each with intensity values over time frames
 
-  int get numPitches => chromagram.length; // 12
-  int get numFrames => chromagram[0].length; // number of time frames (proportional to duration)
-
+  final int numPitches; // number of pitch classes (12)
+  final int numFrames; // number of time frames (proportional to duration)
 
   @override
   State<Visualizer> createState() => _VisualizerState();
@@ -76,6 +76,8 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   void play() async {
     if (!mounted) return;
 
+    initialTime = currentTime; // Update initial time 
+
     // Position audio to initial time and start playback
     await _player.seek(Duration(milliseconds: (initialTime * 1000).toInt()));
     await _player.resume();
@@ -86,7 +88,6 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
   // Pause audio and visualization
   void pause() {
-    initialTime = currentTime; // Update initial time for resuming
     _ticker.stop(); // Stop ticker (elapsed time is reset to zero). 
     _player.pause(); // Pause audio playback
   }
@@ -241,9 +242,27 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           }
 
           List<Widget> allWidgets = dynamicWidgets + baseWidgets;
-          return SizedBox.expand(
-            child: Stack(
-              children: allWidgets,
+
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onVerticalDragStart: (_) {
+              pause(); // Pause audio and ticker
+            },
+            onVerticalDragUpdate: (details) {
+              setState(() {
+                // Adjust currentTime: finger moving down -> positive delta -> increase time
+                currentTime += details.primaryDelta! / oneSecondPx;
+                currentTime = currentTime.clamp(0.0, widget.duration);
+              });
+            },
+            onVerticalDragEnd: (_) {
+              // Optionally: resume playback here if you want
+              // play();
+            },
+            child: SizedBox.expand(
+              child: Stack(
+                children: allWidgets,
+              ),
             ),
           );
         },
