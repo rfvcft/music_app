@@ -17,7 +17,6 @@ class MusicApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.deepPurple,
           brightness: Brightness.light,
-          background: Colors.white,
           surface: Colors.white,
         ),
         scaffoldBackgroundColor: Colors.white,

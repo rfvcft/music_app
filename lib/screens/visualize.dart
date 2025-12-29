@@ -13,80 +13,85 @@ class Visualizer extends StatefulWidget {
     required this.chromagram,
   });
 
-  final String audioUrl;
-  final double duration;
-  final String musicalKey;
-  final List<List<double>> chromagram;
+  final String audioUrl; // URL or asset path to audio file
+  final double duration; // Duration of audio in seconds
+  final String musicalKey; // Musical key of the audio
+  final List<List<double>> chromagram; // Chromagram: List of 12 pitch classes, each with intensity values over time frames
 
-  int get numPitches => chromagram.length;
-  int get numFrames => chromagram[0].length;
+  int get numPitches => chromagram.length; // 12
+  int get numFrames => chromagram[0].length; // number of time frames (proportional to duration)
 
-  final double visualLengthSecond = 144.0;
-  double get visualLengthTotal => duration * visualLengthSecond;
 
   @override
   State<Visualizer> createState() => _VisualizerState();
 }
 
 class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateMixin {
-  late final Ticker _ticker;
-  double currentTime = 0.0;
-  double initialTime = 0.0;
-  double get visualCurrentTime => currentTime * widget.visualLengthSecond;
+  
+  double currentTime = 0.0; // Current time in seconds. Visuals are based on this variable.
+  double initialTime = 0.0; // Auxilliary variable to track time when pausing/playing
 
-  final ap.AudioPlayer _player = ap.AudioPlayer()..setReleaseMode(ap.ReleaseMode.stop);
+  late final Ticker _ticker; // Ticker for updating current time
 
-  void play() async {
-    if (!mounted) return;
-    await _player.seek(Duration(milliseconds: (initialTime * 1000).toInt()));
-    await _player.resume();
-    if (!_ticker.isActive) {
-      _ticker.start();
-    }
-  }
+  final ap.AudioPlayer _player = ap.AudioPlayer()..setReleaseMode(ap.ReleaseMode.stop); // Audio player
 
-  void pause() {
-    initialTime = currentTime;
-    _ticker.stop();
-    _player.pause();
-  }
-
+  // Initialize states
   @override
   void initState() {
     super.initState();
+    // Initialize ticker
     _ticker = Ticker((elapsed) {
-      if (!mounted) return;
+      if (!mounted) return; // Guard against unmounted state
       setState(() {
-        currentTime = initialTime + elapsed.inMilliseconds / 1000.0;
-        if (currentTime >= widget.duration) {
+        currentTime = initialTime + elapsed.inMilliseconds / 1000.0; // Updtate current time
+        if (currentTime >= widget.duration) { // Pause visuals and audio if end is reached
           currentTime = 0.0;
           pause();
         }
       });
     });
 
-    _player.onPlayerStateChanged.listen((state) {
+    // Set up audio player
+    _player.onPlayerStateChanged.listen((state) { // Listen to state changes
       if (!mounted) return;
       setState(() {});
     });
-
-    _player.onPlayerComplete.listen((_) {
+    _player.onPlayerComplete.listen((_) { // Listen to completion event
       if (!mounted) return;
       setState(() {});
       _ticker.stop();
     });
-
-    _player.setSource(_resolveSource(widget.audioUrl));
+    _player.setSource(_resolveSource(widget.audioUrl)); // Set audio source
   }
 
+  // Clean up resources
   @override
-  void dispose() {
-    _ticker.stop();    // <--- Stop the ticker first!
+  void dispose() {   
     _ticker.dispose();
     _player.dispose();
     super.dispose();
   }
 
+  // Play audio and start visualization
+  void play() async {
+    if (!mounted) return;
+
+    // Position audio to initial time and start playback
+    await _player.seek(Duration(milliseconds: (initialTime * 1000).toInt()));
+    await _player.resume();
+
+    // Start ticker to update current time
+    _ticker.start();
+  }
+
+  // Pause audio and visualization
+  void pause() {
+    initialTime = currentTime; // Update initial time for resuming
+    _ticker.stop(); // Stop ticker (elapsed time is reset to zero). 
+    _player.pause(); // Pause audio playback
+  }
+
+  // Resolve audio source based on path type (asset, URL, or device file)
   ap.Source _resolveSource(String path) {
     if (path.startsWith('assets/')) {
       return ap.AssetSource(path.replaceFirst('assets/', ''));
@@ -95,10 +100,9 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     }
   }
 
+  // Build the visualization UI
   @override
   Widget build(BuildContext context) {
-    final isPlaying = _player.state == ap.PlayerState.playing;
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -106,8 +110,8 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final availableWidth = constraints.maxWidth;
-          final availableHeight = constraints.maxHeight;
+          final availableWidth = constraints.maxWidth; 
+          final availableHeight = constraints.maxHeight; 
 
           double oneSecondPx = availableHeight / 6; // One second in pixels
           double durationPx = widget.duration * oneSecondPx; // Total duration in pixels
@@ -116,7 +120,8 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           double currentLinePx = availableHeight * (1/3); // Distance of current line from bottom 
           double pitchLinePx = currentLinePx - oneSecondPx; // Distance of pitch line from bottom 
           double deltaWidthPx = availableWidth / 15; // Horizontal offset for vertical lines (x coord difference)
-
+          
+          final isPlaying = (_player.state == ap.PlayerState.playing); // Check if audio is playing
 
           List<Widget> baseWidgets = [];
           Widget playButton = PlayButton(
@@ -152,6 +157,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                   ),
                 );
           
+          // Current position of audio playback
           Widget currentLine = Positioned(
                   bottom: currentLinePx, 
                   left: deltaWidthPx,
@@ -162,6 +168,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                   ),
                 );
           
+          // Position of pitch line (bottom line of visualization)
           Widget pitchLine = Positioned(
                   bottom: pitchLinePx, 
                   left: deltaWidthPx,
@@ -172,6 +179,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                   ),
                 );
 
+          // Blocker to cover chroma bars below pitch line
           Widget chromaBlocker = Positioned(
             top: availableHeight - pitchLinePx,
             left: 0,
@@ -184,6 +192,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
           baseWidgets.addAll([currentLine, pitchLine, keyDurationInfo, playButton, chromaBlocker]);
 
+          // Vertical lines for pitch classes
           for (int i = 1; i <= 12; i++) {
             Widget verticalPitchLine = Positioned(
               left: (i + 1) * deltaWidthPx,
@@ -198,11 +207,12 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           }
 
           List<Widget> dynamicWidgets = [];
+          // Reference time axis (for debugging)
           Widget timeAxis = Positioned(
                   left: availableWidth - deltaWidthPx / 2, 
                   bottom: currentLinePx,
                   child: Transform.translate(
-                    offset: Offset(0, currentTimePx),
+                    offset: Offset(0, currentTimePx), // Translate vertically down based on current playback time
                     child: Container(
                       width: 1,
                       height: durationPx,
@@ -211,14 +221,15 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                   ),
                 ); 
           dynamicWidgets.add(timeAxis);
-            
+          
+          // Chromagram pitch intensity bars
           for (int i = 0; i < 12; i++) {
             double width = deltaWidthPx / 2;
             Widget pitchIntensityBar = Positioned(
               left: (13 - i) * deltaWidthPx - width / 2,
               bottom: currentLinePx, 
               child: Transform.translate(
-                offset: Offset(0, currentTimePx), 
+                offset: Offset(0, currentTimePx),  // Translate vertically down based on current playback time
                 child: IntensityBar(
                   values: widget.chromagram[i],
                   width: width, 
