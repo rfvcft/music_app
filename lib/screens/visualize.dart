@@ -29,13 +29,12 @@ class Visualizer extends StatefulWidget {
 class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateMixin {
   
   double currentTime = 0.0; // Current time in seconds. Visuals are based on this variable.
-  late double initialTime; // Auxilliary variable used for starting tickers
-  late final Ticker _timeTicker; // Ticker for updating current time
   bool isPlaying = false; // Track whether audio/visuals are playing
 
   late double _flingVelocity; // Velocity of fling in seconds per second
   late Ticker _flingTicker; // Ticker for fling animation
-  late bool resumePlayingAfterFling; // Track if playback should resume after scrolling
+  late double _initialTime; // Auxilliary variable used for starting fling ticker
+  late bool _resumePlayingAfterFling; // Track if playback should resume after scrolling
   bool isFlinging = false; // Track whether a fling animation is in progress
 
   final ap.AudioPlayer _player = ap.AudioPlayer()..setReleaseMode(ap.ReleaseMode.stop); // Audio player
@@ -44,20 +43,32 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-
-    // Initialize tickers
-    _timeTicker = Ticker(_timeUpdate);
+    // Initialize fling ticker
     _flingTicker = Ticker(_flingUpdate);
 
-    // Set up audio player
-    _player.onPlayerStateChanged.listen((state) { // Listen to state changes
+    // Synchronize currentTime with audio player position and redraw UI if player is active
+    _player.onPositionChanged.listen((Duration position) {
+      if (!mounted) return;
+      if (isPlaying) {
+        setState(() {
+          currentTime = position.inMilliseconds / 1000.0;
+        });
+      }
+    });
+
+    // Redraw UI on player state changes
+    _player.onPlayerStateChanged.listen((state) { 
       if (!mounted) return;
       setState(() {});
     });
-    _player.onPlayerComplete.listen((_) { // Listen to completion event
+
+    // When audio competes, update playing state, set currentTime to duration and redraw UI
+    _player.onPlayerComplete.listen((_) { 
       if (!mounted) return;
-      setState(() {});
-      _timeTicker.stop();
+      setState(() {
+        isPlaying = false;
+        currentTime = widget.duration;
+      });
     });
     _player.setSource(_resolveSource(widget.audioUrl)); // Set audio source
   }
@@ -65,42 +76,24 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   // Clean up resources
   @override
   void dispose() {   
-    _timeTicker.dispose();
     _flingTicker.dispose();
     _player.dispose();
     super.dispose();
   }
 
   // Play audio and start visualization
-  void play() async {
-    initialTime = currentTime; // Fix initial time for time ticker updates
+  Future<void> play() async {
+    await _player.seek(Duration(milliseconds: (currentTime * 1000).toInt())); // Position audio to current time
+    await _player.resume(); // Start audio playback. This will also start the visualization via the position listener
 
-    // Position audio to initial time and start playback
-    await _player.seek(Duration(milliseconds: (initialTime * 1000).toInt()));
-    await _player.resume();
-    
-    _timeTicker.start(); // Start dynamic visuals by starting ticker
-    
     isPlaying = true; // Update playing state
   }
 
   // Pause audio and visualization
   void pause() {
-    _timeTicker.stop(); // Stop ticker (elapsed time is reset to zero). 
-    _player.pause(); // Pause audio playback
-    isPlaying = false;
-  }
-
-  // Update current time based on elapsed duration. To be called by time ticker
-  void _timeUpdate(Duration elapsed) {
-      if (!mounted) return; // Guard against unmounted state
-      setState(() {
-        currentTime = initialTime + elapsed.inMilliseconds / 1000.0; // Updtate current time
-        if (currentTime >= widget.duration) { // Pause visuals and audio if end is reached
-          currentTime = widget.duration;
-          pause();
-        }
-      });
+    _player.pause(); // Pause audio playback. This will also pause the visualization via the position listener
+    
+    isPlaying = false; // Update playing state
   }
 
   // Resolve audio source based on path type (asset, URL, or device file)
@@ -114,8 +107,8 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
   // Start fling animation
   void _startFling() {
-    initialTime = currentTime; // Fix initial time for fling ticker updates
-    _flingTicker.start(); // Start fling by starting ticker
+    _initialTime = currentTime; // Fix initial time for fling ticker updates
+    _flingTicker.start(); // Start fling by starting ticker. See _flingUpdate for details 
     isFlinging = true;
   }
 
@@ -128,7 +121,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   // End fling animation and resume playback if needed
   void _endFling() {
     _abortFling();
-    if (resumePlayingAfterFling) play();
+    if (_resumePlayingAfterFling) play();
   }
 
   // Update current time based on fling velocity. To be called by fling ticker
@@ -143,7 +136,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
     if (!mounted) return;
     setState(() {
-      currentTime = initialTime + timeDelta; 
+      currentTime = _initialTime + timeDelta; 
       if (currentTime < 0.0) {
         currentTime = 0.0;
         _endFling();
@@ -313,12 +306,12 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
               
               // Below, we want to resume playing if and only if the audio was playing before
               if (isPlaying) { 
-                resumePlayingAfterFling = true;
+                _resumePlayingAfterFling = true;
                 pause();
                 return;
               } 
 
-              resumePlayingAfterFling = false;
+              _resumePlayingAfterFling = false;
             },
             onVerticalDragUpdate: (details) {
               if (!mounted) return;

@@ -58,10 +58,10 @@ class _LoadAssetsState extends State<LoadAssets> {
     }
 
     // Load chromagram
-    String hpcp = await rootBundle.loadString('assets/analyzed_examples/output/$audioName/hpcp.csv');
+    String chromagramStr = await rootBundle.loadString('assets/analyzed_examples/output/$audioName/chromagram.csv');
     final List<List<double>> chromagram = [];
 
-    final rows = hpcp.split('\n');
+    final rows = chromagramStr.split('\n');
     for (final line in rows) {
       if (line.trim().isEmpty) continue;
 
