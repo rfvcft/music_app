@@ -29,15 +29,13 @@ class Visualizer extends StatefulWidget {
 class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateMixin {
   
   double currentTime = 0.0; // Current time in seconds. Visuals are based on this variable.
-  late double initialTime; // Auxilliary variable to track time when pausing/playing
-
-  bool isPlaying = false; // Track whether audio/visuals are playing
-  late bool resumePlayingAfterFling; // Auxilliary variable to track if playback should resume after scrolling
-
+  late double initialTime; // Auxilliary variable used for starting tickers
   late final Ticker _timeTicker; // Ticker for updating current time
+  bool isPlaying = false; // Track whether audio/visuals are playing
 
-  late Ticker _flingTicker; // Ticker for fling animation
   late double _flingVelocity; // Velocity of fling in seconds per second
+  late Ticker _flingTicker; // Ticker for fling animation
+  late bool resumePlayingAfterFling; // Track if playback should resume after scrolling
   bool isFlinging = false; // Track whether a fling animation is in progress
 
   final ap.AudioPlayer _player = ap.AudioPlayer()..setReleaseMode(ap.ReleaseMode.stop); // Audio player
@@ -75,7 +73,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
   // Play audio and start visualization
   void play() async {
-    initialTime = currentTime; // Fix initial time for ticker updates
+    initialTime = currentTime; // Fix initial time for time ticker updates
 
     // Position audio to initial time and start playback
     await _player.seek(Duration(milliseconds: (initialTime * 1000).toInt()));
@@ -130,16 +128,14 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   // End fling animation and resume playback if needed
   void _endFling() {
     _abortFling();
-    if (resumePlayingAfterFling) {
-      play();
-    }
+    if (resumePlayingAfterFling) play();
   }
 
   // Update current time based on fling velocity. To be called by fling ticker
   void _flingUpdate(Duration elapsed) {
     if (!isFlinging) return;
 
-    // Fling motion is modelled by integrating a decaying exponential velocity function with initial velocity _flingVelocity
+    // Fling motion is modelled by a decaying exponential velocity function with initial velocity _flingVelocity
     const double dampingFactor = 4.0;
     double timeDelta = (_flingVelocity / dampingFactor) * (1 - exp(-dampingFactor * elapsed.inMilliseconds / 1000.0));
     double timeDeltaLimit = (_flingVelocity / dampingFactor); 
@@ -187,9 +183,11 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           double deltaWidthPx = availableWidth / 15; // Horizontal offset for vertical lines (x coord difference)
 
           List<Widget> baseWidgets = [];
-          Widget playButton = PlayButton(
-                  isPlaying: isPlaying,
+          Widget playButton = IconButton(
+                  icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
+                  iconSize: 48,
                   onPressed: () {
+                    if (isFlinging) _abortFling();
                     if (isPlaying) {
                       pause();
                     } else {
@@ -343,26 +341,6 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           );
         },
       ),
-    );
-  }
-}
-
-class PlayButton extends StatelessWidget {
-  final bool isPlaying;
-  final VoidCallback onPressed;
-
-  const PlayButton({
-    super.key,
-    required this.isPlaying,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-      iconSize: 48,
-      onPressed: onPressed,
     );
   }
 }
