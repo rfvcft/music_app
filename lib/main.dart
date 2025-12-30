@@ -15,11 +15,11 @@ class MusicApp extends StatelessWidget {
       title: 'Music App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-          brightness: Brightness.light,
-          surface: Colors.white,
+          seedColor: Color.fromARGB(255, 146, 5, 3),
+          brightness: Brightness.dark,
+          surface: Colors.grey,
         ),
-        scaffoldBackgroundColor: Colors.white,
+        scaffoldBackgroundColor: Colors.black,
       ),
       home: const HomePage(title: 'Music App'),
     );

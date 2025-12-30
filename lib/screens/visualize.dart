@@ -217,8 +217,8 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                   left: deltaWidthPx,
                   right: deltaWidthPx,
                   child: Container(
-                    height: 1, 
-                    color: Colors.pink,
+                    height: 5, 
+                    color: const Color.fromARGB(255, 3, 241, 31),
                   ),
                 );
           
@@ -240,7 +240,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             right: 0,
             child: Container(
               height: availableHeight,
-              color: Colors.white,
+              color: Colors.black,
             ),
           );
 
@@ -338,6 +338,34 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   }
 }
 
+
+// Sampled inferno colormap (10 points, you can add more for smoother gradients)
+const List<Color> infernoColors = [
+  Color(0xFF000004),
+  Color(0xFF1B0C41),
+  Color(0xFF4A0C6B),
+  Color(0xFF781C6D),
+  Color(0xFFA52C60),
+  Color(0xFFCF4446),
+  Color(0xFFF1605D),
+  Color(0xFFFCA636),
+  Color(0xFFFFDF4A),
+  Color(0xFFFFFCB0),
+];
+
+Color infernoColormap(double t) {
+  t = t.clamp(0.0, 1.0);
+
+  final scaled = t * (infernoColors.length - 1);
+  final idx = scaled.floor();
+  final frac = scaled - idx;
+
+  if (idx >= infernoColors.length - 1) {
+    return infernoColors.last;
+  }
+  return Color.lerp(infernoColors[idx], infernoColors[idx + 1], frac)!;
+}
+
 class IntensityBar extends StatelessWidget {
   final List<double> values; // values in range 0..1
   final double width;
@@ -370,12 +398,12 @@ class _IntensityBarPainter extends CustomPainter {
     final rectHeight = size.height / values.length;
     for (int i = 0; i < values.length; i++) {
       final intensity = values[i].clamp(0.0, 1.0);
-      final color = Color.lerp(Colors.white, Colors.black, intensity)!;
+      final color = infernoColormap(intensity);
       final rect = Rect.fromLTWH(
         0, // left
-        (values.length - 1 - i)*rectHeight,     // top
-        rectWidth,    // width of rect
-        rectHeight,   // height of rect
+        (values.length - 1 - i) * rectHeight, // top
+        rectWidth, // width of rect
+        rectHeight, // height of rect
       );
       final paint = Paint()..color = color;
       canvas.drawRect(rect, paint);
