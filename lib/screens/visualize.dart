@@ -159,8 +159,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text("Chromagram visualizer"),
+        title: const Text("Chromagram Visualizer"),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -189,36 +188,14 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                   },
                 );
           
-          Widget keyDurationInfo = Positioned(
-                  top: 16,
-                  right: 16,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'Key: ${widget.musicalKey}',
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                      Text(
-                        'Duration: ${widget.duration.toStringAsFixed(2)} s',
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                      Text(
-                        'Dimensions of chromagram: (${widget.numPitches}, ${widget.numFrames})',
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                    ],
-                  ),
-                );
-          
           // Current position of audio playback
           Widget currentLine = Positioned(
                   bottom: currentLinePx, 
                   left: deltaWidthPx,
                   right: deltaWidthPx,
                   child: Container(
-                    height: 5, 
-                    color: const Color.fromARGB(255, 3, 241, 31),
+                    height: 5, // Originally 1
+                    color: Colors.white,
                   ),
                 );
           
@@ -244,7 +221,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             ),
           );
 
-          baseWidgets.addAll([currentLine, pitchLine, keyDurationInfo, playButton, chromaBlocker]);
+          baseWidgets.addAll([currentLine, pitchLine, playButton, chromaBlocker]);
 
           // Vertical lines for pitch classes
           for (int i = 1; i <= 12; i++) {

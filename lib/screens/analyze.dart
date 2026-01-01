@@ -20,7 +20,7 @@ class AnalyzePage extends StatelessWidget {
           children: [
             Text('Audio URL: $audioUrl', style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 20),
-            const Text('Analysis not implemented yet.', style: TextStyle(fontSize: 18, color: Colors.red)),
+            const Text('Analysis not implemented yet.', style: TextStyle(fontSize: 18)),
           ],
         ),
       ),

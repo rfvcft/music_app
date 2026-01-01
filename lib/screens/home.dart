@@ -5,10 +5,17 @@ import 'package:music_app/screens/import.dart';
 import 'package:music_app/screens/load_assets.dart';
 import 'package:music_app/screens/settings.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.title});
 
   final String title;
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  bool _switchValue = false;
 
   Widget _pageButton(BuildContext context, title, Widget route) {
     return ElevatedButton(
@@ -38,21 +45,37 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(title),
+        title: Text(widget.title),
         actions: [_iconButton(context, Icons.settings, SettingsPage())],
       ),
       body: Center(
         child: Column(
-          spacing: 30,
           mainAxisAlignment: MainAxisAlignment.center,
+          spacing: 12,
           children: <Widget>[
             _pageButton(context, "Record audio", AudioPage()),
             _pageButton(context, "Import audio", ImportPage()),
             _pageButton(context, "Archive", ArchivePage()),
             _pageButton(context, "Frontend", LoadAssets()),
+            const SizedBox(height: 32),
+            // Switch uses secondary color implicitly in dark mode
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Switch'),
+                Switch(
+                  value: _switchValue,
+                  onChanged: (val) => setState(() => _switchValue = val),
+                ),
+              ],
+            ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        tooltip: 'Primary Color Example',
+        child: const Icon(Icons.star),
       ),
     );
   }
