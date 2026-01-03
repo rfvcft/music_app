@@ -3,10 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:audioplayers/audioplayers.dart' as ap;
+import 'package:music_app/screens/settings.dart';
 
 class Visualizer extends StatefulWidget {
   Visualizer({
     super.key,
+    required this.audioName,
     required this.audioUrl,
     required this.duration,
     required this.musicalKey,
@@ -14,6 +16,7 @@ class Visualizer extends StatefulWidget {
   })  : numPitches = chromagram.length,
         numFrames = chromagram[0].length;
 
+  final String audioName; // Name of the audio file (without extension)
   final String audioUrl; // URL or asset path to audio file
   final double duration; // Duration of audio in seconds (computed by C++ library)
   final String musicalKey; // Musical key of the audio
@@ -188,23 +191,47 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Chromagram Visualizer"),
+        title: Text(
+          widget.audioName,
+          overflow: TextOverflow.ellipsis,
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Settings',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => SettingsPage()),
+              );
+            },
+          ),
+        ],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final availableWidth = constraints.maxWidth; 
           final availableHeight = constraints.maxHeight; 
 
-          double oneSecondPx = availableHeight / 6; // One second in pixels
-          double durationPx = _duration * oneSecondPx; 
+          const double goldenRatio = 1.6180339887; // Golden ratio = (1 + sqrt(5)) / 2
+          const double goldenFactorSmall = 1 / (goldenRatio + 1); // Smaller golden section
+          const double goldenFactorLarge = goldenRatio / (goldenRatio + 1); // Larger golden section
+
+          double heightAboveCurrent = goldenFactorLarge * availableHeight; // Available height above current line
+          double heightBelowCurrent = goldenFactorSmall * availableHeight; // Available height below current line
+
+          const int numSecondsAboveCurrent = 5; // Number of seconds to display above current time
+          double oneSecondPx = heightAboveCurrent / numSecondsAboveCurrent; // One second in pixels
+          double durationPx = _duration * oneSecondPx; // Total duration in pixels
           double currentTimePx = currentTime * oneSecondPx; // Current time in pixels
 
-          double deltaWidthPx = availableWidth / 15; // Horizontal offset for vertical lines (x coord difference)
-          double deltaHeightPx = oneSecondPx; // Vertical offset for pitch line (y coord difference)
+          double currentLinePx = heightBelowCurrent; // Distance of current line from bottom of screen
+          double sliderLinePx = goldenFactorLarge * heightBelowCurrent; // Distance of slider line from bottom of screen
 
-          double currentLinePx = availableHeight * 0.4; // Distance of current line from bottom 
-          double pitchLinePx = currentLinePx - deltaHeightPx; // Distance of pitch line from bottom 
+          const int numPitches = 12; // Number of pitch classes
+          double deltaWidthPx = availableWidth / (2 + numPitches - 1 + 2); // Horizontal offset for vertical lines 
+          double deltaHeightPx = goldenFactorLarge * (currentLinePx - sliderLinePx); // Vertical offset between current line and bottom line 
 
+          double bottomLinePx = currentLinePx - deltaHeightPx; // Distance of bottom line from bottom of screen 
 
           List<Widget> allWidgets = [];
 
@@ -243,6 +270,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             allWidgets.add(verticalPitchLine);
           }
 
+
           // Start horizontal line
           Widget startLine = Positioned(
             left: 2*deltaWidthPx,
@@ -257,6 +285,29 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             ),
           );
           allWidgets.add(startLine);
+
+          // Estimated key text below the start line
+          const double fadeOutTime = 1.0;
+          double keyTextOpacity = (1 - (currentTime / fadeOutTime)).clamp(0.0, 1.0);
+          Widget estimatedKeyText = Positioned(
+            left: 2*deltaWidthPx,
+            right: 2*deltaWidthPx,
+            bottom: currentLinePx - 0.35 * oneSecondPx,
+            child: Transform.translate(
+              offset: Offset(0, min(currentTimePx, deltaHeightPx)),
+              child: Opacity(
+                opacity: keyTextOpacity,
+                child: Text(
+                  'Key: ${widget.musicalKey}',
+                  textAlign: TextAlign.left,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ),
+          );
+          allWidgets.add(estimatedKeyText);
 
           // End horizontal line
           Widget endLine = Positioned(
@@ -275,7 +326,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
           // Blocker to cover chroma bars below pitch line
           Widget chromaBlocker = Positioned(
-            top: availableHeight - pitchLinePx,
+            top: availableHeight - bottomLinePx,
             left: 0,
             right: 0,
             child: Container(
@@ -352,7 +403,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           Widget playbackSlider = Positioned(
             left: deltaWidthPx - radius,
             right: deltaWidthPx - radius,
-            bottom: availableHeight * 0.16,
+            bottom: sliderLinePx -radius,
             child: _playbackSlider(radius: radius),
           );
           allWidgets.add(playbackSlider);

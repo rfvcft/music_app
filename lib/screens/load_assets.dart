@@ -85,6 +85,7 @@ class _LoadAssetsState extends State<LoadAssets> {
       context,
       MaterialPageRoute(
         builder: (context) => Visualizer(
+          audioName: audioName,
           audioUrl: assetPath,
           duration: duration,
           musicalKey: musicalKey,
