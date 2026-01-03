@@ -34,11 +34,7 @@ class MusicApp extends StatelessWidget {
           style: ButtonStyle(
             backgroundColor: WidgetStatePropertyAll<Color>(Colors.grey),
             foregroundColor: WidgetStatePropertyAll<Color>(Colors.white),
-            shape: WidgetStatePropertyAll<RoundedRectangleBorder>(
-              RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
+            // Remove custom shape to use the default Material button shape
             elevation: WidgetStatePropertyAll<double>(12), // Higher elevation for 3D effect
             shadowColor: WidgetStatePropertyAll<Color>(Colors.white), // Optional: shadow color
           ),
