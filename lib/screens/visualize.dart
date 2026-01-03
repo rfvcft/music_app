@@ -33,13 +33,14 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   late double _flingVelocity; // Velocity of fling in seconds per second
   late Ticker _flingTicker; // Ticker for fling animation
   late double _initialTime; // Auxilliary variable used for starting fling ticker
-  late bool _resumePlayingAfterFling; // Track if playback should resume after scrolling
+  late bool _resumePlayingLater; // Track if playback should resume after scrolling
   bool isFlinging = false; // Track whether a fling animation is in progress
 
   final ap.AudioPlayer _player = ap.AudioPlayer()..setReleaseMode(ap.ReleaseMode.stop); // Audio player
   double _duration = 0.0; // Duration of audio file in seconds
   bool isPlaying = false; // Track whether audio/visuals are playing
-  bool isComplete = false; // Track whether audio has completed playing
+
+  bool get isComplete => (currentTime >= _duration); // Track whether audio has completed playing
 
   // Initialize states
   @override
@@ -73,14 +74,13 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     });
 
     // When audio completes, update playing state, set currentTime to duration and redraw UI
-    _player.onPlayerComplete.listen((_) { 
-      if (!mounted) return;
-      setState(() {
-        isPlaying = false;
-        isComplete = true;
-        currentTime = _duration; // <-- replaced widget.duration
-      });
-    });
+        _player.onPlayerComplete.listen((_) {
+          if (!mounted) return;
+          setState(() {
+            isPlaying = false;
+            currentTime = _duration; 
+          });
+        });
     _player.setSource(_resolveSource(widget.audioUrl)); // Set audio source
   }
 
@@ -98,7 +98,6 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     await _player.resume();
     setState(() {
       isPlaying = true;
-      isComplete = false; // <-- Reset complete state when playing
     });
   }
 
@@ -108,6 +107,12 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     setState(() {
       isPlaying = false;
     });
+  }
+
+  // Resets playback to the start and pauses audio
+  void reset() {
+    currentTime = 0.0;
+    pause();
   }
 
   // Resolve audio source based on path type (asset, URL, or device file)
@@ -135,13 +140,14 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   // End fling animation and resume playback if needed
   void _endFling() {
     _abortFling();
-    if (_resumePlayingAfterFling) play();
+    if (_resumePlayingLater) play();
   }
 
   // Update current time based on fling velocity. To be called by fling ticker
   void _flingUpdate(Duration elapsed) {
     if (!isFlinging) return;
 
+    // Exponential decay model for fling
     const double dampingFactor = 4.0;
     double timeDelta = (_flingVelocity / dampingFactor) * (1 - exp(-dampingFactor * elapsed.inMilliseconds / 1000.0));
     double timeDeltaLimit = (_flingVelocity / dampingFactor); 
@@ -149,7 +155,10 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
     if (!mounted) return;
     setState(() {
+      // Update currentTime based on fling velocity and elapsed time
       currentTime = _initialTime + timeDelta; 
+      
+      // Clamp currentTime within valid range and end fling if limits are reached or velocity is low
       if (currentTime < 0.0) {
         currentTime = 0.0;
         _endFling();
@@ -157,9 +166,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
       } 
       if (currentTime > _duration) {
         currentTime = _duration;
-        isPlaying = false;      // Pause audio
-        isComplete = true;      // Show replay button
-        _player.pause();        // Actually pause audio playback
+        pause();
         _abortFling();
         return;
       } 
@@ -189,7 +196,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           final availableHeight = constraints.maxHeight; 
 
           double oneSecondPx = availableHeight / 6; // One second in pixels
-          double durationPx = _duration * oneSecondPx; // <-- replaced widget.duration
+          double durationPx = _duration * oneSecondPx; 
           double currentTimePx = currentTime * oneSecondPx; // Current time in pixels
 
           double deltaWidthPx = availableWidth / 15; // Horizontal offset for vertical lines (x coord difference)
@@ -200,18 +207,6 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
 
           List<Widget> allWidgets = [];
-
-          // Position of pitch line (bottom line of visualization)
-          Widget pitchLine = Positioned(
-                  bottom: pitchLinePx, 
-                  left: deltaWidthPx,
-                  right: deltaWidthPx,
-                  child: Container(
-                    height: 1, 
-                    color: Colors.grey,
-                  ),
-                );
-          //allWidgets.add(pitchLine);
 
           // Chromagram pitch intensity bars
           for (int i = 0; i < 12; i++) {
@@ -231,7 +226,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             allWidgets.add(pitchIntensityBar);
           }
 
-          // 12 vertical lines, C (rightmost) to G (leftmost)
+          // 12 vertical lines, C (rightmost) to B (leftmost)
           for (int i = 1; i <= 12; i++) {
             Widget verticalPitchLine = Positioned(
               left: (i + 1) * deltaWidthPx,
@@ -247,6 +242,8 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             );
             allWidgets.add(verticalPitchLine);
           }
+
+          // Start horizontal line
           Widget startLine = Positioned(
             left: 2*deltaWidthPx,
             right: 2*deltaWidthPx,
@@ -261,6 +258,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           );
           allWidgets.add(startLine);
 
+          // End horizontal line
           Widget endLine = Positioned(
             left: 2*deltaWidthPx,
             right: 2*deltaWidthPx,
@@ -287,7 +285,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           );
           allWidgets.add(chromaBlocker);
 
-          // Pitch class names from C (rightmost) to G (leftmost)
+          // Pitch class names from C to B
           const List<String> pitchClassNames = [
             'C', 'C#', 'D', 'D#', 'E', 'F',
             'F#', 'G', 'G#', 'A', 'A#', 'B'
@@ -330,7 +328,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           // Right arrow icon at current position
           double iconSize = 30;
           Widget rightArrow = Positioned(
-            bottom: currentLinePx - iconSize / 2 + 1, // Not sure why +1 is needed here
+            bottom: currentLinePx - iconSize / 2 + 0.5, // +0.5 shift to center (experimentally determined)
             left: deltaWidthPx / 2,
             child: Icon(
               Icons.play_arrow,
@@ -340,34 +338,16 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           );
           allWidgets.add(rightArrow);
 
-          // Left arrow icon at current position (flipped horizontally)
-          Widget leftArrow = Positioned(
-            bottom: currentLinePx - iconSize / 2 + 1,
-            right: deltaWidthPx / 2,
-            child: Transform(
-              alignment: Alignment.center,
-              transform: Matrix4.rotationY(pi),
-              child: Icon(
-                Icons.play_arrow,
-                color: Colors.white,
-                size: iconSize,
-              ),
-            ),
-          );
-          //allWidgets.add(leftArrow);
-
-
-
           // Place play button centered below the pitch line
           Widget playButton = Positioned(
             left: 0,
             right: 0,
-            bottom: availableHeight * 0.075, // 64 pixels below the pitch line (adjust as needed)
+            bottom: availableHeight * 0.075, 
             child: Center(child: _playButton()),
           );
           allWidgets.add(playButton);
 
-          // Add a slider below the play button to indicate and control playback time
+          // Slider to indicate and control playback time
           double radius = 8;
           Widget playbackSlider = Positioned(
             left: deltaWidthPx - radius,
@@ -377,11 +357,11 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           );
           allWidgets.add(playbackSlider);
 
-          // Widget to display current time and total duration aligned with slider ends
+          // Widget to display current time and total duration 
           Widget timeDisplay = Positioned(
             left: deltaWidthPx,
             right: deltaWidthPx,
-            bottom: availableHeight * 0.13, // slightly below the slider
+            bottom: availableHeight * 0.13, 
             child: _timeDisplay(),
           );
           allWidgets.add(timeDisplay);
@@ -389,35 +369,33 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
             onVerticalDragStart: (_) {
+              // If fling in progress, abort it
               if (isFlinging) {
                 _abortFling();
                 return;
               }
               
-              // Below, we want to resume playing if and only if the audio was playing before
+              // If audio was playing, pause and set _resumePlayingLater
               if (isPlaying) { 
-                _resumePlayingAfterFling = true;
+                _resumePlayingLater = true;
                 pause();
                 return;
               } 
 
-              _resumePlayingAfterFling = false;
+              _resumePlayingLater = false;
             },
             onVerticalDragUpdate: (details) {
               if (!mounted) return;
               setState(() {
                 // Adjust currentTime: finger moving down -> positive delta -> increase time
                 currentTime += details.primaryDelta! / oneSecondPx;
-                currentTime = currentTime.clamp(0.0, _duration); // <-- replaced widget.duration
-                if (currentTime < _duration && isComplete) { // <-- replaced widget.duration
-                  isComplete = false;
-                }
+                currentTime = currentTime.clamp(0.0, _duration); 
               });
             },
             onVerticalDragEnd: (details) {
               // Fling effect
-              _flingVelocity = (details.primaryVelocity ?? 0.0) / oneSecondPx;
-              _startFling();
+              _flingVelocity = (details.primaryVelocity ?? 0.0) / oneSecondPx; // Convert pixels per second to seconds per second
+              _startFling(); // Start fling animation (needs _flingVelocity to be set)
             },
             child: SizedBox.expand(
               child: Stack(
@@ -430,18 +408,8 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     );
   }
 
-  /// Resets playback to the start and pauses audio
-  void reset() {
-    setState(() {
-      currentTime = 0.0;
-      isComplete = false;
-      isPlaying = false;
-    });
-    _player.pause();
-    _player.seek(const Duration(milliseconds: 0));
-  }
 
-  /// Returns the appropriate play/pause/replay button widget
+  // Returns the appropriate play/pause/replay button widget
   Widget _playButton() {
     Color iconColor = Colors.black;
     Color backgroundColor = Colors.white;
@@ -481,7 +449,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     }
   }
 
-  /// Widget to display current time and total duration aligned with slider ends
+  // Widget to display current time and total duration aligned with slider ends
   Widget _timeDisplay() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -498,7 +466,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     );
   }
 
-  /// Returns the playback slider widget (no time display, no positioning)
+  // Returns the playback slider widget (no time display, no positioning)
   Widget _playbackSlider({double radius = 11}) {
     return SliderTheme(
       data: SliderTheme.of(context).copyWith(
@@ -512,11 +480,28 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
         min: 0.0,
         max: _duration,
         onChanged: (value) {
+          // Update currentTime as slider is moved
+          if (!mounted) return;
           setState(() {
             currentTime = value;
-            isComplete = currentTime >= _duration;
           });
-          _player.seek(Duration(milliseconds: (currentTime * 1000).toInt()));
+        },
+        onChangeStart: (value) {
+          // If fling in progress, abort it
+          if (isFlinging) _abortFling();
+          // If audio was playing, pause and set _resumePlayingLater
+          if (isPlaying) {
+            _resumePlayingLater = true;
+            pause();
+          } else {
+            _resumePlayingLater = false;
+          }
+        },
+        onChangeEnd: (value) {
+          // Resume audio if it was playing before
+          if (_resumePlayingLater) {
+            play();
+          }
         },
         activeColor: Colors.white,
         inactiveColor: Colors.grey,
