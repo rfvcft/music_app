@@ -12,7 +12,7 @@ class MusicApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Music App',
+      title: 'Dodeca',
       theme: ThemeData(
         colorScheme: const ColorScheme(
           brightness: Brightness.dark, // Overall theme brightness. Not important if individual colors are set.
@@ -41,7 +41,7 @@ class MusicApp extends StatelessWidget {
         ),
 
       ),
-      home: const HomePage(title: 'Music App'),
+      home: const HomePage(title: 'DODECA'),
     );
   }
 }

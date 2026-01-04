@@ -128,7 +128,8 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   }
 
   // Start fling animation
-  void _startFling() {
+  void _startFling(double flingVelocity) {
+    _flingVelocity = flingVelocity; // Set fling velocity
     _initialTime = currentTime; // Fix initial time for fling ticker updates
     _flingTicker.start(); // Start fling by starting ticker. See _flingUpdate for details 
     isFlinging = true;
@@ -233,13 +234,18 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
           double bottomLinePx = currentLinePx - deltaHeightPx; // Distance of bottom line from bottom of screen 
 
+          double playButtonPx = (availableHeight - sliderLinePx) + 0.1 * sliderLinePx; // Distance of top of audio player to top of screen
+          double timeDisplayPx = (availableHeight - sliderLinePx) + 0.05 * sliderLinePx; // Distance of top of time display to top of screen
+          double pitchLabelPx = (availableHeight - currentLinePx);
+          double keyTextPx = (availableHeight - currentLinePx) + 0.075 * currentLinePx; // Distance of key text from top of screen
+
           List<Widget> allWidgets = [];
 
           // Chromagram pitch intensity bars
           for (int i = 0; i < 12; i++) {
             double width = deltaWidthPx / 2;
             Widget pitchIntensityBar = Positioned(
-              left: (13 - i) * deltaWidthPx - width / 2,
+              left: (i + 2) * deltaWidthPx - width / 2,
               bottom: currentLinePx, 
               child: Transform.translate(
                 offset: Offset(0, currentTimePx),  // Translate vertically down based on current playback time
@@ -270,7 +276,6 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             allWidgets.add(verticalPitchLine);
           }
 
-
           // Start horizontal line
           Widget startLine = Positioned(
             left: 2*deltaWidthPx,
@@ -287,12 +292,12 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           allWidgets.add(startLine);
 
           // Estimated key text below the start line
-          const double fadeOutTime = 1.0;
+          double fadeOutTime = 0.66 * (deltaHeightPx / oneSecondPx); // Time in seconds over which text fades out
           double keyTextOpacity = (1 - (currentTime / fadeOutTime)).clamp(0.0, 1.0);
-          Widget estimatedKeyText = Positioned(
+          Widget keyText = Positioned(
             left: 2*deltaWidthPx,
             right: 2*deltaWidthPx,
-            bottom: currentLinePx - 0.35 * oneSecondPx,
+            top: keyTextPx,
             child: Transform.translate(
               offset: Offset(0, min(currentTimePx, deltaHeightPx)),
               child: Opacity(
@@ -307,7 +312,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
               ),
             ),
           );
-          allWidgets.add(estimatedKeyText);
+          allWidgets.add(keyText);
 
           // End horizontal line
           Widget endLine = Positioned(
@@ -342,18 +347,18 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             'F#', 'G', 'G#', 'A', 'A#', 'B'
           ];
 
-          for (int i = 1; i <= 12; i++) {
+          for (int i = 0; i < 12; i++) {
             // Add pitch class label below startLine, translated with currentTimePx
             Widget pitchLabel = Positioned(
-              left: (i + 1) * deltaWidthPx - 16, // Center label under line
-              bottom: currentLinePx - 18,
+              left: (i + 2) * deltaWidthPx - 16, // Center label under line
+              top: pitchLabelPx,
               child: Transform.translate(
                 offset: Offset(0, min(currentTimePx, deltaHeightPx)),
                 child: SizedBox(
                   width: 32,
                   child: Center(
                     child: Text(
-                      pitchClassNames[12 - i],
+                      pitchClassNames[i],
                       style: const TextStyle(color: Colors.white, fontSize: 12),
                     ),
                   ),
@@ -389,22 +394,24 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           );
           allWidgets.add(rightArrow);
 
-          // Place play button centered below the pitch line
+          // Play button below the slider line
+          double playButtonRadius = 30;
+          double playButtonIconSize = 38;
           Widget playButton = Positioned(
             left: 0,
             right: 0,
-            bottom: availableHeight * 0.075, 
-            child: Center(child: _playButton()),
+            top: playButtonPx, 
+            child: Center(child: _playButton(radius: playButtonRadius, iconSize: playButtonIconSize)),
           );
           allWidgets.add(playButton);
 
           // Slider to indicate and control playback time
-          double radius = 8;
+          double sliderRadius = 8;
           Widget playbackSlider = Positioned(
-            left: deltaWidthPx - radius,
-            right: deltaWidthPx - radius,
-            bottom: sliderLinePx -radius,
-            child: _playbackSlider(radius: radius),
+            left: deltaWidthPx - sliderRadius,
+            right: deltaWidthPx - sliderRadius,
+            bottom: sliderLinePx -sliderRadius,
+            child: _playbackSlider(radius: sliderRadius),
           );
           allWidgets.add(playbackSlider);
 
@@ -412,7 +419,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           Widget timeDisplay = Positioned(
             left: deltaWidthPx,
             right: deltaWidthPx,
-            bottom: availableHeight * 0.13, 
+            top: timeDisplayPx, 
             child: _timeDisplay(),
           );
           allWidgets.add(timeDisplay);
@@ -445,8 +452,8 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             },
             onVerticalDragEnd: (details) {
               // Fling effect
-              _flingVelocity = (details.primaryVelocity ?? 0.0) / oneSecondPx; // Convert pixels per second to seconds per second
-              _startFling(); // Start fling animation (needs _flingVelocity to be set)
+              double flingVelocity = (details.primaryVelocity ?? 0.0) / oneSecondPx; // Convert pixels per second to seconds per second
+              _startFling(flingVelocity);
             },
             child: SizedBox.expand(
               child: Stack(
@@ -461,11 +468,9 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
 
   // Returns the appropriate play/pause/replay button widget
-  Widget _playButton() {
+  Widget _playButton({double radius = 30, double iconSize = 38}) {
     Color iconColor = Colors.black;
     Color backgroundColor = Colors.white;
-    double radius = 30;
-    double iconSize = 38;
 
     if (isComplete) {
       // Show "go to start" button when playback is complete
