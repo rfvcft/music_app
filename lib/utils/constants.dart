@@ -21,11 +21,9 @@ const double goldenFactorLarge = goldenRatio / (goldenRatio + 1); // Larger gold
 
 // PITCH CLASSES
 const int numPitches = 12; // Number of pitch classes
-
 const List<String> pitchClassNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']; // Pitch class names from C to B
 const List<int> pitchClassIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]; // Pitch class indices from 0 to 11
-
-const Map<String, int> pitchClassNameToIndex = { // Map from pitch class names to indices
+const Map<String, int> pitchClassNameToIndex = { 
   'C': 0,
   'C#': 1,
   'D': 2,
@@ -38,9 +36,8 @@ const Map<String, int> pitchClassNameToIndex = { // Map from pitch class names t
   'A': 9,
   'A#': 10,
   'B': 11,
-};
-
-const Map<int, String> pitchClassIndexToName = { // Map from pitch class indices to names
+}; // Map from pitch class names to indices
+const Map<int, String> pitchClassIndexToName = { 
   0: 'C',
   1: 'C#',
   2: 'D',
@@ -53,12 +50,13 @@ const Map<int, String> pitchClassIndexToName = { // Map from pitch class indices
   9: 'A',
   10: 'A#',
   11: 'B',
-};
+}; // Map from pitch class indices to names
 
 // SCALES 
+const List<String> scaleDegrees = ['1', '♭2', '2', '♭3', '3', '4', '♯4', '5', '♭6', '6', '♭7', '7']; // Scale degree names
+
 const List<int> majorScale = [1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1]; // Major scale pattern
 const List<int> minorScale = [1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0]; // Minor scale pattern
-
 const Map<String, List<int>> scalePatterns = {
   'major': majorScale,
   'minor': minorScale,
