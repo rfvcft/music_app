@@ -14,13 +14,13 @@ class MusicApp extends StatelessWidget {
     return MaterialApp(
       title: 'Dodeca',
       theme: ThemeData(
-        colorScheme: const ColorScheme(
+        colorScheme: ColorScheme(
           brightness: Brightness.dark, // Overall theme brightness. Not important if individual colors are set.
-          primary: Colors.yellow, // Used for floating action buttons, switches (on state), etc.
+          primary: Colors.green, // Used for floating action buttons, switches (on state), etc.
           onPrimary: Colors.orange,
           secondary: Colors.green, // Used in audio player visual
           onSecondary: Colors.purple, 
-          surface: Colors.pink, // Used in switches (off state), etc.
+          surface: Colors.grey[850]!, // Used in switches (off state), etc.
           onSurface: Colors.white, // Text, icon button, etc. 
           error: Color(0xFFCF4446), // Error messages
           onError: Colors.white,
