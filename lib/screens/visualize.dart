@@ -1,12 +1,16 @@
 import 'dart:math';
-import 'package:music_app/utils/constants.dart' as cnst; // Import constants
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:audioplayers/audioplayers.dart' as ap;
+
+import 'package:audioplayers/audioplayers.dart' as ap; // Audio player package
+
+import 'package:music_app/core/app_settings.dart'; // App settings
 import 'package:music_app/screens/settings.dart'; // Settings page
 import 'package:music_app/utils/intensity_bar.dart' as ib; // Intensity bar widget
 import 'package:music_app/utils/conversion.dart' as conv; // Conversion utilities
+import 'package:music_app/utils/constants.dart' as cnst; // Import constants
 
 
 class Visualizer extends StatefulWidget {
@@ -18,10 +22,7 @@ class Visualizer extends StatefulWidget {
     required this.musicalKey,
     required this.chromagram,
   }) : assert(chromagram.length == cnst.numPitches, 'Chromagram must have ${cnst.numPitches} pitch classes.'),
-        numFrames = chromagram[0].length,
-        // Unpack the record (tonicIndex, scale)
-        tonicIndex = conv.parseMusicalKey(musicalKey).$1,
-        scale = conv.parseMusicalKey(musicalKey).$2;
+        numFrames = chromagram[0].length;
 
   final String audioName; // Name of the audio file (without extension)
   final String audioUrl; // URL or asset path to audio file
@@ -29,9 +30,7 @@ class Visualizer extends StatefulWidget {
   final String musicalKey; // Musical key of the audio
   final List<List<double>> chromagram; // Chromagram: List of 12 pitch classes, each with intensity values over time frames
 
-  final int numFrames; // number of time frames (proportional to duration)
-  final int tonicIndex;
-  final String scale;
+  final int numFrames; // Number of time frames (proportional to duration)
 
   @override
   State<Visualizer> createState() => _VisualizerState();
@@ -53,12 +52,20 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
   bool get isComplete => (currentTime >= _duration); // Track whether audio has completed playing
 
-  late double _oneSecondPx; // Number of pixels representing one second (updated in build method)
+  String _musicalKey = ''; // Musical key of the audio (may be edited by user)
+  int _tonicIndex = -1; // Tonic index of the audio
+  String _scale = ''; // Scale of the audio 
 
   // Initialize states
   @override
   void initState() {
     super.initState();
+    // Initialize musical key
+    _musicalKey = widget.musicalKey;
+    var parsed = conv.parseMusicalKey(_musicalKey);
+    _tonicIndex = parsed.$1;
+    _scale = parsed.$2;
+
     // Initialize fling ticker
     _flingTicker = Ticker(_flingUpdate);
 
@@ -191,6 +198,89 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     }); 
   }
 
+  Future<void> _editMusicalKey(BuildContext context) async {
+    // Parse current key
+    String currentTonic = cnst.pitchClassNames.first;
+    String currentScale = cnst.scalePatterns.keys.first;
+    final keyRegExp = RegExp(r'([A-G]#?|B)\s*(major|minor)', caseSensitive: false);
+    final match = keyRegExp.firstMatch(_musicalKey);
+    if (match != null) {
+      currentTonic = match.group(1) ?? currentTonic;
+      currentScale = match.group(2)?.toLowerCase() ?? currentScale;
+    }
+
+    String selectedTonic = currentTonic;
+    String selectedScale = currentScale;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Edit Key'),
+              content: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    flex: 1,
+                    child: DropdownButton<String>(
+                      value: selectedTonic,
+                      isExpanded: true,
+                      items: cnst.pitchClassNames.map((tonic) {
+                        return DropdownMenuItem<String>(
+                          value: tonic,
+                          child: Text(tonic),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) setState(() => selectedTonic = value);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Flexible(
+                    flex: 2,
+                    child: DropdownButton<String>(
+                      value: selectedScale,
+                      isExpanded: true,
+                      items: cnst.scalePatterns.keys.map((scale) {
+                        return DropdownMenuItem<String>(
+                          value: scale,
+                          child: Text(scale[0].toUpperCase() + scale.substring(1)),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) setState(() => selectedScale = value);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    if (result == true) {
+      setState(() {
+        _musicalKey = '$selectedTonic $selectedScale';
+        _tonicIndex = cnst.pitchClassNameToIndex[selectedTonic] ?? -1;
+        _scale = selectedScale;
+      });
+    }
+  }
+
   // Build the visualization UI
   @override
   Widget build(BuildContext context) {
@@ -211,10 +301,12 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           IconButton(
             icon: const Icon(Icons.settings),
             tooltip: 'Settings',
-            onPressed: () {
-              Navigator.of(context).push(
+            onPressed: () async {
+              await Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => SettingsPage()),
               );
+              // After returning, call setState to rebuild with new settings
+              setState(() {});
             },
           ),
         ],
@@ -223,8 +315,6 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
         builder: (context, constraints) {
           final availableWidth = constraints.maxWidth; 
           final availableHeight = constraints.maxHeight; 
-
-          
 
           late double oneSecondPx; 
           List<Widget> allWidgets = [];
@@ -263,7 +353,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                 child: Transform.translate(
                   offset: Offset(0, currentTimePx),  // Translate vertically down based on current playback time
                   child: ib.IntensityBar(
-                    values: widget.chromagram[(i + widget.tonicIndex) % cnst.numPitches],
+                    values: widget.chromagram[(i + _tonicIndex) % cnst.numPitches],
                     orientation: 'vertical',
                     width: width, 
                     height: durationPx,
@@ -316,21 +406,34 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                 offset: Offset(0, min(currentTimePx, deltaHeightPx)),
                 child: Opacity(
                   opacity: keyTextOpacity,
-                  child: RichText(
-                    textAlign: TextAlign.left,
-                    text: TextSpan(
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 15),
-                      children: [
-                        TextSpan(
-                          text: 'Key: ',
-                          style: const TextStyle(fontWeight: FontWeight.normal),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Key: ',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 15, fontWeight: FontWeight.normal),
+                      ),
+                      const SizedBox(width: 4),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(6),
+                        onTap: () => _editMusicalKey(context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[850],
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            _musicalKey,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
-                        TextSpan(
-                          text: widget.musicalKey,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -367,7 +470,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             for (int i = 0; i < cnst.numPitches; i++) {
               // Add pitch class label below startLine, translated with currentTimePx
               // Determine if pitch is in scale
-              final scalePattern = cnst.scalePatterns[widget.scale];
+              final scalePattern = cnst.scalePatterns[_scale];
               final isInScale = scalePattern != null && scalePattern[i] == 1;
               Widget pitchLabel = Positioned(
                 left: (i + 2) * deltaWidthPx - 16, // Center label under line
@@ -378,7 +481,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                     width: 32,
                     child: Center(
                       child: Text(
-                        cnst.pitchClassNames[(i + widget.tonicIndex) % cnst.numPitches],
+                        AppSettings.instance.showPitchClasses ? cnst.pitchClassNames[(i + _tonicIndex) % cnst.numPitches] : cnst.scaleDegrees[i],
                         style: TextStyle(
                           color: isInScale ? Colors.white : Colors.grey,
                           fontSize: 12,
@@ -476,7 +579,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                 child: Transform.translate(
                   offset: Offset(-currentTimePx, 0),  // Translate horizontally based on current playback time
                   child: ib.IntensityBar(
-                    values: widget.chromagram[(i + widget.tonicIndex) % cnst.numPitches],
+                    values: widget.chromagram[(i + _tonicIndex) % cnst.numPitches],
                     orientation: 'horizontal',
                     height: height, 
                     width: durationPx,
@@ -518,7 +621,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             for (int i = 0; i < cnst.numPitches; i++) {
               // Center the label at the same height as the horizontalPitchLine
               // Determine if pitch is in scale
-              final scalePattern = cnst.scalePatterns[widget.scale];
+              final scalePattern = cnst.scalePatterns[_scale];
               final isInScale = scalePattern != null && scalePattern[i] == 1;
               Widget pitchLabel = Positioned(
                 bottom: (i + 2) * deltaHeightPx - pitchLabelHeight / 2,
@@ -530,7 +633,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                     height: pitchLabelHeight,
                     child: Center(
                       child: Text(
-                        cnst.pitchClassNames[(i + widget.tonicIndex) % cnst.numPitches],
+                        AppSettings.instance.showPitchClasses ? cnst.pitchClassNames[(i + _tonicIndex) % cnst.numPitches] : cnst.scaleDegrees[i],
                         style: TextStyle(
                           color: isInScale ? Colors.white : Colors.grey,
                           fontSize: 12,
@@ -555,27 +658,35 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                 offset: Offset(-min(currentTimePx, deltaWidthPx), 0),
                 child: Opacity(
                   opacity: keyTextOpacity,
-                  child: SizedBox(
-                    height: keyTextHeight,
-                    child: Center(
-                      child: RichText(
-                        textAlign: TextAlign.left,
-                        text: TextSpan(
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 15),
-                          children: [
-                            TextSpan(
-                              text: 'Key: ',
-                              style: const TextStyle(fontWeight: FontWeight.normal),
-                            ),
-                            TextSpan(
-                              text: widget.musicalKey,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ],
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Key: ',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 15, fontWeight: FontWeight.normal),
                         ),
-                      ),
+                        const SizedBox(width: 4),
+                        InkWell(
+                          borderRadius: BorderRadius.circular(6),
+                          onTap: () => _editMusicalKey(context),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[850],
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              _musicalKey,
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
                 ),
               ),
             );
