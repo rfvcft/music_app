@@ -5,10 +5,16 @@ import 'package:flutter/scheduler.dart';
 import 'package:audioplayers/audioplayers.dart' as ap;
 import 'package:music_app/screens/settings.dart';
 
+// Golden ratio
 const double goldenRatio = 1.6180339887; // Golden ratio = (1 + sqrt(5)) / 2
 const double goldenFactorSmall = 1 / (goldenRatio + 1); // Smaller golden section
 const double goldenFactorLarge = goldenRatio / (goldenRatio + 1); // Larger golden section
 
+// Number of pitch classes
+const int numPitches = 12; 
+
+// Pitch class names from C to B
+const List<String> pitchClassNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 class Visualizer extends StatefulWidget {
   Visualizer({
@@ -221,13 +227,15 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           final availableWidth = constraints.maxWidth; 
           final availableHeight = constraints.maxHeight; 
 
-          const int numSecondsAboveCurrent = 5; // Number of seconds to display above current time
+          
 
           late double oneSecondPx; 
-          List<Widget> allWidgets;
-          
-          if (MediaQuery.of(context).orientation == Orientation.portrait) {
+          List<Widget> allWidgets = [];
 
+          final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+          
+          if (isPortrait) {
+            const int numSecondsAboveCurrent = 5; // Number of seconds to display above current time
             double heightAboveCurrent = goldenFactorLarge * availableHeight; // Available height above current line
             double heightBelowCurrent = goldenFactorSmall * availableHeight; // Available height below current line
 
@@ -238,7 +246,6 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             double currentLinePx = heightBelowCurrent; // Distance of current line from bottom of screen
             double sliderLinePx = goldenFactorLarge * heightBelowCurrent; // Distance of slider line from bottom of screen
 
-            const int numPitches = 12; // Number of pitch classes
             double deltaWidthPx = availableWidth / (2 + numPitches - 1 + 2); // Horizontal offset for vertical lines 
             double deltaHeightPx = goldenFactorLarge * (currentLinePx - sliderLinePx); // Vertical offset between current line and bottom line 
 
@@ -250,57 +257,431 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             double pitchLabelPx = (availableHeight - currentLinePx);
             double keyTextPx = (availableHeight - currentLinePx) + 0.075 * currentLinePx; // Distance of key text from top of screen
 
-            allWidgets = _buildPortraitWidgets(
-              oneSecondPx: oneSecondPx,
-              durationPx: durationPx,
-              currentTimePx: currentTimePx,
-              currentLinePx: currentLinePx,
-              sliderLinePx: sliderLinePx,
-              deltaWidthPx: deltaWidthPx,
-              deltaHeightPx: deltaHeightPx,
-              bottomLinePx: bottomLinePx,
-              chromaBlockerPx: chromaBlockerPx,
-              playButtonPx: playButtonPx,
-              timeDisplayPx: timeDisplayPx,
-              pitchLabelPx: pitchLabelPx,
-              keyTextPx: keyTextPx,
+            // Chromagram pitch intensity bars
+            for (int i = 0; i < numPitches; i++) {
+              double width = deltaWidthPx / 2;
+              Widget pitchIntensityBar = Positioned(
+                left: (i + 2) * deltaWidthPx - width / 2,
+                bottom: currentLinePx, 
+                child: Transform.translate(
+                  offset: Offset(0, currentTimePx),  // Translate vertically down based on current playback time
+                  child: IntensityBar(
+                    values: widget.chromagram[i],
+                    orientation: 'vertical',
+                    width: width, 
+                    height: durationPx,
+                  ),
+                ),
+              );
+              allWidgets.add(pitchIntensityBar);
+            }
+
+            // 12 vertical lines, C (leftmost) to B (rightmost)
+            for (int i = 1; i <= numPitches; i++) {
+              Widget verticalPitchLine = Positioned(
+                left: (i + 1) * deltaWidthPx,
+                bottom: currentLinePx,
+                child: Transform.translate(
+                  offset: Offset(0, currentTimePx), 
+                  child: Container(
+                    width: 1,
+                    height: durationPx,
+                    color: Colors.grey,
+                  ),
+                ),
+              );
+              allWidgets.add(verticalPitchLine);
+            }
+
+            // Start horizontal line
+            Widget startLine = Positioned(
+              left: 2*deltaWidthPx,
+              right: 2*deltaWidthPx,
+              bottom: currentLinePx,
+              child: Transform.translate(
+                offset: Offset(0, min(currentTimePx, deltaHeightPx)), 
+                child: Container(
+                  height: 1,
+                  color: Colors.grey,
+                ),
+              ),
             );
+            allWidgets.add(startLine);
+
+            // Estimated key text below the start line
+            double fadeOutTime = 0.66 * (deltaHeightPx / oneSecondPx); // Time in seconds over which text fades out
+            double keyTextOpacity = (1 - (currentTime / fadeOutTime)).clamp(0.0, 1.0);
+            Widget keyText = Positioned(
+              left: 2*deltaWidthPx,
+              right: 2*deltaWidthPx,
+              top: keyTextPx,
+              child: Transform.translate(
+                offset: Offset(0, min(currentTimePx, deltaHeightPx)),
+                child: Opacity(
+                  opacity: keyTextOpacity,
+                  child: Text(
+                    'Key: ${widget.musicalKey}',
+                    textAlign: TextAlign.left,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ),
+            );
+            allWidgets.add(keyText);
+
+            // End horizontal line
+            Widget endLine = Positioned(
+              left: 2*deltaWidthPx,
+              right: 2*deltaWidthPx,
+              bottom: currentLinePx + durationPx,
+              child: Transform.translate(
+                offset: Offset(0, currentTimePx), 
+                child: Container(
+                  height: 1,
+                  color: Colors.grey,
+                ),
+              ),
+            );
+            allWidgets.add(endLine);
+
+            // Blocker to cover chroma bars below pitch line
+            Widget chromaBlocker = Positioned(
+              top: chromaBlockerPx,
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                color: Colors.black,
+              ),
+            );
+            allWidgets.add(chromaBlocker);
+
+            for (int i = 0; i < numPitches; i++) {
+              // Add pitch class label below startLine, translated with currentTimePx
+              Widget pitchLabel = Positioned(
+                left: (i + 2) * deltaWidthPx - 16, // Center label under line
+                top: pitchLabelPx,
+                child: Transform.translate(
+                  offset: Offset(0, min(currentTimePx, deltaHeightPx)),
+                  child: SizedBox(
+                    width: 32,
+                    child: Center(
+                      child: Text(
+                        pitchClassNames[i],
+                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+              allWidgets.add(pitchLabel);
+            }
+
+            // Current position of audio playback
+            Widget currentLine = Positioned(
+              // Align the center of the line with currentLinePx
+              bottom: currentLinePx,
+              left: deltaWidthPx,
+              right: deltaWidthPx,
+              child: Container(
+                height: 1, // Originally 1
+                color: Colors.white,
+              ),
+            );
+            allWidgets.add(currentLine);
+
+            // Right arrow icon at current position
+            double iconSize = 30;
+            Widget rightArrow = Positioned(
+              bottom: currentLinePx - iconSize / 2 + 0.5, // +0.5 shift to center (experimentally determined)
+              left: deltaWidthPx / 2,
+              child: Icon(
+                Icons.play_arrow,
+                color: Colors.white,
+                size: iconSize,
+              ),
+            );
+            allWidgets.add(rightArrow);
+
+            // Play button below the slider line
+            double playButtonRadius = 30;
+            double playButtonIconSize = 38;
+            Widget playButton = Positioned(
+              left: 0,
+              right: 0,
+              top: playButtonPx, 
+              child: Center(child: _playButton(radius: playButtonRadius, iconSize: playButtonIconSize)),
+            );
+            allWidgets.add(playButton);
+
+            // Slider to indicate and control playback time
+            double sliderRadius = 8;
+            Widget playbackSlider = Positioned(
+              left: deltaWidthPx - sliderRadius,
+              right: deltaWidthPx - sliderRadius,
+              bottom: sliderLinePx -sliderRadius,
+              child: _playbackSlider(radius: sliderRadius),
+            );
+            allWidgets.add(playbackSlider);
+
+            // Widget to display current time and total duration 
+            Widget timeDisplay = Positioned(
+              left: deltaWidthPx,
+              right: deltaWidthPx,
+              top: timeDisplayPx, 
+              child: _timeDisplay(),
+            );
+            allWidgets.add(timeDisplay);
+        
           } else {
-            allWidgets = []; // TODO: Implement landscape mode
-            oneSecondPx = 50.0; // Placeholder value
+            double widthToRightOfCurrent = (3 / 4) * availableWidth; // Available width to the right of current line
+            double widthToLeftOfCurrent = (1 / 4) * availableWidth; // Available width to the left of current line
+
+            const int numSecondsToRightOfCurrent = 8; // Number of seconds to display to the right of current time
+            oneSecondPx = widthToRightOfCurrent / numSecondsToRightOfCurrent; // One second in pixels
+            double durationPx = _duration * oneSecondPx; // Total duration in pixels
+            double currentTimePx = currentTime * oneSecondPx; // Current time in pixels
+
+            double currentLinePx = widthToLeftOfCurrent; // Distance of current line from left of screen
+            double bottomLinePx = 0.11 * availableWidth; // Distance of bottom line from left of screen
+            double chromaBlockerPx = availableWidth - bottomLinePx; // Distance of chroma blocker from right of screen
+
+            double deltaHeightPx = availableHeight / (2 + numPitches - 1 + 2); // Vertical offset for horizontal lines
+            double deltaWidthPx = currentLinePx - bottomLinePx; // Horizontal offset between current line and bottom line
+
+            double pitchLabelPx = (availableWidth - currentLinePx); // Distance of pitch labels from right of the screen
+            double playButtonPx = 0.06 * availableWidth; // Distance of play button from right of screen
+
+            // Chromagram pitch intensity bars
+            for (int i = 0; i < numPitches; i++) {
+              double height = deltaHeightPx / 2;
+              Widget pitchIntensityBar = Positioned(
+                bottom: (i + 2) * deltaHeightPx - height / 2,
+                left: currentLinePx, 
+                child: Transform.translate(
+                  offset: Offset(-currentTimePx, 0),  // Translate horizontally based on current playback time
+                  child: IntensityBar(
+                    values: widget.chromagram[i],
+                    orientation: 'horizontal',
+                    height: height, 
+                    width: durationPx,
+                  ),
+                ),
+              );
+              allWidgets.add(pitchIntensityBar);
+            }
+
+            for (int i = 0; i < numPitches; i++) {
+              Widget horizontalPitchLine = Positioned(
+                left: currentLinePx,
+                top: (i + 2) * deltaHeightPx,
+                child: Transform.translate(
+                  offset: Offset(-currentTimePx, 0), // Move left as currentTime increases
+                  child: Container(
+                    height: 1,
+                    width: durationPx,
+                    color: Colors.grey,
+                  ),
+                ),
+              );
+              allWidgets.add(horizontalPitchLine);
+            }
+
+            // Blocker to cover chroma bars below pitch line
+            Widget chromaBlocker = Positioned(
+              top: 0,
+              bottom: 0,
+              right: chromaBlockerPx,
+              left: 0,
+              child: Container(
+                color: Colors.black,
+              ),
+            );
+            allWidgets.add(chromaBlocker);
+
+            const double pitchLabelHeight = 20; // Approximate height for label centering
+            for (int i = 0; i < numPitches; i++) {
+              // Center the label at the same height as the horizontalPitchLine
+              Widget pitchLabel = Positioned(
+                bottom: (i + 2) * deltaHeightPx - pitchLabelHeight / 2,
+                right: pitchLabelPx,
+                child: Transform.translate(
+                  offset: Offset(- min(currentTimePx, deltaWidthPx), 0),
+                  child: SizedBox(
+                    width: 24,
+                    height: pitchLabelHeight,
+                    child: Center(
+                      child: Text(
+                        pitchClassNames[i],
+                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+              allWidgets.add(pitchLabel);
+            }
+
+            // Estimated key text below the start line
+            double fadeOutTime = (deltaWidthPx / oneSecondPx); // Time in seconds over which text fades out
+            double keyTextOpacity = (1 - (currentTime / fadeOutTime)).clamp(0.0, 1.0);
+            const double keyTextHeight = 24; // Approximate height for key text
+            Widget keyText = Positioned(
+              right: availableWidth - currentLinePx + 10,
+              bottom: deltaHeightPx - keyTextHeight / 2,
+              child: Transform.translate(
+                offset: Offset(-min(currentTimePx, deltaWidthPx), 0),
+                child: Opacity(
+                  opacity: keyTextOpacity,
+                  child: SizedBox(
+                    height: keyTextHeight,
+                    child: Center(
+                      child: Text(
+                        'Key: ${widget.musicalKey}',
+                        textAlign: TextAlign.left,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+            allWidgets.add(keyText);
+
+            // Start vertical line
+            Widget startLine = Positioned(
+              top: 2*deltaHeightPx,
+              bottom: 2*deltaHeightPx,
+              left: currentLinePx,
+              child: Transform.translate(
+                offset: Offset(-min(currentTimePx, deltaWidthPx), 0), 
+                child: Container(
+                  width: 1,
+                  color: Colors.grey,
+                ),
+              ),
+            );
+            allWidgets.add(startLine);
+
+            // End vertical line
+            Widget endLine = Positioned(
+              top: 2*deltaHeightPx,
+              bottom: 2*deltaHeightPx,
+              left: currentLinePx + durationPx,
+              child: Transform.translate(
+                offset: Offset(-currentTimePx, 0), 
+                child: Container(
+                  width: 1,
+                  color: Colors.grey,
+                ),
+              ),
+            );
+            allWidgets.add(endLine);
+
+            // Current position of audio playback
+            Widget currentLine = Positioned(
+              left: currentLinePx,
+              top: deltaHeightPx,
+              bottom: deltaHeightPx,
+              child: Container(
+                width: 1,
+                color: Colors.white,
+              ),
+            );
+            allWidgets.add(currentLine);
+
+             // Right arrow icon at current position
+            double iconSize = 30;
+            Widget downArrow = Positioned(
+              top: deltaHeightPx - iconSize / 2, 
+              left: currentLinePx - iconSize / 2 + 0.5,
+              child: Transform.rotate(
+                angle: pi / 2, // 90 degrees clockwise
+                child: Icon(
+                  Icons.play_arrow,
+                  color: Colors.white,
+                  size: iconSize,
+                ),
+              ),
+            );
+            allWidgets.add(downArrow);
+
+            // Play button at height 2 * deltaHeightPx from bottom right
+            double playButtonRadius = 30;
+            double playButtonIconSize = 38;
+            Widget playButton = Positioned(
+              right: playButtonPx,
+              // Place the center of the button at 2 * deltaHeightPx from the bottom
+              bottom: (2 * deltaHeightPx) - playButtonRadius,
+              child: _playButton(radius: playButtonRadius, iconSize: playButtonIconSize),
+            );
+            allWidgets.add(playButton);
           }
           
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onVerticalDragStart: (_) {
-              // If fling in progress, abort it
-              if (isFlinging) {
-                _abortFling();
-                return;
-              }
-              
-              // If audio was playing, pause and set _resumePlayingLater
-              if (isPlaying) { 
-                _resumePlayingLater = true;
-                pause();
-                return;
-              } 
-
-              _resumePlayingLater = false;
-            },
-            onVerticalDragUpdate: (details) {
-              if (!mounted) return;
-              setState(() {
-                // Adjust currentTime: finger moving down -> positive delta -> increase time
-                currentTime += details.primaryDelta! / oneSecondPx;
-                currentTime = currentTime.clamp(0.0, _duration); 
-              });
-            },
-            onVerticalDragEnd: (details) {
-              // Fling effect
-              double flingVelocity = (details.primaryVelocity ?? 0.0) / oneSecondPx; // Convert pixels per second to seconds per second
-              _startFling(flingVelocity);
-            },
+            onVerticalDragStart: isPortrait
+                ? (_) {
+                    if (isFlinging) {
+                      _abortFling();
+                      return;
+                    }
+                    if (isPlaying) {
+                      _resumePlayingLater = true;
+                      pause();
+                      return;
+                    }
+                    _resumePlayingLater = false;
+                  }
+                : null,
+            onVerticalDragUpdate: isPortrait
+                ? (details) {
+                    if (!mounted) return;
+                    setState(() {
+                      currentTime += details.primaryDelta! / oneSecondPx;
+                      currentTime = currentTime.clamp(0.0, _duration);
+                    });
+                  }
+                : null,
+            onVerticalDragEnd: isPortrait
+                ? (details) {
+                    double flingVelocity = (details.primaryVelocity ?? 0.0) / oneSecondPx;
+                    _startFling(flingVelocity);
+                  }
+                : null,
+            onHorizontalDragStart: !isPortrait
+                ? (_) {
+                    if (isFlinging) {
+                      _abortFling();
+                      return;
+                    }
+                    if (isPlaying) {
+                      _resumePlayingLater = true;
+                      pause();
+                      return;
+                    }
+                    _resumePlayingLater = false;
+                  }
+                : null,
+            onHorizontalDragUpdate: !isPortrait
+                ? (details) {
+                    if (!mounted) return;
+                    setState(() {
+                      currentTime -= details.primaryDelta! / oneSecondPx;
+                      currentTime = currentTime.clamp(0.0, _duration);
+                    });
+                  }
+                : null,
+            onHorizontalDragEnd: !isPortrait
+                ? (details) {
+                    double flingVelocity = -(details.primaryVelocity ?? 0.0) / oneSecondPx;
+                    _startFling(flingVelocity);
+                  }
+                : null,
             child: SizedBox.expand(
               child: Stack(
                 children: allWidgets,
@@ -310,209 +691,6 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
         },
       ),
     );
-  }
-
-  _buildPortraitWidgets({
-    required double oneSecondPx,
-    required double durationPx,
-    required double currentTimePx,
-    required double currentLinePx,
-    required double sliderLinePx,
-    required double deltaWidthPx,
-    required double deltaHeightPx,
-    required double bottomLinePx,
-    required double chromaBlockerPx,
-    required double playButtonPx,
-    required double timeDisplayPx,
-    required double pitchLabelPx,
-    required double keyTextPx,
-  }) {
-
-    List<Widget> allWidgets = [];
-
-    // Chromagram pitch intensity bars
-    for (int i = 0; i < 12; i++) {
-      double width = deltaWidthPx / 2;
-      Widget pitchIntensityBar = Positioned(
-        left: (i + 2) * deltaWidthPx - width / 2,
-        bottom: currentLinePx, 
-        child: Transform.translate(
-          offset: Offset(0, currentTimePx),  // Translate vertically down based on current playback time
-          child: IntensityBar(
-            values: widget.chromagram[i],
-            width: width, 
-            height: durationPx,
-          ),
-        ),
-      );
-      allWidgets.add(pitchIntensityBar);
-    }
-
-    // 12 vertical lines, C (leftmost) to B (rightmost)
-    for (int i = 1; i <= 12; i++) {
-      Widget verticalPitchLine = Positioned(
-        left: (i + 1) * deltaWidthPx,
-        bottom: currentLinePx,
-        child: Transform.translate(
-          offset: Offset(0, currentTimePx), 
-          child: Container(
-            width: 1,
-            height: durationPx,
-            color: Colors.grey,
-          ),
-        ),
-      );
-      allWidgets.add(verticalPitchLine);
-    }
-
-    // Start horizontal line
-    Widget startLine = Positioned(
-      left: 2*deltaWidthPx,
-      right: 2*deltaWidthPx,
-      bottom: currentLinePx,
-      child: Transform.translate(
-        offset: Offset(0, min(currentTimePx, deltaHeightPx)), 
-        child: Container(
-          height: 1,
-          color: Colors.grey,
-        ),
-      ),
-    );
-    allWidgets.add(startLine);
-
-    // Estimated key text below the start line
-    double fadeOutTime = 0.66 * (deltaHeightPx / oneSecondPx); // Time in seconds over which text fades out
-    double keyTextOpacity = (1 - (currentTime / fadeOutTime)).clamp(0.0, 1.0);
-    Widget keyText = Positioned(
-      left: 2*deltaWidthPx,
-      right: 2*deltaWidthPx,
-      top: keyTextPx,
-      child: Transform.translate(
-        offset: Offset(0, min(currentTimePx, deltaHeightPx)),
-        child: Opacity(
-          opacity: keyTextOpacity,
-          child: Text(
-            'Key: ${widget.musicalKey}',
-            textAlign: TextAlign.left,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontSize: 15,
-            ),
-          ),
-        ),
-      ),
-    );
-    allWidgets.add(keyText);
-
-    // End horizontal line
-    Widget endLine = Positioned(
-      left: 2*deltaWidthPx,
-      right: 2*deltaWidthPx,
-      bottom: currentLinePx + durationPx,
-      child: Transform.translate(
-        offset: Offset(0, currentTimePx), 
-        child: Container(
-          height: 1,
-          color: Colors.grey,
-        ),
-      ),
-    );
-    allWidgets.add(endLine);
-
-    // Blocker to cover chroma bars below pitch line
-    Widget chromaBlocker = Positioned(
-      top: chromaBlockerPx,
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        color: Colors.black,
-      ),
-    );
-    allWidgets.add(chromaBlocker);
-
-    // Pitch class names from C to B
-    const List<String> pitchClassNames = [
-      'C', 'C#', 'D', 'D#', 'E', 'F',
-      'F#', 'G', 'G#', 'A', 'A#', 'B'
-    ];
-
-    for (int i = 0; i < 12; i++) {
-      // Add pitch class label below startLine, translated with currentTimePx
-      Widget pitchLabel = Positioned(
-        left: (i + 2) * deltaWidthPx - 16, // Center label under line
-        top: pitchLabelPx,
-        child: Transform.translate(
-          offset: Offset(0, min(currentTimePx, deltaHeightPx)),
-          child: SizedBox(
-            width: 32,
-            child: Center(
-              child: Text(
-                pitchClassNames[i],
-                style: const TextStyle(color: Colors.white, fontSize: 12),
-              ),
-            ),
-          ),
-        ),
-      );
-      allWidgets.add(pitchLabel);
-    }
-
-    // Current position of audio playback
-    Widget currentLine = Positioned(
-      // Align the center of the line with currentLinePx
-      bottom: currentLinePx,
-      left: deltaWidthPx,
-      right: deltaWidthPx,
-      child: Container(
-        height: 1, // Originally 1
-        color: Colors.white,
-      ),
-    );
-    allWidgets.add(currentLine);
-
-    // Right arrow icon at current position
-    double iconSize = 30;
-    Widget rightArrow = Positioned(
-      bottom: currentLinePx - iconSize / 2 + 0.5, // +0.5 shift to center (experimentally determined)
-      left: deltaWidthPx / 2,
-      child: Icon(
-        Icons.play_arrow,
-        color: Colors.white,
-        size: iconSize,
-      ),
-    );
-    allWidgets.add(rightArrow);
-
-    // Play button below the slider line
-    double playButtonRadius = 30;
-    double playButtonIconSize = 38;
-    Widget playButton = Positioned(
-      left: 0,
-      right: 0,
-      top: playButtonPx, 
-      child: Center(child: _playButton(radius: playButtonRadius, iconSize: playButtonIconSize)),
-    );
-    allWidgets.add(playButton);
-
-    // Slider to indicate and control playback time
-    double sliderRadius = 8;
-    Widget playbackSlider = Positioned(
-      left: deltaWidthPx - sliderRadius,
-      right: deltaWidthPx - sliderRadius,
-      bottom: sliderLinePx -sliderRadius,
-      child: _playbackSlider(radius: sliderRadius),
-    );
-    allWidgets.add(playbackSlider);
-
-    // Widget to display current time and total duration 
-    Widget timeDisplay = Positioned(
-      left: deltaWidthPx,
-      right: deltaWidthPx,
-      top: timeDisplayPx, 
-      child: _timeDisplay(),
-    );
-    allWidgets.add(timeDisplay);
-    return allWidgets;
   }
 
   // Returns the appropriate play/pause/replay button widget
@@ -658,50 +836,77 @@ class IntensityBar extends StatelessWidget {
   final List<double> values; // values in range 0..1
   final double width;
   final double height;
+  final String orientation; // 'vertical' or 'horizontal'
 
   const IntensityBar({
     super.key,
     required this.values,
     required this.width,
     required this.height,
+    required this.orientation,
   });
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
       size: Size(width, height),
-      painter: _IntensityBarPainter(values),
+      painter: _IntensityBarPainter(
+        values: values, 
+        orientation: orientation
+      ),
     );
   }
 }
 
 class _IntensityBarPainter extends CustomPainter {
   final List<double> values;
+  final String orientation;
 
-  _IntensityBarPainter(this.values);
+  _IntensityBarPainter({
+    required this.values, 
+    required this.orientation
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final rectWidth = size.width;
-    final rectHeight = size.height / values.length;
-    for (int i = 0; i < values.length; i++) {
-      final intensity = values[i].clamp(0.0, 1.0);
-      if (intensity < 0.1) continue; // Skip very low intensities for performance
-      final color = infernoColormap(intensity);
-      final rect = Rect.fromLTWH(
-        0, // left
-        (values.length - 1 - i) * rectHeight, // top
-        rectWidth, // width of rect
-        rectHeight, // height of rect
-      );
-      final paint = Paint()..color = color;
-      canvas.drawRect(rect, paint);
+    if (orientation == 'horizontal') {
+      final rectHeight = size.height;
+      final rectWidth = size.width / values.length;
+      for (int i = 0; i < values.length; i++) {
+        final intensity = values[i].clamp(0.0, 1.0);
+        if (intensity < 0.1) continue;
+        final color = infernoColormap(intensity);
+        final rect = Rect.fromLTWH(
+          i * rectWidth, // left
+          0, // top
+          rectWidth, // width
+          rectHeight, // height
+        );
+        final paint = Paint()..color = color;
+        canvas.drawRect(rect, paint);
+      }
+    } else {
+      final rectWidth = size.width;
+      final rectHeight = size.height / values.length;
+      for (int i = 0; i < values.length; i++) {
+        final intensity = values[i].clamp(0.0, 1.0);
+        if (intensity < 0.1) continue;
+        final color = infernoColormap(intensity);
+        final rect = Rect.fromLTWH(
+          0, // left
+          (values.length - 1 - i) * rectHeight, // top
+          rectWidth, // width
+          rectHeight, // height
+        );
+        final paint = Paint()..color = color;
+        canvas.drawRect(rect, paint);
+      }
     }
   }
 
   @override
   bool shouldRepaint(covariant _IntensityBarPainter oldDelegate) =>
-      oldDelegate.values != values;
+      oldDelegate.values != values || oldDelegate.orientation != orientation;
 }
 
 
