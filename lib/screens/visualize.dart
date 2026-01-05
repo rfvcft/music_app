@@ -1,20 +1,13 @@
 import 'dart:math';
+import 'package:music_app/utils/constants.dart' as cnst; // Import constants
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:audioplayers/audioplayers.dart' as ap;
-import 'package:music_app/screens/settings.dart';
+import 'package:music_app/screens/settings.dart'; // Settings page
+import 'package:music_app/utils/intensity_bar.dart' as ib; // Intensity bar widget
+import 'package:music_app/utils/conversion.dart' as conv; // Conversion utilities
 
-// Golden ratio
-const double goldenRatio = 1.6180339887; // Golden ratio = (1 + sqrt(5)) / 2
-const double goldenFactorSmall = 1 / (goldenRatio + 1); // Smaller golden section
-const double goldenFactorLarge = goldenRatio / (goldenRatio + 1); // Larger golden section
-
-// Number of pitch classes
-const int numPitches = 12; 
-
-// Pitch class names from C to B
-const List<String> pitchClassNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 class Visualizer extends StatefulWidget {
   Visualizer({
@@ -24,8 +17,11 @@ class Visualizer extends StatefulWidget {
     required this.duration,
     required this.musicalKey,
     required this.chromagram,
-  })  : numPitches = chromagram.length,
-        numFrames = chromagram[0].length;
+  }) : assert(chromagram.length == cnst.numPitches, 'Chromagram must have ${cnst.numPitches} pitch classes.'),
+        numFrames = chromagram[0].length,
+        // Unpack the record (tonicIndex, scale)
+        tonicIndex = conv.parseMusicalKey(musicalKey).$1,
+        scale = conv.parseMusicalKey(musicalKey).$2;
 
   final String audioName; // Name of the audio file (without extension)
   final String audioUrl; // URL or asset path to audio file
@@ -33,8 +29,9 @@ class Visualizer extends StatefulWidget {
   final String musicalKey; // Musical key of the audio
   final List<List<double>> chromagram; // Chromagram: List of 12 pitch classes, each with intensity values over time frames
 
-  final int numPitches; // number of pitch classes (12)
   final int numFrames; // number of time frames (proportional to duration)
+  final int tonicIndex;
+  final String scale;
 
   @override
   State<Visualizer> createState() => _VisualizerState();
@@ -236,18 +233,18 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           
           if (isPortrait) {
             const int numSecondsAboveCurrent = 5; // Number of seconds to display above current time
-            double heightAboveCurrent = goldenFactorLarge * availableHeight; // Available height above current line
-            double heightBelowCurrent = goldenFactorSmall * availableHeight; // Available height below current line
+            double heightAboveCurrent = cnst.goldenFactorLarge * availableHeight; // Available height above current line
+            double heightBelowCurrent = cnst.goldenFactorSmall * availableHeight; // Available height below current line
 
             oneSecondPx = heightAboveCurrent / numSecondsAboveCurrent; // One second in pixels
             double durationPx = _duration * oneSecondPx; // Total duration in pixels
             double currentTimePx = currentTime * oneSecondPx; // Current time in pixels
 
             double currentLinePx = heightBelowCurrent; // Distance of current line from bottom of screen
-            double sliderLinePx = goldenFactorLarge * heightBelowCurrent; // Distance of slider line from bottom of screen
+            double sliderLinePx = cnst.goldenFactorLarge * heightBelowCurrent; // Distance of slider line from bottom of screen
 
-            double deltaWidthPx = availableWidth / (2 + numPitches - 1 + 2); // Horizontal offset for vertical lines 
-            double deltaHeightPx = goldenFactorLarge * (currentLinePx - sliderLinePx); // Vertical offset between current line and bottom line 
+            double deltaWidthPx = availableWidth / (2 + cnst.numPitches - 1 + 2); // Horizontal offset for vertical lines 
+            double deltaHeightPx = cnst.goldenFactorLarge * (currentLinePx - sliderLinePx); // Vertical offset between current line and bottom line 
 
             double bottomLinePx = currentLinePx - deltaHeightPx; // Distance of bottom line from bottom of screen 
             double chromaBlockerPx = availableHeight - bottomLinePx; // Height of chroma blocker from top of screen
@@ -258,15 +255,15 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             double keyTextPx = (availableHeight - currentLinePx) + 0.075 * currentLinePx; // Distance of key text from top of screen
 
             // Chromagram pitch intensity bars
-            for (int i = 0; i < numPitches; i++) {
+            for (int i = 0; i < cnst.numPitches; i++) {
               double width = deltaWidthPx / 2;
               Widget pitchIntensityBar = Positioned(
                 left: (i + 2) * deltaWidthPx - width / 2,
                 bottom: currentLinePx, 
                 child: Transform.translate(
                   offset: Offset(0, currentTimePx),  // Translate vertically down based on current playback time
-                  child: IntensityBar(
-                    values: widget.chromagram[i],
+                  child: ib.IntensityBar(
+                    values: widget.chromagram[(i + widget.tonicIndex) % cnst.numPitches],
                     orientation: 'vertical',
                     width: width, 
                     height: durationPx,
@@ -276,8 +273,8 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
               allWidgets.add(pitchIntensityBar);
             }
 
-            // 12 vertical lines, C (leftmost) to B (rightmost)
-            for (int i = 1; i <= numPitches; i++) {
+            // 12 vertical lines for pitch classes
+            for (int i = 1; i <= cnst.numPitches; i++) {
               Widget verticalPitchLine = Positioned(
                 left: (i + 1) * deltaWidthPx,
                 bottom: currentLinePx,
@@ -309,7 +306,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             allWidgets.add(startLine);
 
             // Estimated key text below the start line
-            double fadeOutTime = 0.66 * (deltaHeightPx / oneSecondPx); // Time in seconds over which text fades out
+            double fadeOutTime = 0.5 * (deltaHeightPx / oneSecondPx); // Time in seconds over which text fades out
             double keyTextOpacity = (1 - (currentTime / fadeOutTime)).clamp(0.0, 1.0);
             Widget keyText = Positioned(
               left: 2*deltaWidthPx,
@@ -319,11 +316,20 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                 offset: Offset(0, min(currentTimePx, deltaHeightPx)),
                 child: Opacity(
                   opacity: keyTextOpacity,
-                  child: Text(
-                    'Key: ${widget.musicalKey}',
+                  child: RichText(
                     textAlign: TextAlign.left,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: 15,
+                    text: TextSpan(
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 15),
+                      children: [
+                        TextSpan(
+                          text: 'Key: ',
+                          style: const TextStyle(fontWeight: FontWeight.normal),
+                        ),
+                        TextSpan(
+                          text: widget.musicalKey,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -358,8 +364,11 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             );
             allWidgets.add(chromaBlocker);
 
-            for (int i = 0; i < numPitches; i++) {
+            for (int i = 0; i < cnst.numPitches; i++) {
               // Add pitch class label below startLine, translated with currentTimePx
+              // Determine if pitch is in scale
+              final scalePattern = cnst.scalePatterns[widget.scale];
+              final isInScale = scalePattern != null && scalePattern[i] == 1;
               Widget pitchLabel = Positioned(
                 left: (i + 2) * deltaWidthPx - 16, // Center label under line
                 top: pitchLabelPx,
@@ -369,8 +378,12 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                     width: 32,
                     child: Center(
                       child: Text(
-                        pitchClassNames[i],
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        cnst.pitchClassNames[(i + widget.tonicIndex) % cnst.numPitches],
+                        style: TextStyle(
+                          color: isInScale ? Colors.white : Colors.grey,
+                          fontSize: 12,
+                          fontWeight: isInScale ? FontWeight.bold : FontWeight.normal,
+                        ),
                       ),
                     ),
                   ),
@@ -448,22 +461,22 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             double bottomLinePx = 0.11 * availableWidth; // Distance of bottom line from left of screen
             double chromaBlockerPx = availableWidth - bottomLinePx; // Distance of chroma blocker from right of screen
 
-            double deltaHeightPx = availableHeight / (2 + numPitches - 1 + 2); // Vertical offset for horizontal lines
+            double deltaHeightPx = availableHeight / (2 + cnst.numPitches - 1 + 2); // Vertical offset for horizontal lines
             double deltaWidthPx = currentLinePx - bottomLinePx; // Horizontal offset between current line and bottom line
 
             double pitchLabelPx = (availableWidth - currentLinePx); // Distance of pitch labels from right of the screen
             double playButtonPx = 0.06 * availableWidth; // Distance of play button from right of screen
 
             // Chromagram pitch intensity bars
-            for (int i = 0; i < numPitches; i++) {
+            for (int i = 0; i < cnst.numPitches; i++) {
               double height = deltaHeightPx / 2;
               Widget pitchIntensityBar = Positioned(
                 bottom: (i + 2) * deltaHeightPx - height / 2,
                 left: currentLinePx, 
                 child: Transform.translate(
                   offset: Offset(-currentTimePx, 0),  // Translate horizontally based on current playback time
-                  child: IntensityBar(
-                    values: widget.chromagram[i],
+                  child: ib.IntensityBar(
+                    values: widget.chromagram[(i + widget.tonicIndex) % cnst.numPitches],
                     orientation: 'horizontal',
                     height: height, 
                     width: durationPx,
@@ -473,7 +486,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
               allWidgets.add(pitchIntensityBar);
             }
 
-            for (int i = 0; i < numPitches; i++) {
+            for (int i = 0; i < cnst.numPitches; i++) {
               Widget horizontalPitchLine = Positioned(
                 left: currentLinePx,
                 top: (i + 2) * deltaHeightPx,
@@ -502,8 +515,11 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             allWidgets.add(chromaBlocker);
 
             const double pitchLabelHeight = 20; // Approximate height for label centering
-            for (int i = 0; i < numPitches; i++) {
+            for (int i = 0; i < cnst.numPitches; i++) {
               // Center the label at the same height as the horizontalPitchLine
+              // Determine if pitch is in scale
+              final scalePattern = cnst.scalePatterns[widget.scale];
+              final isInScale = scalePattern != null && scalePattern[i] == 1;
               Widget pitchLabel = Positioned(
                 bottom: (i + 2) * deltaHeightPx - pitchLabelHeight / 2,
                 right: pitchLabelPx,
@@ -514,8 +530,12 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                     height: pitchLabelHeight,
                     child: Center(
                       child: Text(
-                        pitchClassNames[i],
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        cnst.pitchClassNames[(i + widget.tonicIndex) % cnst.numPitches],
+                        style: TextStyle(
+                          color: isInScale ? Colors.white : Colors.grey,
+                          fontSize: 12,
+                          fontWeight: isInScale ? FontWeight.bold : FontWeight.normal,
+                        ),
                       ),
                     ),
                   ),
@@ -538,11 +558,20 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                   child: SizedBox(
                     height: keyTextHeight,
                     child: Center(
-                      child: Text(
-                        'Key: ${widget.musicalKey}',
+                      child: RichText(
                         textAlign: TextAlign.left,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontSize: 15,
+                        text: TextSpan(
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 15),
+                          children: [
+                            TextSpan(
+                              text: 'Key: ',
+                              style: const TextStyle(fontWeight: FontWeight.normal),
+                            ),
+                            TextSpan(
+                              text: widget.musicalKey,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -737,11 +766,11 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          _formatTime(currentTime),
+          conv.formatTime(currentTime),
           style: const TextStyle(color: Colors.white, fontSize: 12),
         ),
         Text(
-          _formatTime(_duration),
+          conv.formatTime(_duration),
           style: const TextStyle(color: Colors.white, fontSize: 12),
         ),
       ],
@@ -790,124 +819,11 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
       ),
     );
   }
-
-  // Add this helper method to your _VisualizerState class:
-  String _formatTime(double seconds) {
-    final int min = seconds ~/ 60;
-    final int sec = seconds.toInt() % 60;
-    // Only show leading zero for minutes if time is 10 minutes or more
-    if (min < 10) {
-      return '$min:${sec.toString().padLeft(2, '0')}';
-    } else {
-      return '${min.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}';
-    }
-  }
 }
 
 
-// Sampled inferno colormap (10 points, you can add more for smoother gradients)
-const List<Color> infernoColors = [
-  Color(0xFF000004),
-  Color(0xFF1B0C41),
-  Color(0xFF4A0C6B),
-  Color(0xFF781C6D),
-  Color(0xFFA52C60),
-  Color(0xFFCF4446),
-  Color(0xFFF1605D),
-  Color(0xFFFCA636),
-  Color(0xFFFFDF4A),
-  Color(0xFFFFFCB0),
-];
 
-Color infernoColormap(double t) {
-  t = t.clamp(0.0, 1.0);
 
-  final scaled = t * (infernoColors.length - 1);
-  final idx = scaled.floor();
-  final frac = scaled - idx;
-
-  if (idx >= infernoColors.length - 1) {
-    return infernoColors.last;
-  }
-  return Color.lerp(infernoColors[idx], infernoColors[idx + 1], frac)!;
-}
-
-class IntensityBar extends StatelessWidget {
-  final List<double> values; // values in range 0..1
-  final double width;
-  final double height;
-  final String orientation; // 'vertical' or 'horizontal'
-
-  const IntensityBar({
-    super.key,
-    required this.values,
-    required this.width,
-    required this.height,
-    required this.orientation,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(width, height),
-      painter: _IntensityBarPainter(
-        values: values, 
-        orientation: orientation
-      ),
-    );
-  }
-}
-
-class _IntensityBarPainter extends CustomPainter {
-  final List<double> values;
-  final String orientation;
-
-  _IntensityBarPainter({
-    required this.values, 
-    required this.orientation
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (orientation == 'horizontal') {
-      final rectHeight = size.height;
-      final rectWidth = size.width / values.length;
-      for (int i = 0; i < values.length; i++) {
-        final intensity = values[i].clamp(0.0, 1.0);
-        if (intensity < 0.1) continue;
-        final color = infernoColormap(intensity);
-        final rect = Rect.fromLTWH(
-          i * rectWidth, // left
-          0, // top
-          rectWidth, // width
-          rectHeight, // height
-        );
-        final paint = Paint()..color = color;
-        canvas.drawRect(rect, paint);
-      }
-    } else {
-      final rectWidth = size.width;
-      final rectHeight = size.height / values.length;
-      for (int i = 0; i < values.length; i++) {
-        final intensity = values[i].clamp(0.0, 1.0);
-        if (intensity < 0.1) continue;
-        final color = infernoColormap(intensity);
-        final rect = Rect.fromLTWH(
-          0, // left
-          (values.length - 1 - i) * rectHeight, // top
-          rectWidth, // width
-          rectHeight, // height
-        );
-        final paint = Paint()..color = color;
-        canvas.drawRect(rect, paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _IntensityBarPainter oldDelegate) =>
-      oldDelegate.values != values || oldDelegate.orientation != orientation;
-}
 
 
 
