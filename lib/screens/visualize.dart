@@ -302,6 +302,8 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             icon: const Icon(Icons.settings),
             tooltip: 'Settings',
             onPressed: () async {
+              if (isFlinging) _abortFling();
+              if (isPlaying) pause();
               await Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => SettingsPage()),
               );
