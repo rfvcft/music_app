@@ -198,6 +198,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     }); 
   }
 
+  // Show dialog to edit musical key
   Future<void> _editMusicalKey(BuildContext context) async {
     // Parse current key
     String currentTonic = cnst.pitchClassNames.first;
@@ -212,6 +213,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     String selectedTonic = currentTonic;
     String selectedScale = currentScale;
 
+    // Let the user select new key via dialog
     final result = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -302,6 +304,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             icon: const Icon(Icons.settings),
             tooltip: 'Settings',
             onPressed: () async {
+              // Abort fling and pause playback before navigating to settings
               if (isFlinging) _abortFling();
               if (isPlaying) pause();
               await Navigator.of(context).push(
@@ -323,6 +326,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
           final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
           
+          // PORTRAIT MODE
           if (isPortrait) {
             const int numSecondsAboveCurrent = 5; // Number of seconds to display above current time
             double heightAboveCurrent = cnst.goldenFactorLarge * availableHeight; // Available height above current line
@@ -552,7 +556,8 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
               child: _timeDisplay(),
             );
             allWidgets.add(timeDisplay);
-        
+
+          // LANDSCAPE MODE
           } else {
             double widthToRightOfCurrent = (3 / 4) * availableWidth; // Available width to the right of current line
             double widthToLeftOfCurrent = (1 / 4) * availableWidth; // Available width to the left of current line
@@ -764,14 +769,20 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             allWidgets.add(playButton);
           }
           
+          // Main gesture handler for scrubbing and flinging through the audio timeline.
+          // Handles vertical drags in portrait and horizontal drags in landscape.
           return GestureDetector(
-            behavior: HitTestBehavior.opaque,
+            behavior: HitTestBehavior.opaque, // Ensures gestures are detected anywhere in the area
+
+            // --- Portrait mode: vertical drag to scrub/fling ---
             onVerticalDragStart: isPortrait
                 ? (_) {
+                    // Abort any ongoing fling if user starts a new drag
                     if (isFlinging) {
                       _abortFling();
                       return;
                     }
+                    // Pause playback if currently playing, and remember to resume after drag
                     if (isPlaying) {
                       _resumePlayingLater = true;
                       pause();
@@ -782,6 +793,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                 : null,
             onVerticalDragUpdate: isPortrait
                 ? (details) {
+                    // Move currentTime based on drag distance (pixels to seconds)
                     if (!mounted) return;
                     setState(() {
                       currentTime += details.primaryDelta! / oneSecondPx;
@@ -791,16 +803,21 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                 : null,
             onVerticalDragEnd: isPortrait
                 ? (details) {
-                    double flingVelocity = (details.primaryVelocity ?? 0.0) / oneSecondPx;
+                    // Start a fling animation based on drag velocity
+                    double flingVelocity = (details.primaryVelocity ?? 0.0) / oneSecondPx; // Convert pixels/sec to seconds/sec
                     _startFling(flingVelocity);
                   }
                 : null,
+
+            // --- Landscape mode: horizontal drag to scrub/fling ---
             onHorizontalDragStart: !isPortrait
                 ? (_) {
+                    // Abort any ongoing fling if user starts a new drag
                     if (isFlinging) {
                       _abortFling();
                       return;
                     }
+                    // Pause playback if currently playing, and remember to resume after drag
                     if (isPlaying) {
                       _resumePlayingLater = true;
                       pause();
@@ -811,6 +828,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                 : null,
             onHorizontalDragUpdate: !isPortrait
                 ? (details) {
+                    // Move currentTime based on drag distance (pixels to seconds)
                     if (!mounted) return;
                     setState(() {
                       currentTime -= details.primaryDelta! / oneSecondPx;
@@ -820,10 +838,13 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                 : null,
             onHorizontalDragEnd: !isPortrait
                 ? (details) {
-                    double flingVelocity = -(details.primaryVelocity ?? 0.0) / oneSecondPx;
+                    // Start a fling animation based on drag velocity
+                    double flingVelocity = -(details.primaryVelocity ?? 0.0) / oneSecondPx; // Convert pixels/sec to seconds/sec
                     _startFling(flingVelocity);
                   }
                 : null,
+
+            // The main visual stack (timeline, bars, labels, etc.)
             child: SizedBox.expand(
               child: Stack(
                 children: allWidgets,
