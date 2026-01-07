@@ -4,7 +4,7 @@ import 'package:flutter/services.dart' show rootBundle; // for access to assets
 
 
 class AnalyzePage extends StatelessWidget {
-  AnalyzePage({super.key, required this.audioUrl});
+  const AnalyzePage({super.key, required this.audioUrl});
 
   final String audioUrl; // audio path for archive audio. Will eventually be processed by Essentia
 
