@@ -213,6 +213,12 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     String selectedTonic = currentTonic;
     String selectedScale = currentScale;
 
+    // Shift pitchClassNames so that A is first
+    final shiftedPitchClassNames = [
+      ...cnst.pitchClassNames.sublist(9),
+      ...cnst.pitchClassNames.sublist(0, 9)
+    ];
+
     // Let the user select new key via dialog
     final result = await showDialog<bool>(
       context: context,
@@ -229,7 +235,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                     child: DropdownButton<String>(
                       value: selectedTonic,
                       isExpanded: true,
-                      items: cnst.pitchClassNames.map((tonic) {
+                      items: shiftedPitchClassNames.map((tonic) {
                         return DropdownMenuItem<String>(
                           value: tonic,
                           child: Text(tonic),
@@ -345,7 +351,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             double bottomLinePx = currentLinePx - deltaHeightPx; // Distance of bottom line from bottom of screen 
             double chromaBlockerPx = availableHeight - bottomLinePx; // Height of chroma blocker from top of screen
 
-            double playButtonPx = (availableHeight - sliderLinePx) + 0.1 * sliderLinePx; // Distance of top of audio player to top of screen
+            double playButtonPx = (availableHeight - sliderLinePx) + 0.15 * sliderLinePx; // Distance of top of audio player to top of screen
             double timeDisplayPx = (availableHeight - sliderLinePx) + 0.05 * sliderLinePx; // Distance of top of time display to top of screen
             double pitchLabelPx = (availableHeight - currentLinePx);
             double keyTextPx = (availableHeight - currentLinePx) + 0.075 * currentLinePx; // Distance of key text from top of screen
@@ -518,7 +524,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             double iconSize = 30;
             Widget rightArrow = Positioned(
               bottom: currentLinePx - iconSize / 2 + 0.5, // +0.5 shift to center (experimentally determined)
-              left: deltaWidthPx / 2,
+              left: deltaWidthPx - iconSize / 2,
               child: Icon(
                 Icons.play_arrow,
                 color: Colors.white,
