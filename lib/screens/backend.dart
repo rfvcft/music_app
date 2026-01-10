@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:music_app/ffi/audioanalysis_ffi.dart';
+import 'package:music_app/screens/visualize.dart';
 
 import 'dart:io';
 import 'package:flutter/services.dart' show rootBundle;
@@ -45,7 +46,7 @@ class _BackendPageState extends State<BackendPage> {
 
   /// Loads the asset, analyzes it using AudioProcessingFfi, and updates the UI with results.
   /// Handles errors and manages loading state.
-  Future<void> _analyze(String assetName) async {
+  Future<void> _analyze(BuildContext context, String assetName) async {
     setState(() => _loading = true);
     try {
       final filePath = Platform.isIOS ? await _copyAssetToTemp(assetName, "m4a") : await _copyAssetToTemp(assetName, "wav");
@@ -53,7 +54,7 @@ class _BackendPageState extends State<BackendPage> {
       final audioProcessor = AudioProcessingFfi();
       final result = audioProcessor.loadAndAnalyze(filePath);
       final key = result['key'] ?? '';
-      final duration = result['duration']?.toStringAsFixed(2) ?? '';
+      final double duration = result['duration'];
       final chromagram = result['chromagram'] as List<List<double>>?;
       String chromaShape = '';
       if (chromagram != null) {
@@ -67,6 +68,18 @@ class _BackendPageState extends State<BackendPage> {
           _chromagrams[assetName] = chromagram;
         }
       });
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => Visualizer(
+            audioName: assetName,
+            audioUrl: filePath,
+            duration: duration,
+            musicalKey: key,
+            chromagram: chromagram!,
+          ),
+        ),
+      );
     } catch (e) {
       setState(() {
         _analysisSummaries[assetName] = 'Error: $e';
@@ -74,19 +87,6 @@ class _BackendPageState extends State<BackendPage> {
     } finally {
       setState(() => _loading = false);
     }
-  }
-
-  void _pushChromagramPage(BuildContext context, String assetName) {
-    final chromagram = _chromagrams[assetName];
-    if (chromagram == null) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ChromagramPage(
-          assetName: assetName,
-          chromagram: chromagram,
-        ),
-      ),
-    );
   }
 
   @override
@@ -112,22 +112,7 @@ class _BackendPageState extends State<BackendPage> {
                         minimumSize: const Size(0, 28),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      onPressed: _loading ? null : () => _analyze(name),
-                      child: const Text('Analyze', style: TextStyle(fontSize: 12)),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    height: 28,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                        minimumSize: const Size(0, 28),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      onPressed: _chromagrams.containsKey(name)
-                          ? () => _pushChromagramPage(context, name)
-                          : null,
+                      onPressed: () => _analyze(context, name),
                       child: const Text('Show Chromagram', style: TextStyle(fontSize: 12)),
                     ),
                   ),
