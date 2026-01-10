@@ -68,7 +68,6 @@ class _ArchivePageState extends State<ArchivePage> {
               itemBuilder: (context, index) {
                 return Container(
                   height: 50,
-                  color: Colors.green,
                   child: _audioTile("Entry ${p.basename(files[index].path)}", files[index].path),
                 );
               },

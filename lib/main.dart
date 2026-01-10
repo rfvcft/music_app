@@ -17,11 +17,11 @@ class MusicApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme(
           brightness: Brightness.dark, // Overall theme brightness. Not important if individual colors are set.
-          primary: Colors.green, // Used for floating action buttons, switches (on state), etc.
+          primary: Colors.white, // Used for floating action buttons, switches (on state), etc.
           onPrimary: Colors.white,
-          secondary: Colors.pink, // Used in audio player visual
+          secondary: Colors.grey, // Used in audio player visual
           onSecondary: Colors.purple, 
-          surface: Colors.grey[850]!, // Used in switches (off state), etc.
+          surface: Colors.white, // Used in switches (off state), etc.
           onSurface: Colors.white, // Text, icon button, etc. 
           error: Color(0xFFCF4446), // Error messages
           onError: Colors.white,

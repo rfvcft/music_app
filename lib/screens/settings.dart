@@ -36,8 +36,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 });
               },
               borderRadius: BorderRadius.circular(8),
-              selectedColor: Colors.white,
-              fillColor: Theme.of(context).colorScheme.primary,
+                selectedColor: Colors.white,
+                fillColor: Colors.green,
               children: const [
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
