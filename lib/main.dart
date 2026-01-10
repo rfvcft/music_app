@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:music_app/screens/home.dart';
 
 void main() {
@@ -12,26 +13,35 @@ class MusicApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Music App',
+      title: 'Dodeca',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme(
+          brightness: Brightness.dark, // Overall theme brightness. Not important if individual colors are set.
+          primary: Colors.grey, // Used for floating action buttons, switches (on state), circular progress indicator etc.
+          onPrimary: Colors.yellow,
+          secondary: Colors.grey, // Used in audio player visual
+          onSecondary: Colors.purple, 
+          surface: const Color.fromARGB(255, 30, 30, 30), // Used in switches (off state), alert dialog background, active part in audio player etc.
+          onSurface: Colors.white, // Text, icon button, etc. 
+          error: Color(0xFFCF4446), // Error messages
+          onError: Colors.white,
+        ),
+        scaffoldBackgroundColor: Colors.black, // Background color for scaffolds (used in home, visualize, etc.)
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.grey[900], // AppBar background color
+          foregroundColor: Colors.white, // AppBar text color
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ButtonStyle(
+            backgroundColor: WidgetStatePropertyAll<Color>(Colors.grey[800]!), // Button background color
+            foregroundColor: WidgetStatePropertyAll<Color>(Colors.white),
+            // Remove custom shape to use the default Material button shape
+            elevation: WidgetStatePropertyAll<double>(12), // Higher elevation for 3D effect
+            shadowColor: WidgetStatePropertyAll<Color>(Colors.grey[600]!), // Optional: shadow color
+          ),
+        ),
       ),
-      home: const HomePage(title: 'Music App'),
+      home: const HomePage(title: 'DODECA'),
     );
   }
 }

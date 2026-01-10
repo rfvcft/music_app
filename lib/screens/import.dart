@@ -12,8 +12,7 @@ class _ImportPageState extends State<ImportPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text("TITLE OF PAGE"),
+        title: Text("Import Audio"),
       ),
       body: Center(child: Text("To be built")),
     );
