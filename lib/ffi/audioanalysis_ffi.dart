@@ -211,10 +211,14 @@ class AudioProcessingFfi {
 			);
 		}
 
-    // Clean up 
-		_deleteAnalysisResult!(resultPtr);
+		// Clean up
+		if (Platform.isIOS) {
+			_analyzer!.deleteAnalysisResult(resultPtr);
+		} else if (Platform.isAndroid) {
+			_deleteAnalysisResult!(resultPtr);
+		}
 		if (bufferPtr != null) {
-		  _audioLoader?.freeAudioBuffer(bufferPtr);
+			_audioLoader?.freeAudioBuffer(bufferPtr);
 		}
 
 		return {
