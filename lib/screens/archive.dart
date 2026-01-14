@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:music_app/screens/analyze.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:audioplayers/audioplayers.dart';
 
 class ArchivePage extends StatefulWidget {
   const ArchivePage({super.key});
@@ -14,6 +15,9 @@ class ArchivePage extends StatefulWidget {
 
 class _ArchivePageState extends State<ArchivePage> {
   late Future<List<File>> _audioFiles;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  String? _currentlyPlaying;
+  bool _isPlaying = false;
 
   @override
   void initState() {
@@ -27,6 +31,7 @@ class _ArchivePageState extends State<ArchivePage> {
   }
 
   Widget _audioTile(String name, String audioUrl) {
+    bool isThisPlaying = _currentlyPlaying == audioUrl && _isPlaying;
     return ListTile(
       title: Text(name),
       onTap: () {
@@ -34,19 +39,37 @@ class _ArchivePageState extends State<ArchivePage> {
           context,
           MaterialPageRoute(
             builder: (context) => AnalyzePage(
+              audioName: name,
               audioUrl: audioUrl,
             ),
           ),
         );
       },
       trailing: IconButton(
-        onPressed: () {
-          //TODO: add possibility to play the audio here as well?
-          /* PLAY AUDIO */
+        onPressed: () async {
+          if (isThisPlaying) {
+            await _audioPlayer.pause();
+            setState(() {
+              _isPlaying = false;
+            });
+          } else {
+            await _audioPlayer.stop();
+            await _audioPlayer.play(DeviceFileSource(audioUrl));
+            setState(() {
+              _currentlyPlaying = audioUrl;
+              _isPlaying = true;
+            });
+          }
         },
-        icon: Icon(Icons.play_arrow),
+        icon: Icon(isThisPlaying ? Icons.pause : Icons.play_arrow),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
   }
 
   @override
@@ -66,9 +89,9 @@ class _ArchivePageState extends State<ArchivePage> {
             List<File> files = asyncSnapshot.data!;
             return ListView.separated(
               itemBuilder: (context, index) {
-                return Container(
-                  height: 50,
-                  child: _audioTile("Entry ${p.basename(files[index].path)}", files[index].path),
+                      return Container(
+                        height: 50,
+                        child: _audioTile(p.basename(files[index].path), files[index].path),
                 );
               },
               separatorBuilder: (context, index) => const Divider(),
