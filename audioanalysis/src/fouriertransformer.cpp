@@ -7,27 +7,19 @@
 #endif
 
 FourierTransformer::FourierTransformer(const std::vector<float>& frameBuffer,
-                                       std::vector<std::complex<float>>& spectrumBuffer,
-                                       std::vector<float>& magnitudeBuffer,
-                                       std::vector<float>& frequencyBuffer)
-    : frame(frameBuffer), spectrum(spectrumBuffer), magnitudes(magnitudeBuffer), frequencies(frequencyBuffer)
-#if defined(__APPLE__)
+                                       std::vector<float>& magnitudeBuffer)
+    : frame(frameBuffer), magnitudes(magnitudeBuffer)
+#ifdef __APPLE__
     , fftSetup(nullptr), real(frameBuffer.size(), 0.0f), imag(frameBuffer.size(), 0.0f)
-#elif defined(__ANDROID__)
-    , input_shape{frameBuffer.size()}
 #endif
-{
+{   
+    // Preallocate buffers
     int N = frame.size();
     spectrum.resize(N / 2 + 1, std::complex<float>(0.0f, 0.0f));
     magnitudes.resize(N / 2 + 1, 0.0f);
-
-    // Precompute frequencies, does not depend on frame content
-    frequencies.resize(N / 2 + 1, 0.0f);
-    for (int k = 0; k <= N / 2; ++k) {
-        frequencies[k] = binToFrequency(k);
-    }
 }
 
+// Destructor. Needed to clean up FFT setup
 FourierTransformer::~FourierTransformer() {
 #ifdef __APPLE__
     if (fftSetup) {
@@ -37,15 +29,21 @@ FourierTransformer::~FourierTransformer() {
 #endif
 }
 
-void FourierTransformer::computeSpectrumAndMagnitudes() {
-#if defined(__APPLE__)
+// Computes magnitude spectrum of frame
+void FourierTransformer::computeMagnitudes() {
+    if (frame.empty()) {
+        magnitudes.clear();
+        return;
+    }
+
+    // Compute spectrum using FFT (complex valued)
+#ifdef __APPLE__
     accelerateFFT();
-#elif defined(__ANDROID__)
-    pocketFFT();
 #else
     primitiveFFT();
 #endif
 
+    // Write magnitudes to output buffer
     int N = frame.size();
     int K = N / 2 + 1;
     magnitudes.resize(K, 0.0f);
@@ -54,7 +52,7 @@ void FourierTransformer::computeSpectrumAndMagnitudes() {
     }
 }
 
-// Primitive FFT: Only compute first N/2+1 spectrum bins for real input
+// Primitive FFT (inefficient implementation)
 void FourierTransformer::primitiveFFT() {
     int N = frame.size();
     if (N == 0) return;
@@ -102,11 +100,8 @@ void FourierTransformer::primitiveFFT() {
     }
 }
 
-float FourierTransformer::binToFrequency(float bin) const {
-    return bin * sampleRate / frame.size();
-}
-
-#if defined(__APPLE__)
+// Apple's Accelerate framework FFT implementation
+#ifdef __APPLE__
 void FourierTransformer::accelerateFFT() {
     int N = frame.size();
     if (N == 0) return;
@@ -139,18 +134,4 @@ void FourierTransformer::accelerateFFT() {
     }
     spectrum[N / 2] = std::complex<float>(splitComplex.imagp[0], 0.0f);
 }
-
-#elif defined(__ANDROID__)
-void FourierTransformer::pocketFFT() {
-    int N = frame.size();
-    if (N == 0) return;
-
-    // adjust input shape (length) and output (spectrum) size to the current input (frame) size
-    // input of length N produces output of length N/2 + 1 for real-to-complex FFT
-    input_shape[0] = N;
-    spectrum.resize(N/2 + 1);
-
-    pocketfft::r2c<float>(input_shape, input_stride, output_stride, 0, pocketfft::FORWARD, frame.data(), spectrum.data(), 1.0f);
-}
-
 #endif

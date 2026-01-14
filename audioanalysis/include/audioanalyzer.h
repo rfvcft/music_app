@@ -12,15 +12,15 @@ struct AudioAnalysisResult {
 class AudioAnalyzer {
 public: 
     AudioAnalyzer(
-        const std::vector<float>& audioBuffer, // Input: audio buffer
-        AudioAnalysisResult& analysisResult // Output: analysis result
-    );
-
-    AudioAnalyzer(
         const float* audio_buffer, // Input: audio buffer (float array)
         int audio_buffer_length, // Input: corresponding length of audio buffer
         AudioAnalysisResult& analysisResult // Output: analysis result
     );
+
+    AudioAnalyzer(
+        const std::vector<float>& audio_buffer, // Input: audio buffer (float vector)
+        AudioAnalysisResult& analysisResult // Output: analysis result
+    ) : AudioAnalyzer(audio_buffer.data(), static_cast<int>(audio_buffer.size()), analysisResult) {}
 
     // Parameters
     int sampleRate = 44100; // samplerate of audio buffer, in Hz
@@ -28,8 +28,7 @@ public:
     void analyze();
 
 private:
-    const std::vector<float>* audioVector = nullptr; // Input: audio buffer (vector<float>)
-    const float* audioArray = nullptr; // Input: audio buffer (float array)
-    int64_t audioSize; // size of audio buffer
-    AudioAnalysisResult& result; // Output: analysis result
+    const float* audioBuffer; 
+    int audioBufferLength;
+    AudioAnalysisResult& result;
 };

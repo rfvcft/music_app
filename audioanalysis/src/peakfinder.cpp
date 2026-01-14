@@ -3,72 +3,94 @@
 #include <cmath>
 #include <algorithm>
 
+
 PeakFinder::PeakFinder(const std::vector<float>& magnitudeBuffer,
-                        const std::vector<float>& frequencyBuffer,
-                       std::vector<float>& peakMagBuffer,
-                       std::vector<float>& peakFreqBuffer)
-    : magnitudes(magnitudeBuffer), frequencies(frequencyBuffer), peakMagnitudes(peakMagBuffer), peakFrequencies(peakFreqBuffer) {
-        peakMagnitudes.reserve(maxPeaks);
-        peakFrequencies.reserve(maxPeaks);
-        minHeap.reserve(maxPeaks);
+                          std::vector<Peak>& peakBuffer)
+    : magnitudes(magnitudeBuffer), peaks(peakBuffer) {
+                peaks.reserve(maxPeaks);
       }
 
+// Find local peaks in magnitude spectrum. We only consider peaks within [minFrequency, maxFrequency].  
 void PeakFinder::computePeaks() {
-    peakMagnitudes.clear();
-    peakFrequencies.clear();
-    minHeap.clear();
+    peaks.clear();
+    if (magnitudes.empty()) return; 
 
     int K = magnitudes.size();
 
-    for (int i = 1; i < K - 1; ++i) {
+    // Convert frequency bounds to bin indices
+    float minBin = frequencyToBin(minFrequency);
+    float maxBin = frequencyToBin(maxFrequency);
+
+    int minIndex = std::max(roundToInt(minBin), 1);
+    int maxIndex = std::min(roundToInt(maxBin), K - 2);
+
+    // Search for local peaks
+    for (int i = minIndex; i <= maxIndex; ++i) {
         if (magnitudes[i] > magnitudes[i - 1] && magnitudes[i] > magnitudes[i + 1]) {
             // Local peak, apply parabolic interpolation
-            float interpolatedFreq, interpolatedMag;
-            parabolicInterpolate(frequencies[i - 1], magnitudes[i - 1], frequencies[i], magnitudes[i], frequencies[i + 1], magnitudes[i + 1], interpolatedFreq, interpolatedMag);
-            updateHeap(interpolatedMag, interpolatedFreq);
+            Peak peak = parabolicInterpolate(i - 1, magnitudes[i - 1], i, magnitudes[i], i + 1, magnitudes[i + 1]);
+            updateHeap(peak);
         } else if (magnitudes[i] == magnitudes[i + 1]) {
             int j = i + 1;
             while (j + 1 < K && magnitudes[j] == magnitudes[j + 1]) ++j;
             if (magnitudes[j] > magnitudes[j + 1]) {
                 // Plateau peak, take center frequency
-                float meanFreq = 0.5f * (frequencies[i] + frequencies[j]); // Here we assume that frequencies are linearly spaced!
-                updateHeap(magnitudes[i], meanFreq);
+                float meanBin = 0.5f * (i + j); 
+                float meanFreq = binToFrequency(meanBin);
+                Peak peak = Peak{magnitudes[i], meanFreq};
+                updateHeap(peak);
                 i = j;
             }
         }
     }
+}
 
-    // Sort peaks by magnitude descending
-    //std::sort(minHeap.begin(), minHeap.end());
+int PeakFinder::roundToInt(float x) const {
+    return static_cast<int>(std::floor(x + 0.5f));
+}
 
-    for (const auto& p : minHeap) {
-        peakMagnitudes.push_back(p.mag);
-        peakFrequencies.push_back(p.freq);
+// Convert bin index to frequency in Hz
+float PeakFinder::binToFrequency(float bin) const {
+    int N = (magnitudes.size() - 1) * 2; // since magnitudes size is N/2 + 1
+    return bin * static_cast<float>(sampleRate) / static_cast<float>(N);
+}
+
+// Convert frequency in Hz to bin index
+float PeakFinder::frequencyToBin(float frequency) const {
+    int N = (magnitudes.size() - 1) * 2; // since magnitudes size is N/2 + 1
+    return frequency * static_cast<float>(N) / static_cast<float>(sampleRate);
+}
+
+// Maintain a max-heap of peaks. We only keep the top maxPeaks peaks.
+void PeakFinder::updateHeap(Peak peak) {
+    if ((int)peaks.size() < maxPeaks) {
+        peaks.push_back(peak);
+        std::push_heap(peaks.begin(), peaks.end());
+    } else if (peak.mag > peaks.front().mag) {
+        std::pop_heap(peaks.begin(), peaks.end());
+        peaks.back() = peak;
+        std::push_heap(peaks.begin(), peaks.end());
     }
 }
 
-void PeakFinder::updateHeap(float mag, float freq) {
-    if ((int)minHeap.size() < maxPeaks) {
-        minHeap.push_back(Peak{mag, freq});
-        std::push_heap(minHeap.begin(), minHeap.end());
-    } else if (mag > minHeap.front().mag) {
-        std::pop_heap(minHeap.begin(), minHeap.end());
-        minHeap.back() = Peak{mag, freq};
-        std::push_heap(minHeap.begin(), minHeap.end());
-    }
-}
+// Parabolic interpolation: fit a parabola through (bin1, mag1), (bin2, mag2), (bin3, mag3)
+// and find the maximum (interpBin, interpMag). Then convert interpBin to frequency interpFreq. Returns Peak{interpMag, interpFreq}
+Peak PeakFinder::parabolicInterpolate(int bin1, float mag1, int bin2, float mag2, int bin3, float mag3) const {
+    float interpBin = bin2;
+    float interpMag = mag2;
 
-void PeakFinder::parabolicInterpolate(float x1, float y1, float x2, float y2, float x3, float y3, float& interpX, float& interpY) const {
-    // Parabolic interpolation: fit a parabola through (x1, y1), (x2, y2), (x3, y3)
-    // and find the vertex (maximum)
-    float denom = (x1 - x2) * (x1 - x3) * (x2 - x3);
+    float denom = (bin1 - bin2) * (bin1 - bin3) * (bin2 - bin3);
     if (denom == 0.0f) {
-        interpX = x2;
-        interpY = y2;
-        return;
+        float interpFreq = binToFrequency(interpBin);
+        return Peak{interpMag, interpFreq};
     }
-    float a = (x3 * (y2 - y1) + x2 * (y1 - y3) + x1 * (y3 - y2)) / denom;
-    float b = (x3*x3 * (y1 - y2) + x2*x2 * (y3 - y1) + x1*x1 * (y2 - y3)) / denom;
-    interpX = -b / (2.0f * a);
-    interpY = a * interpX * interpX + b * interpX + (y1 - a * x1 * x1 - b * x1);
+
+    float a = (bin3 * (mag2 - mag1) + bin2 * (mag1 - mag3) + bin1 * (mag3 - mag2)) / denom;
+    float b = (bin3*bin3 * (mag1 - mag2) + bin2*bin2 * (mag3 - mag1) + bin1*bin1 * (mag2 - mag3)) / denom;
+
+    interpBin = -b / (2.0f * a);
+    interpMag = a * interpBin * interpBin + b * interpBin + (mag1 - a * bin1 * bin1 - b * bin1);
+
+    float interpFreq = binToFrequency(interpBin);
+    return Peak{interpMag, interpFreq};
 }

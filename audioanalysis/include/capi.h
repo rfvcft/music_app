@@ -17,10 +17,6 @@ typedef struct {
 // Analyze a float* buffer and return results. Must be freed with delete_analysis_result.
 CAudioAnalysisResult* analyze_audio_buffer(const float* buffer, int buffer_length);
 
-#if defined(__ANDROID__) || defined(__linux__)
-CAudioAnalysisResult* analyze_audio_file(const char* file_path);
-#endif
-
 // Free an CAudioAnalysisResult and all its heap-allocated fields
 void delete_analysis_result(CAudioAnalysisResult* result);
 

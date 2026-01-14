@@ -1,48 +1,32 @@
-#include <vector>
-#include <cmath>
-#include <complex>
-#include <algorithm>
-#include <string>
-#include <iostream>
-#include <memory>
-
 #include "audioanalyzer.h"
-#include "framecutter.h"
-#include "fouriertransformer.h"
-#include "peakfinder.h"
 #include "chromaconverter.h"
-#include "keyfinder.h"
 #include "chromaenhancer.h"
+#include "fouriertransformer.h"
+#include "framecutter.h"
+#include "keyfinder.h"
+#include "peakfinder.h"
+#include "percussionremover.h"
 
-AudioAnalyzer::AudioAnalyzer(const std::vector<float>& audioBuffer, AudioAnalysisResult& analysisResult) 
-    : audioVector(&audioBuffer), audioArray(nullptr), audioSize(audioBuffer.size()), result(analysisResult) {}
 
 AudioAnalyzer::AudioAnalyzer(const float* audio_buffer, int audio_buffer_length, AudioAnalysisResult& analysisResult)
-    : audioVector(nullptr), audioArray(audio_buffer), audioSize(audio_buffer_length), result(analysisResult) {}
+    : audioBuffer(audio_buffer), audioBufferLength(audio_buffer_length), result(analysisResult) {}
 
 void AudioAnalyzer::analyze() {
     // Set up algorithms
     std::vector<float> frame;
-    std::unique_ptr<FrameCutter> frameCutter; // Needed for case distinction between vector and array input
-    if (audioVector) {
-        frameCutter = std::make_unique<FrameCutter>(*audioVector, frame);
-    } else if (audioArray) {
-        frameCutter = std::make_unique<FrameCutter>(audioArray, audioSize, frame);
-    } else {
-        throw std::runtime_error("No valid audio buffer provided.");
-    }
+    FrameCutter frameCutter(audioBuffer, audioBufferLength, frame);
+    
+    std::vector<float> magnitudes; 
+    FourierTransformer fourierTransformer(frame, magnitudes); 
 
-    std::vector<std::complex<float>> spectrum;
-    std::vector<float> magnitudes;
-    std::vector<float> frequencies; 
-    FourierTransformer fourierTransformer(frame, spectrum, magnitudes, frequencies);
+    std::vector<float> noPercussionMagnitudes;
+    PercussionRemover percussionRemover(magnitudes, noPercussionMagnitudes);
 
-    std::vector<float> peakMagnitudes;
-    std::vector<float> peakFrequencies;
-    PeakFinder peakFinder(magnitudes, frequencies, peakMagnitudes, peakFrequencies);
+    std::vector<Peak> peaks;
+    PeakFinder peakFinder(noPercussionMagnitudes, peaks);
 
     std::vector<float> chroma;
-    ChromaConverter chromaConverter(peakMagnitudes, peakFrequencies, chroma); 
+    ChromaConverter chromaConverter(peaks, chroma);
 
     std::vector<std::vector<float>> chromaMatrix; // time frames x chroma bins
     std::vector<std::vector<float>> enhancedChromaMatrix;
@@ -53,10 +37,17 @@ void AudioAnalyzer::analyze() {
 
     // Process audio buffer frame by frame
     while (true) {
-        frameCutter->computeNextFrame();
-        if (frame.empty()) break; // End of audio buffer signaled by empty frame
-        // Process the frame 
-        fourierTransformer.computeSpectrumAndMagnitudes();
+        frameCutter.computeNextFrame();
+        fourierTransformer.computeMagnitudes();
+        percussionRemover.computePercussionRemoval();
+
+        if (noPercussionMagnitudes.empty()) { // Two cases:
+            // 1. At start, percussionRemover has not seen enough frames yet.
+            // 2. At end, audio buffer has ended and percussionRemover has exhausted internal history.
+            if (frame.empty()) break; // Case 2
+            continue; // Case 1
+        }
+
         peakFinder.computePeaks();
         chromaConverter.computeChroma();
         chromaMatrix.push_back(chroma);
@@ -67,5 +58,5 @@ void AudioAnalyzer::analyze() {
 
     result.chromaMatrix = enhancedChromaMatrix; // time frames x chroma bins
     result.musicalKeys = musicalKeys;
-    result.duration = (float) audioSize / sampleRate;
+    result.duration = static_cast<float>(audioBufferLength) / static_cast<float>(sampleRate);
 }

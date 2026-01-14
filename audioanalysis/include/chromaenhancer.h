@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-// Enhance chroma by converting to log scale and dropping low amplitudes
+// Enhance chromagram by converting to log scale, dropping low amplitudes, applying median time filter and removing short excitations
 class ChromaEnhancer {
 public:
     ChromaEnhancer(
@@ -12,18 +12,20 @@ public:
     );
 
     // Parameters
-    float threshold = 0.85f; // Values below threshold are dropped (on log scale). 1.0 = drop everything, 0.0 = keep everything. 0.85 is a good value
-
+    float lowAmplitudeThreshold = 0.90f; // Relative threshold for dropping low amplitudes (0.0 = no drop, 1.0 = drop all). 0.90f is a good default
+    int medianFilterWindowSize = 7; // Window size for median filtering in time (must be odd). (0 to bypass this.) 7 is a good default
+    int minDuration = 10; // Minimum duration (in frames) for a chroma excitation to be kept (0 to bypass this.) 10 is a good default
+    bool normalize = false; // If true normalize each chroma vector using the max norm. Should be set to false (option only for testing)
+    
     void computeEnhancement();
 
 private:
     const std::vector<std::vector<float>>& chromaMatrix; 
     std::vector<std::vector<float>>& enhancedChromaMatrix; 
 
-    void copyMatrix();
     void convertToLogScale();
-    void normalizeMatrix();
-    void dropLowAmplitudes();
-    void dropShortTimeExcitations();
-    void normalizeChromaFrames();
+    void dropLowAmplitudes(float threshold);
+    void dropShortTimeExcitations(int minDurationFrames);
+    void medianTimeFilterSliding(int windowSize);
+    void normalizeChroma(bool normalize);
 };

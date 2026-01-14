@@ -7,6 +7,7 @@
 #include <map>
 
 
+
 // Load .raw file to audio buffer. 
 std::vector<float> loadRawFile(const std::string& filePath) {
     std::ifstream inFile(filePath, std::ios::binary | std::ios::ate);
@@ -29,13 +30,13 @@ std::vector<float> loadRawFile(const std::string& filePath) {
     return buffer;
 }
 
+// This is a simple example of using the C API to analyze an audio buffer
 int main(int argc, char** argv) {
     if (argc < 2) {
         std::cerr << "Usage: " << argv[0] << " audio.raw \n";
         return 1;
     }
 
-#if defined(__APPLE__)
     // Load audio buffer to memory
     std::vector<float> audio = loadRawFile(argv[1]);
 
@@ -44,15 +45,12 @@ int main(int argc, char** argv) {
     int audio_buffer_length = audio.size();
 
     // Analyze
-    CAudioAnalysisResult* resultPtr = analyze_audio_buffer(audio_buffer, audio_buffer_length);
-#elif defined(__ANDROID__) || defined(__linux__)
-    CAudioAnalysisResult* resultPtr = analyze_audio_file(argv[1]);
-#endif
+    CAudioAnalysisResult* resultPtr = analyze_audio_buffer(audio_buffer, audio_buffer_length); 
 
     // Log results
     std::cout << "Detected Key: " << (resultPtr->key[0] ? resultPtr->key : "Unknown") << std::endl;
     std::cout << "Duration: " << resultPtr->duration << " seconds" << std::endl;
-    std::cout << "Chroma Matrix: " << resultPtr->chroma_n_frames << " frames, " << resultPtr->chroma_n_bins << " bins" << std::endl;
+    std::cout << "Chromagram size: " << resultPtr->chroma_n_frames << " frames, " << resultPtr->chroma_n_bins << " bins" << std::endl;
     
     // Clean up 
     delete_analysis_result(resultPtr);

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 
+// Finds the musical key from a chroma matrix. Outputs a sorted list of candidate keys (best match first).
 class KeyFinder {
 public:
     KeyFinder(
