@@ -127,8 +127,8 @@ class AudioProcessingFfi {
 	final AudioAnalysisFfi? _analyzer;
 
 	// for Android
-	late final _AnalyzeAudioFile? _analyzeAudioFile;
-	late final _DeleteAnalysisResultDart? _deleteAnalysisResult;
+	_AnalyzeAudioFile? _analyzeAudioFile;
+	_DeleteAnalysisResultDart? _deleteAnalysisResult;
 
 	factory AudioProcessingFfi({AudioLoaderFfi? audioLoader, AudioAnalysisFfi? analyzer}) {
 		if (Platform.isIOS) {
@@ -211,10 +211,14 @@ class AudioProcessingFfi {
 			);
 		}
 
-    // Clean up 
-		_deleteAnalysisResult!(resultPtr);
-		if (bufferPtr != null) {
-		  _audioLoader?.freeAudioBuffer(bufferPtr);
+		// Clean up
+		if (Platform.isAndroid) {
+			_deleteAnalysisResult?.call(resultPtr);
+		} else {
+			_analyzer?.freeResult(resultPtr);
+			if (bufferPtr != null) {
+				_audioLoader?.freeAudioBuffer(bufferPtr);
+			}
 		}
 
 		return {
