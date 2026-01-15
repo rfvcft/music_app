@@ -19,10 +19,9 @@
 		F360C7FB2E5DE8BD00D8B380 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F360C7FA2E5DE8BD00D8B380 /* Accelerate.framework */; };
 		F365DF112E8F08DD00F52B52 /* libaudioanalysis.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F365DF102E8F08DC00F52B52 /* libaudioanalysis.a */; };
 		F37354F92E62424600B96523 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F37354F82E62424600B96523 /* AVFoundation.framework */; };
-		F37354FB2E62430400B96523 /* AudioBufferLoader.mm in Sources */ = {isa = PBXBuildFile; fileRef = F37354FA2E62430400B96523 /* AudioBufferLoader.mm */; };
 		F373550B2E63001C00B96523 /* AudioBufferLoader.mm in Sources */ = {isa = PBXBuildFile; fileRef = F37354FA2E62430400B96523 /* AudioBufferLoader.mm */; };
 		F373550E2E6301E400B96523 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F373550D2E6301E400B96523 /* AVFoundation.framework */; };
-		F373550F2E63093C00B96523 /* libAudioBufferLoader.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F37355002E62FD4900B96523 /* libAudioBufferLoader.a */; };
+		F39DDD7A2F19A30D00B1233F /* libAudioBufferLoader.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F37355002E62FD4900B96523 /* libAudioBufferLoader.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -94,7 +93,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F373550F2E63093C00B96523 /* libAudioBufferLoader.a in Frameworks */,
+				F39DDD7A2F19A30D00B1233F /* libAudioBufferLoader.a in Frameworks */,
 				F365DF112E8F08DD00F52B52 /* libaudioanalysis.a in Frameworks */,
 				F37354F92E62424600B96523 /* AVFoundation.framework in Frameworks */,
 				F360C7FB2E5DE8BD00D8B380 /* Accelerate.framework in Frameworks */,
@@ -413,9 +412,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -437,7 +440,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F37354FB2E62430400B96523 /* AudioBufferLoader.mm in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);
@@ -542,6 +544,14 @@
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = GF44G3C9DH;
 				ENABLE_BITCODE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/audioplayers_darwin/audioplayers_darwin.framework/Headers\"",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/path_provider_foundation/path_provider_foundation.framework/Headers\"",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/record_ios/record_ios.framework/Headers\"",
+					"$(SRCROOT)/Runner/AudioLoader/include",
+					"$(SRCROOT)/../audioanalysis/include",
+				);
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -561,6 +571,8 @@
 					"\"record_ios\"",
 					"-Wl,-u,_analyze_audio_buffer",
 					"-Wl,-u,_delete_analysis_result",
+					"-Wl,-u,_loadAudioBufferFromM4A",
+					"-Wl,-u,_freeAudioBuffer",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.4821904021934;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -767,6 +779,8 @@
 					"\"record_ios\"",
 					"-Wl,-u,_analyze_audio_buffer",
 					"-Wl,-u,_delete_analysis_result",
+					"-Wl,-u,_loadAudioBufferFromM4A",
+					"-Wl,-u,_freeAudioBuffer",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.4821904021934;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -786,6 +800,14 @@
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = GF44G3C9DH;
 				ENABLE_BITCODE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/audioplayers_darwin/audioplayers_darwin.framework/Headers\"",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/path_provider_foundation/path_provider_foundation.framework/Headers\"",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/record_ios/record_ios.framework/Headers\"",
+					"$(SRCROOT)/Runner/AudioLoader/include",
+					"$(SRCROOT)/../audioanalysis/include",
+				);
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -805,6 +827,8 @@
 					"\"record_ios\"",
 					"-Wl,-u,_analyze_audio_buffer",
 					"-Wl,-u,_delete_analysis_result",
+					"-Wl,-u,_loadAudioBufferFromM4A",
+					"-Wl,-u,_freeAudioBuffer",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.4821904021934;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -853,6 +877,7 @@
 				DEVELOPMENT_TEAM = GF44G3C9DH;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
+				"HEADER_SEARCH_PATHS[arch=*]" = "$(PROJECT_DIR)/Runner/AudioLoader/include";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_FAST_MATH = YES;
@@ -876,6 +901,7 @@
 				DEVELOPMENT_TEAM = GF44G3C9DH;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
+				"HEADER_SEARCH_PATHS[arch=*]" = "$(PROJECT_DIR)/Runner/AudioLoader/include";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_FAST_MATH = YES;

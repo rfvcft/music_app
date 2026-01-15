@@ -63,6 +63,7 @@ float* loadAudioBufferFromM4A(const char* filePath, int* outLength) {
 
 // Free the buffer allocated by loadAudioBufferFromM4A
 void freeAudioBuffer(float* buffer) {
+	NSLog(@"freeAudioBuffer called for address: %p", buffer);
 	free(buffer);
 }
 }
