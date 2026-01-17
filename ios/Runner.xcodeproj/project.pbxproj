@@ -571,7 +571,7 @@
 					"\"record_ios\"",
 					"-Wl,-u,_analyze_audio_buffer",
 					"-Wl,-u,_delete_analysis_result",
-					"-Wl,-u,_loadAudioBufferFromM4A",
+					"-Wl,-u,_loadAudioBufferFromFile",
 					"-Wl,-u,_freeAudioBuffer",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.4821904021934;
@@ -779,7 +779,7 @@
 					"\"record_ios\"",
 					"-Wl,-u,_analyze_audio_buffer",
 					"-Wl,-u,_delete_analysis_result",
-					"-Wl,-u,_loadAudioBufferFromM4A",
+					"-Wl,-u,_loadAudioBufferFromFile",
 					"-Wl,-u,_freeAudioBuffer",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.4821904021934;
@@ -827,7 +827,7 @@
 					"\"record_ios\"",
 					"-Wl,-u,_analyze_audio_buffer",
 					"-Wl,-u,_delete_analysis_result",
-					"-Wl,-u,_loadAudioBufferFromM4A",
+					"-Wl,-u,_loadAudioBufferFromFile",
 					"-Wl,-u,_freeAudioBuffer",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.4821904021934;

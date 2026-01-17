@@ -15,11 +15,12 @@ final class CAudioAnalysisResult extends ffi.Struct {
 	external int chroma_n_bins;
 }
 
-// Function signatures for loading audio 
-typedef _LoadAudioBufferFromM4A = ffi.Pointer<ffi.Float> Function(
-		ffi.Pointer<ffi.Char> filePath, ffi.Pointer<ffi.Int32> outLength);
-typedef _LoadAudioBufferFromM4ADart = ffi.Pointer<ffi.Float> Function(
-		ffi.Pointer<ffi.Char> filePath, ffi.Pointer<ffi.Int32> outLength);
+
+// Function signatures for loading audio (generic file)
+typedef _LoadAudioBufferFromFile = ffi.Pointer<ffi.Float> Function(
+	ffi.Pointer<ffi.Char> filePath, ffi.Pointer<ffi.Int32> outLength);
+typedef _LoadAudioBufferFromFileDart = ffi.Pointer<ffi.Float> Function(
+	ffi.Pointer<ffi.Char> filePath, ffi.Pointer<ffi.Int32> outLength);
 
 typedef _FreeAudioBuffer = ffi.Void Function(ffi.Pointer<ffi.Float> buffer);
 typedef _FreeAudioBufferDart = void Function(ffi.Pointer<ffi.Float> buffer);
@@ -40,34 +41,34 @@ typedef _DeleteAnalysisResultDart = void Function(
 		ffi.Pointer<CAudioAnalysisResult> result);
 
 
-/// Loads audio files to audio buffer
+/// Loads audio files to audio buffer (on iOS, .wav, .m4a, .mp3 are supported)
 class AudioLoaderFfi {
 	late final ffi.DynamicLibrary _audioLoaderLib = _loadLibrary();
-	late final _LoadAudioBufferFromM4ADart loadAudioBufferFromM4A = _audioLoaderLib
-			.lookupFunction<_LoadAudioBufferFromM4A, _LoadAudioBufferFromM4ADart>('loadAudioBufferFromM4A');
+	late final _LoadAudioBufferFromFileDart loadAudioBufferFromFile = _audioLoaderLib
+			.lookupFunction<_LoadAudioBufferFromFile, _LoadAudioBufferFromFileDart>('loadAudioBufferFromFile');
 	late final _FreeAudioBufferDart freeAudioBuffer = _audioLoaderLib
 			.lookupFunction<_FreeAudioBuffer, _FreeAudioBufferDart>('freeAudioBuffer');
 
 	AudioLoaderFfi();
 
-		static ffi.DynamicLibrary _loadLibrary() {
-			if (Platform.isIOS) {
-				// On iOS, use process() to access symbols from the main app binary
-				return ffi.DynamicLibrary.process();
-			} else if (Platform.isAndroid) {
-				// Android not implemented yet
-				throw UnimplementedError('AudioLoaderFfi is not implemented for Android');
-			} else {
-				throw UnsupportedError('AudioLoaderFfi only supports iOS and Android');
-			}
+	static ffi.DynamicLibrary _loadLibrary() {
+		if (Platform.isIOS) {
+			// On iOS, use process() to access symbols from the main app binary
+			return ffi.DynamicLibrary.process();
+		} else if (Platform.isAndroid) {
+			// Android not implemented yet
+			throw UnimplementedError('AudioLoaderFfi is not implemented for Android');
+		} else {
+			throw UnsupportedError('AudioLoaderFfi only supports iOS and Android');
 		}
+	}
 
-	/// Loads an .m4a file and returns a pointer to the buffer and its length.
+	/// Loads an audio file and returns a pointer to the buffer and its length.
 	Map<String, dynamic> loadAudio(String filePath) {
 		final filePathPtr = filePath.toNativeUtf8().cast<ffi.Char>();
 		final outLengthPtr = calloc<ffi.Int32>();
 		try {
-			final bufferPtr = loadAudioBufferFromM4A(filePathPtr, outLengthPtr);
+			final bufferPtr = loadAudioBufferFromFile(filePathPtr, outLengthPtr);
 			final length = outLengthPtr.value;
 			if (bufferPtr == ffi.Pointer<ffi.Float>.fromAddress(0) || length == 0) {
 				throw Exception('Failed to load audio buffer');
@@ -160,7 +161,7 @@ class AudioProcessingFfi {
 				.lookupFunction<_DeleteAnalysisResult, _DeleteAnalysisResultDart>("delete_analysis_result");
 	}
 
-	/// Loads an .m4a file and analyzes it. Returns a Dart map with results.
+	/// Loads an audio file and analyzes it. Returns a Dart map with results.
 	Map<String, dynamic> loadAndAnalyze(String filePath) {
 		ffi.Pointer<CAudioAnalysisResult>? resultPtr;
 		ffi.Pointer<ffi.Float>? bufferPtr;

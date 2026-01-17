@@ -5,10 +5,10 @@
 extern "C" {
 #endif
 
-// Loads an audio file at filePath (.m4a), converts to mono, 44.1kHz, float32, and returns a malloc'd buffer. Length is set in outLength.
-float* loadAudioBufferFromM4A(const char* filePath, int* outLength);
+// Loads audio file at filePath (.wav, .m4a, .mp3), converts to mono, 44.1kHz, float32, and returns a malloc'd buffer. Length is set in outLength.
+float* loadAudioBufferFromFile(const char* filePath, int* outLength);
 
-// Frees the buffer allocated by loadAudioBufferFromM4A
+// Frees the buffer allocated by loadAudioBufferFromFile
 void freeAudioBuffer(float* buffer);
 
 #ifdef __cplusplus

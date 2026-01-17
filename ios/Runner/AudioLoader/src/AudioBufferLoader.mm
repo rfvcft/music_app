@@ -4,8 +4,8 @@
 #include <stdlib.h>
 
 extern "C" {
-// Loads an audio file at filePath, converts to mono, 44.1kHz, float32, and returns a malloc'd buffer. Length is set in outLength.
-float* loadAudioBufferFromM4A(const char* filePath, int* outLength) {
+// Loads an audio file at filePath (.wav, .m4a, .mp3), converts to mono, 44.1kHz, float32, and returns a malloc'd buffer. Length is set in outLength.
+float* loadAudioBufferFromFile(const char* filePath, int* outLength) {
 	@autoreleasepool {
 		NSString* nsPath = [NSString stringWithUTF8String:filePath];
 		NSURL* url = [NSURL fileURLWithPath:nsPath];
