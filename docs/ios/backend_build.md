@@ -73,7 +73,7 @@ Inside `audioanalysis/` run the following commands:
 
 ```sh
 mkdir -p build && cd build
-cmake -DPLATFORM=ios ..
+cmake -DPLATFORM=ios -DCMAKE_BUILD_TYPE=Release ..
 make
 ```
 This will compile the library to `audioanalysis/build/ios/libaudioanalysis.a`.

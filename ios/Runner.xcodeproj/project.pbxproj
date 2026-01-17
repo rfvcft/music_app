@@ -16,8 +16,8 @@
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		B5E3D3B2C4242E6AA0C4A705 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F01F8CDB8765653E3396CE9 /* Pods_RunnerTests.framework */; };
+		F354858F2F1B9E6F0046C618 /* libaudioanalysis.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F354858E2F1B9E6F0046C618 /* libaudioanalysis.a */; };
 		F360C7FB2E5DE8BD00D8B380 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F360C7FA2E5DE8BD00D8B380 /* Accelerate.framework */; };
-		F365DF112E8F08DD00F52B52 /* libaudioanalysis.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F365DF102E8F08DC00F52B52 /* libaudioanalysis.a */; };
 		F37354F92E62424600B96523 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F37354F82E62424600B96523 /* AVFoundation.framework */; };
 		F373550B2E63001C00B96523 /* AudioBufferLoader.mm in Sources */ = {isa = PBXBuildFile; fileRef = F37354FA2E62430400B96523 /* AudioBufferLoader.mm */; };
 		F373550E2E6301E400B96523 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F373550D2E6301E400B96523 /* AVFoundation.framework */; };
@@ -79,8 +79,8 @@
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E3D85E9752D6CBF2068BCA0F /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
 		E89286C83033393C70ED95E5 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
+		F354858E2F1B9E6F0046C618 /* libaudioanalysis.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libaudioanalysis.a; path = ../audioanalysis/build/ios/libaudioanalysis.a; sourceTree = SOURCE_ROOT; };
 		F360C7FA2E5DE8BD00D8B380 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
-		F365DF102E8F08DC00F52B52 /* libaudioanalysis.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libaudioanalysis.a; path = ../audioanalysis/build/ios/libaudioanalysis.a; sourceTree = SOURCE_ROOT; };
 		F37354F82E62424600B96523 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		F37354FA2E62430400B96523 /* AudioBufferLoader.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = AudioBufferLoader.mm; path = AudioLoader/src/AudioBufferLoader.mm; sourceTree = "<group>"; };
 		F37355002E62FD4900B96523 /* libAudioBufferLoader.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libAudioBufferLoader.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -93,8 +93,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F354858F2F1B9E6F0046C618 /* libaudioanalysis.a in Frameworks */,
 				F39DDD7A2F19A30D00B1233F /* libAudioBufferLoader.a in Frameworks */,
-				F365DF112E8F08DD00F52B52 /* libaudioanalysis.a in Frameworks */,
 				F37354F92E62424600B96523 /* AVFoundation.framework in Frameworks */,
 				F360C7FB2E5DE8BD00D8B380 /* Accelerate.framework in Frameworks */,
 				6D820169179004458610753A /* Pods_Runner.framework in Frameworks */,
@@ -164,7 +164,7 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
-				F365DF102E8F08DC00F52B52 /* libaudioanalysis.a */,
+				F354858E2F1B9E6F0046C618 /* libaudioanalysis.a */,
 				F37354FA2E62430400B96523 /* AudioBufferLoader.mm */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
