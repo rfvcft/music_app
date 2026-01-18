@@ -1,3 +1,4 @@
+#include "audioloader.h"
 #include "capi.h"
 
 #include <iostream>
@@ -5,7 +6,6 @@
 #include <fstream>
 #include <sstream>
 #include <map>
-
 
 
 // Load .raw file to audio buffer. 
@@ -33,16 +33,20 @@ std::vector<float> loadRawFile(const std::string& filePath) {
 // This is a simple example of using the C API to analyze an audio buffer
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " audio.raw \n";
+        std::cerr << "Usage: " << argv[0] << " audio.wav \n";
         return 1;
     }
 
     // Load audio buffer to memory
-    std::vector<float> audio = loadRawFile(argv[1]);
+    //std::vector<float> audio = loadRawFile(argv[1]);  // Uncomment to load .raw files
+    std::vector<float> audio;
+    AudioLoader audioLoader(argv[1], audio);
+    audioLoader.load();
 
     // Convert to float* for C API
     float* audio_buffer = audio.data();
     int audio_buffer_length = audio.size();
+    std::cout << "Loaded audio buffer with " << audio_buffer_length << " samples." << std::endl;
 
     // Analyze
     CAudioAnalysisResult* resultPtr = analyze_audio_buffer(audio_buffer, audio_buffer_length); 

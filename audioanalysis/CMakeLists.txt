@@ -4,7 +4,7 @@ project(audioanalysis)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Allow user to specify platform: macos (default), ios, android
+# Allow user to specify platform: macos (default), ios, android, linux
 if(NOT DEFINED PLATFORM)
     set(PLATFORM "macos")
 endif()
@@ -13,6 +13,7 @@ include_directories(
     include
 )
 
+# Source files for audio analysis library (excluding main.cpp and audioloader.cpp)
 set(AUDIOANALYSIS_SOURCES
     src/audioanalyzer.cpp
     src/capi.cpp
@@ -25,13 +26,20 @@ set(AUDIOANALYSIS_SOURCES
     src/percussionremover.cpp
 )
 
-
 if (PLATFORM STREQUAL "macos")
     # Compile an executable for macOS
-    add_executable(analyze ${AUDIOANALYSIS_SOURCES} src/main.cpp)
+    add_executable(analyze ${AUDIOANALYSIS_SOURCES} src/audioloader.cpp src/main.cpp)
 
     # Link with Accelerate framework for fast FFT implementation
     target_link_libraries(analyze "-framework Accelerate")
+
+elseif (PLATFORM STREQUAL "linux")
+    # Compile main.cpp as executable for Linux by
+    #   1. creating a build directory and navigating into it
+    #   2. running cmake -DPLATFORM=linux /path/to/audioanalysis
+    #   3. running cmake --build .
+    #   4. running cmake --install .
+    add_executable(analyze ${AUDIOANALYSIS_SOURCES} src/audioloader.cpp src/main.cpp)
 
 elseif(PLATFORM STREQUAL "ios")
     # Get the path to the iOS SDK
@@ -55,10 +63,17 @@ elseif(PLATFORM STREQUAL "ios")
     )
 
 elseif(PLATFORM STREQUAL "android")
-    message(WARNING "Android build is not implemented yet.")
+    set(BUILD_SHARED_LIBS ON)
+    if (NOT DEFINED ANDROID_PLATFORM)
+        set(ANDROID_PLATFORM "android-21")
+    endif()
+    if (NOT DEFINED ANDROID_NATIVE_API_LEVEL)
+        set(ANDROID_NATIVE_API_LEVEL 21)
+    endif()
 
+    add_library(audioanalysis SHARED ${AUDIOANALYSIS_SOURCES} src/audioloader.cpp)
 else() 
-    message(FATAL_ERROR "Unknown platform: ${PLATFORM}. Supported platforms are: macos, ios, android.")
+    message(FATAL_ERROR "Unknown platform: ${PLATFORM}. Supported platforms are: macos, ios, linux, android.")
     
 endif()
 
