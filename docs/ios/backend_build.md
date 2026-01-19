@@ -51,7 +51,7 @@ ios/Runner/AudioLoader/
 ### 4. Link the Library in Your App
 - In your main app, i.e. `Runner` target, make sure that the lib is listed in **Build phases > Link Binaries with Libraries**. 
 - Add the directory where `AudioBufferLoader.h`is in to **Build Settings > Header Search Paths**. DON'T add `AudioBufferLoader.mm` to compile sources. 
-- Add force load flags in **Build Settings > Other Linker flags**: `-Wl,-u,_loadAudioBufferFromM4A`, `-Wl,-u,_freeAudioBuffer`
+- Add force load flags in **Build Settings > Other Linker flags**: `-Wl,-u,_loadAudioBufferFromFile`, `-Wl,-u,_freeAudioBuffer`
 - Having set up everything, `libAudioBufferLoader.a` is compiled automatically when compiling the main app. This means the previous step is optional.
 
 ## Custom library **audioanalysis**
