@@ -86,6 +86,16 @@ This will compile the library to `audioanalysis/build/ios/libaudioanalysis.a`.
 
 
 
-## Using Dart FFI to Access the C-API
+## Compiling the app
 
-Once the buffer loader and **audioanalysis** is compiled and linked to your app, you can use Dart's Foreign Function Interface (FFI) to access them.
+Once **audioanalysis** is compiled run 
+
+```sh
+flutter clean && flutter pub get
+flutter run --release -d <physical-device-id>
+```
+
+This will automatically compile `AudioBufferLoader` as well as the app and launch it. 
+
+- Make sure that in `ios/Runner.xcworkspace` the scheme for Runner Target is set to `Release`. (`audioanalysis` and `AudioBufferLoader` do not necessarily have to be set to `Release`). 
+- Since `iOS 26` Flutter's debug mode does not work anymore on physical devices (Simulator works though, but in this branch it is not set up properly, yet).
