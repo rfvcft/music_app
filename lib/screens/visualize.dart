@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-import 'package:audioplayers/audioplayers.dart' as ap; // Audio player package
+import 'package:just_audio/just_audio.dart' as ja;
 
 import 'package:music_app/core/app_settings.dart'; // App settings
 import 'package:music_app/screens/settings.dart'; // Settings page
@@ -46,7 +46,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   late bool _resumePlayingLater; // Track if playback should resume after scrolling
   bool isFlinging = false; // Track whether a fling animation is in progress
 
-  final ap.AudioPlayer _player = ap.AudioPlayer()..setReleaseMode(ap.ReleaseMode.stop); // Audio player
+  ja.AudioPlayer _player = ja.AudioPlayer(); // Audio player for playback
   double _duration = 0.0; // Duration of audio file in seconds
   bool isPlaying = false; // Track whether audio/visuals are playing
 
@@ -60,6 +60,8 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
+    print('INITIALIZING VISUALIZER FOR ${widget.audioName}');
+
     // Initialize musical key
     _musicalKey = widget.musicalKey;
     var parsed = conv.parseMusicalKey(_musicalKey);
@@ -69,16 +71,27 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     // Initialize fling ticker
     _flingTicker = Ticker(_flingUpdate);
 
-    // Listen for duration changes and set _duration
-    _player.onDurationChanged.listen((Duration duration) {
+    // Use AudioSource.asset for asset paths, AudioSource.uri otherwise
+    if (widget.audioUrl.startsWith('assets/')) {
+      _player.setAudioSource(ja.AudioSource.asset(widget.audioUrl));
+    } else {
+      _player.setAudioSource(ja.AudioSource.uri(Uri.parse(widget.audioUrl)));
+    }
+
+    // Get duration from audio player stream (should be fixed since we are reading an audio file)
+    _player.durationStream.listen((duration) {
       if (!mounted) return;
-      setState(() {
-        _duration = duration.inMilliseconds / 1000.0; // store duration in seconds
-      });
+      if (duration != null) {
+        setState(() {
+          _duration = duration.inMilliseconds / 1000.0;
+        });
+        print('AUDIO DURATION: $_duration seconds');
+        print('AUDIO DURATION COMPUTED BY C++ LIBRARY: ${widget.duration} seconds');
+      }
     });
 
-    // Synchronize currentTime with audio player position and redraw UI if player is active
-    _player.onPositionChanged.listen((Duration position) {
+    // Sync currentTime with audio player position stream (if player is playing)
+    _player.positionStream.listen((position) {
       if (!mounted) return;
       if (isPlaying) {
         setState(() {
@@ -86,22 +99,18 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
         });
       }
     });
-
-    // Redraw UI on player state changes
-    _player.onPlayerStateChanged.listen((state) { 
+    
+    // Listen for player state changes and completion
+    _player.playerStateStream.listen((state) {
       if (!mounted) return;
       setState(() {});
-    });
-
-    // When audio completes, update playing state, set currentTime to duration and redraw UI
-        _player.onPlayerComplete.listen((_) {
-          if (!mounted) return;
-          setState(() {
-            isPlaying = false;
-            currentTime = _duration; 
-          });
+      if (state.processingState == ja.ProcessingState.completed) {
+        setState(() {
+          isPlaying = false;
+          currentTime = _duration;
         });
-    _player.setSource(_resolveSource(widget.audioUrl)); // Set audio source
+      }
+    });
   }
 
   // Clean up resources
@@ -115,10 +124,12 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   // Play audio and start visualization
   Future<void> play() async {
     await _player.seek(Duration(milliseconds: (currentTime * 1000).toInt()));
-    await _player.resume();
     setState(() {
       isPlaying = true;
+      // Immediately update visuals to reflect currentTime on play
+      currentTime = _player.position.inMilliseconds / 1000.0;
     });
+    await _player.play();
   }
 
   // Pause audio and visualization
@@ -135,14 +146,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     pause();
   }
 
-  // Resolve audio source based on path type (asset, URL, or device file)
-  ap.Source _resolveSource(String path) {
-    if (path.startsWith('assets/')) {
-      return ap.AssetSource(path.replaceFirst('assets/', ''));
-    } else {
-      return kIsWeb ? ap.UrlSource(path) : ap.DeviceFileSource(path);
-    }
-  }
+
 
   // Start fling animation
   void _startFling(double flingVelocity) {
