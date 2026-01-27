@@ -46,7 +46,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   late bool _resumePlayingLater; // Track if playback should resume after scrolling
   bool isFlinging = false; // Track whether a fling animation is in progress
 
-  ja.AudioPlayer _player = ja.AudioPlayer(); // Audio player for playback
+  final ja.AudioPlayer _player = ja.AudioPlayer(); // Audio player for playback
   double _duration = 0.0; // Duration of audio file in seconds
   bool isPlaying = false; // Track whether audio/visuals are playing
 
@@ -82,9 +82,12 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     _player.durationStream.listen((duration) {
       if (!mounted) return;
       if (duration != null) {
+        double newDuration = duration.inMilliseconds / 1000.0;
+        if (newDuration == _duration) return;
         setState(() {
-          _duration = duration.inMilliseconds / 1000.0;
+          _duration = newDuration;
         });
+        print('setState: durationStream listener');
         print('AUDIO DURATION: $_duration seconds');
         print('AUDIO DURATION COMPUTED BY C++ LIBRARY: ${widget.duration} seconds');
       }
@@ -94,21 +97,29 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     _player.positionStream.listen((position) {
       if (!mounted) return;
       if (isPlaying) {
-        setState(() {
-          currentTime = position.inMilliseconds / 1000.0;
-        });
+        double newTime = position.inMilliseconds / 1000.0;
+        if (newTime >= currentTime) {
+          setState(() {
+            currentTime = newTime;
+          });
+        } else { // Safeguard against non-monotone increasing position stream values (might happen when audio player is buffering)
+          print('POSITION STREAM NOT MONOTONE INCREASING: newTime=$newTime, currentTime=$currentTime');
+        }
+        print('setState: positionStream listener');
+        print('CURRENT TIME UPDATED FROM AUDIO PLAYER POSITION: $currentTime seconds');
       }
     });
     
-    // Listen for player state changes and completion
+    // Listen for completion
     _player.playerStateStream.listen((state) {
-      if (!mounted) return;
-      setState(() {});
-      if (state.processingState == ja.ProcessingState.completed) {
+      print('PLAYER STATE CHANGED: ${state.processingState}, playing: ${state.playing}');
+      if (state.processingState == ja.ProcessingState.completed && state.playing == true) { // This conditional should capture when audio playback completes naturally (not by a fling)
+        if (!mounted) return;
         setState(() {
           isPlaying = false;
           currentTime = _duration;
         });
+        print('setState: playerStateStream (completed)');
       }
     });
   }
@@ -123,30 +134,50 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
   // Play audio and start visualization
   Future<void> play() async {
+    // Sync audio player position with currentTime
     await _player.seek(Duration(milliseconds: (currentTime * 1000).toInt()));
+
+    // Redraw UI 
+    if (!mounted) return;
     setState(() {
       isPlaying = true;
-      // Immediately update visuals to reflect currentTime on play
       currentTime = _player.position.inMilliseconds / 1000.0;
     });
+    print('setState: play()');
+
+    // Start playback (this updates currentTime based on position stream)
     await _player.play();
   }
 
   // Pause audio and visualization
   void pause() {
+    // Pause audio playback (this stops currentTime updates from position stream)
     _player.pause();
+
+    // Redraw UI
+    if (!mounted) return;
     setState(() {
       isPlaying = false;
     });
+    print('setState: pause()');
   }
 
-  // Resets playback to the start and pauses audio
+  // Resets audio and visuals to the start 
   void reset() {
-    currentTime = 0.0;
-    pause();
+    print('RESETTING PLAYBACK');
+    // Reset audio playback
+    _player.pause();
+    _player.seek(Duration.zero);
+
+    // Redraw UI with reset currentTime
+    if (!mounted) return;
+    setState(() {
+      isPlaying = false;
+      currentTime = 0.0;
+    });
+    print('setState: reset()');
+    print('CURRENT TIME AFTER RESET: $currentTime');
   }
-
-
 
   // Start fling animation
   void _startFling(double flingVelocity) {
@@ -199,7 +230,8 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
         _endFling();
         return;
       } 
-    }); 
+    });
+    print('setState: _flingUpdate()');
   }
 
   // Show dialog to edit musical key
@@ -290,6 +322,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
         _tonicIndex = cnst.pitchClassNameToIndex[selectedTonic] ?? -1;
         _scale = selectedScale;
       });
+      print('setState: _editMusicalKey dialog result');
     }
   }
 
@@ -322,6 +355,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
               );
               // After returning, call setState to rebuild with new settings
               setState(() {});
+              print('setState: after returning from SettingsPage');
             },
           ),
         ],
@@ -809,6 +843,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                       currentTime += details.primaryDelta! / oneSecondPx;
                       currentTime = currentTime.clamp(0.0, _duration);
                     });
+                    print('setState: onVerticalDragUpdate');
                   }
                 : null,
             onVerticalDragEnd: isPortrait
@@ -844,6 +879,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                       currentTime -= details.primaryDelta! / oneSecondPx;
                       currentTime = currentTime.clamp(0.0, _duration);
                     });
+                    print('setState: onHorizontalDragUpdate');
                   }
                 : null,
             onHorizontalDragEnd: !isPortrait
@@ -940,6 +976,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           setState(() {
             currentTime = value;
           });
+          print('setState: _playbackSlider onChanged');
         },
         onChangeStart: (value) {
           // If fling in progress, abort it
