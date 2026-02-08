@@ -40,11 +40,14 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   
   double currentTime = 0.0; // Current time in seconds. Visuals are based on this variable.
 
+  late double _initialTime; // Auxilliary variable used for starting tickers
+
   late double _flingVelocity; // Velocity of fling in seconds per second
   late Ticker _flingTicker; // Ticker for fling animation
-  late double _initialTime; // Auxilliary variable used for starting fling ticker
   late bool _resumePlayingLater; // Track if playback should resume after scrolling
   bool isFlinging = false; // Track whether a fling animation is in progress
+
+  late Ticker _timeTicker; // Ticker for updating currentTime while audio playback
 
   final ja.AudioPlayer _player = ja.AudioPlayer(); // Audio player for playback
   double _duration = 0.0; // Duration of audio file in seconds
@@ -68,8 +71,11 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     _tonicIndex = parsed.$1;
     _scale = parsed.$2;
 
-    // Initialize fling ticker
+    // Initialize fling ticker for updating currentTime during fling animations
     _flingTicker = Ticker(_flingUpdate);
+
+    // Initialize time ticker for updating currentTime during playback
+    _timeTicker = Ticker(_timeUpdate);
 
     // Use AudioSource.asset for asset paths, AudioSource.uri otherwise
     if (widget.audioUrl.startsWith('assets/')) {
@@ -93,11 +99,13 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
       }
     });
 
+    /*
     // Sync currentTime with audio player position stream (if player is playing)
     _player.positionStream.listen((position) {
       if (!mounted) return;
       if (isPlaying) {
         double newTime = position.inMilliseconds / 1000.0;
+        print('TIME DIFFERENCE FROM AUDIO PLAYER POSITION: ${newTime - currentTime} seconds');
         if (newTime >= currentTime) {
           setState(() {
             currentTime = newTime;
@@ -109,10 +117,13 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
         print('CURRENT TIME UPDATED FROM AUDIO PLAYER POSITION: $currentTime seconds');
       }
     });
+    */
     
-    // Listen for completion
+    
+    // Listen for state changes
     _player.playerStateStream.listen((state) {
       print('PLAYER STATE CHANGED: ${state.processingState}, playing: ${state.playing}');
+      /*
       if (state.processingState == ja.ProcessingState.completed && state.playing == true) { // This conditional should capture when audio playback completes naturally (not by a fling)
         if (!mounted) return;
         setState(() {
@@ -121,38 +132,48 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
         });
         print('setState: playerStateStream (completed)');
       }
+      */
     });
+    
   }
 
   // Clean up resources
   @override
   void dispose() {   
     _flingTicker.dispose();
+    _timeTicker.dispose();
     _player.dispose();
     super.dispose();
   }
 
   // Play audio and start visualization
   Future<void> play() async {
-    // Sync audio player position with currentTime
-    await _player.seek(Duration(milliseconds: (currentTime * 1000).toInt()));
+    _initialTime = currentTime;
+
+    // Seek audioplayer to _initialTime
+    await _player.seek(Duration(milliseconds: (_initialTime * 1000).toInt()));
+    //await _player.load();
+    print('Audio player seeked to $_initialTime seconds and loaded. Actual position after seek: ${_player.position.inMilliseconds / 1000.0} seconds');
+
+    // Start audio playback and time ticker (hopefully simultaneously)
+    _player.play();
+    _timeTicker.start();
+    
+    print('AUDIO PLAYBACK STARTED AT: $_initialTime seconds');
 
     // Redraw UI 
     if (!mounted) return;
     setState(() {
       isPlaying = true;
-      currentTime = _player.position.inMilliseconds / 1000.0;
     });
     print('setState: play()');
-
-    // Start playback (this updates currentTime based on position stream)
-    await _player.play();
   }
 
   // Pause audio and visualization
   void pause() {
     // Pause audio playback (this stops currentTime updates from position stream)
     _player.pause();
+    _timeTicker.stop(); // Stop time ticker to stop updating currentTime
 
     // Redraw UI
     if (!mounted) return;
@@ -168,6 +189,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     // Reset audio playback
     _player.pause();
     _player.seek(Duration.zero);
+    _timeTicker.stop(); // Stop time ticker to stop updating currentTime
 
     // Redraw UI with reset currentTime
     if (!mounted) return;
@@ -177,6 +199,45 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     });
     print('setState: reset()');
     print('CURRENT TIME AFTER RESET: $currentTime');
+  }
+
+  void _timeUpdate(Duration elapsed) {
+    double elapsedTime = elapsed.inMilliseconds / 1000.0; // Elapsed time since play() was called (or ticker was restarted for resyncing with audio player position)
+    double newTime = _initialTime + elapsedTime;
+    double playerPosition = _player.position.inMilliseconds / 1000.0;
+    const minTimeForAudioSync = 0.5; // Minimum time before trusting audio player position for sync (to allow for audio player to buffer and start playback)
+    double deltaToAudio = (newTime - playerPosition).abs();
+    const double maxDeltaToAudio = 0.010; // Maximum tolerated difference to audio player position
+
+    // Check if audio has completed playing
+    if (newTime > _duration) {
+      currentTime = _duration; 
+      pause();
+      return;
+    }
+
+    // Guard against out of sync UI 
+    if (newTime > minTimeForAudioSync && deltaToAudio > maxDeltaToAudio) {
+      _timeTicker.stop();
+      _initialTime = playerPosition; // Resync with audio player position
+      _timeTicker.start();
+      print('WARNING: currentTime is out of sync with audio player position by $deltaToAudio seconds. Resyncing time ticker with audio player position at $playerPosition seconds.');
+      return;
+    }
+
+    // Safeguard against non-monotone increasing newTime values (might happen when audio player position stream jumped back and hence ticker was resynced to an earlier time)
+    if (newTime < currentTime) {
+      print('WARNING: newTime ($newTime seconds) is less than currentTime ($currentTime seconds).');
+      return; 
+    }
+    
+    // Redraw UI
+    setState(() {
+      print('TIME UPDATE DELTA: ${newTime - currentTime} seconds');
+      currentTime = newTime;
+    });
+    print('setState: _timeUpdate()');
+    print('CURRENT TIME UPDATED FROM _timeUpdate: $currentTime seconds. Audio player position: ${_player.position.inMilliseconds / 1000.0} seconds');
   }
 
   // Start fling animation
