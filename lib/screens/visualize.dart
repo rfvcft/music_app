@@ -150,6 +150,14 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   Future<void> play() async {
     _initialTime = currentTime;
 
+    // Hacky workaround to enforce correct position stream (happens on Bluetooth on iOS. Audioplayer needs to play for a little and then, after a restart, position stream is correct and in sync with actual audio playback)
+    await _player.seek(Duration(milliseconds: (_initialTime * 1000).toInt()));
+    _player.setVolume(0.0);
+    _player.play();
+    await Future.delayed(const Duration(milliseconds: 50));
+    _player.pause();
+    _player.setVolume(1.0);
+
     // Seek audioplayer to _initialTime
     await _player.seek(Duration(milliseconds: (_initialTime * 1000).toInt()));
     //await _player.load();
