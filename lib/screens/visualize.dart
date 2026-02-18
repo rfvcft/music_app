@@ -12,7 +12,9 @@ import 'package:music_app/utils/intensity_bar.dart' as ib; // Intensity bar widg
 import 'package:music_app/utils/conversion.dart' as conv; // Conversion utilities
 import 'package:music_app/utils/constants.dart' as cnst; // Import constants
 
+const bool showLogs = false; // Set to true to enable logs for debugging
 
+// Screen for visualizing the chromagram of an audio file. Users can control playback via scroll, fling gestures or a slider. 
 class Visualizer extends StatefulWidget {
   Visualizer({
     super.key,
@@ -63,7 +65,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    print('INITIALIZING VISUALIZER FOR ${widget.audioName}');
+    if (showLogs) print('INITIALIZING VISUALIZER FOR ${widget.audioName}');
 
     // Initialize musical key
     _musicalKey = widget.musicalKey;
@@ -93,9 +95,9 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
         setState(() {
           _duration = newDuration;
         });
-        print('setState: durationStream listener');
-        print('AUDIO DURATION: $_duration seconds');
-        print('AUDIO DURATION COMPUTED BY C++ LIBRARY: ${widget.duration} seconds');
+        if (showLogs) print('setState: durationStream listener');
+        if (showLogs) print('AUDIO DURATION COMPUTED BY just_audio: $_duration seconds');
+        if (showLogs) print('AUDIO DURATION COMPUTED BY C++ LIBRARY: ${widget.duration} seconds');
       }
     });
   }
@@ -124,20 +126,20 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     // Seek audioplayer to _initialTime
     await _player.seek(Duration(milliseconds: (_initialTime * 1000).toInt()));
     //await _player.load();
-    print('Audio player seeked to $_initialTime seconds and loaded. Actual position after seek: ${_player.position.inMilliseconds / 1000.0} seconds');
+    if (showLogs) print('AUDIO PLAYER SEEKED TO: $_initialTime seconds.');
 
     // Start audio playback and time ticker (hopefully simultaneously)
     _player.play();
     _timeTicker.start();
     
-    print('AUDIO PLAYBACK STARTED AT: $_initialTime seconds');
+    if (showLogs) print('AUDIO PLAYBACK STARTED AT: $_initialTime seconds');
 
     // Redraw UI 
     if (!mounted) return;
     setState(() {
       isPlaying = true;
     });
-    print('setState: play()');
+    if (showLogs) print('setState: play()');
   }
 
   // Pause audio and visualization
@@ -145,18 +147,19 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     // Pause audio playback (this stops currentTime updates from position stream)
     _player.pause();
     _timeTicker.stop(); // Stop time ticker to stop updating currentTime
+    if (showLogs) print('AUDIO PLAYBACK PAUSED AT: $currentTime seconds');
 
     // Redraw UI
     if (!mounted) return;
     setState(() {
       isPlaying = false;
     });
-    print('setState: pause()');
+    if (showLogs) print('setState: pause()');
   }
 
   // Resets audio and visuals to the start 
   void reset() {
-    print('RESETTING PLAYBACK');
+    if (showLogs) print('RESETTING PLAYBACK');
     // Reset audio playback
     _player.pause();
     _player.seek(Duration.zero);
@@ -168,10 +171,11 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
       isPlaying = false;
       currentTime = 0.0;
     });
-    print('setState: reset()');
-    print('CURRENT TIME AFTER RESET: $currentTime');
+    if (showLogs) print('setState: reset()');
+    if (showLogs) print('CURRENT TIME AFTER RESET: $currentTime seconds');
   }
 
+  // Update time based on time ticker. The ticker is started in play() and paused in pause(). If the time ticker is out of sync with the audio player position, it is resynced. Also guards against non-monotone increasing time values. 
   void _timeUpdate(Duration elapsed) {
     double elapsedTime = elapsed.inMilliseconds / 1000.0; // Elapsed time since play() was called (or ticker was restarted for resyncing with audio player position)
     double newTime = _initialTime + elapsedTime;
@@ -192,23 +196,23 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
       _timeTicker.stop();
       _initialTime = playerPosition; // Resync with audio player position
       _timeTicker.start();
-      print('WARNING: currentTime is out of sync with audio player position by $deltaToAudio seconds. Resyncing time ticker with audio player position at $playerPosition seconds.');
+      if (showLogs) print('WARNING: currentTime OUT OF SYNC WITH AUDIO PLAYER POSITION BY $deltaToAudio seconds. RESYNCING TIME TICKER WITH AUDIO PLAYER POSITION AT $playerPosition seconds.');
       return;
     }
 
     // Safeguard against non-monotone increasing newTime values (might happen when audio player position stream jumped back and hence ticker was resynced to an earlier time)
     if (newTime < currentTime) {
-      print('WARNING: newTime ($newTime seconds) is less than currentTime ($currentTime seconds).');
+      if (showLogs) print('WARNING: newTime ($newTime seconds) IS LESS THAN currentTime ($currentTime seconds). SKIPPING TIME UPDATE.');
       return; 
     }
     
     // Redraw UI
     setState(() {
-      print('TIME UPDATE DELTA: ${newTime - currentTime} seconds');
+      if (showLogs) print('TIME UPDATED WITH DELTA: ${newTime - currentTime} seconds');
       currentTime = newTime;
     });
-    print('setState: _timeUpdate()');
-    print('CURRENT TIME UPDATED FROM _timeUpdate: $currentTime seconds. Audio player position: ${_player.position.inMilliseconds / 1000.0} seconds');
+    if (showLogs) print('setState: _timeUpdate()');
+    if (showLogs) print('CURRENT TIME UPDATED FROM _timeUpdate: $currentTime seconds. AUDIO PLAYER POSITION: ${_player.position.inMilliseconds / 1000.0} seconds');
   }
 
   // Start fling animation
@@ -263,7 +267,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
         return;
       } 
     });
-    print('setState: _flingUpdate()');
+    if (showLogs) print('setState: _flingUpdate()');
   }
 
   // Show dialog to edit musical key
@@ -354,7 +358,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
         _tonicIndex = cnst.pitchClassNameToIndex[selectedTonic] ?? -1;
         _scale = selectedScale;
       });
-      print('setState: _editMusicalKey dialog result');
+      if (showLogs) print('setState: _editMusicalKey dialog result');
     }
   }
 
@@ -387,7 +391,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
               );
               // After returning, call setState to rebuild with new settings
               setState(() {});
-              print('setState: after returning from SettingsPage');
+              if (showLogs) print('setState: after returning from SettingsPage');
             },
           ),
         ],
@@ -448,6 +452,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                     height: durationPx,
                     startIndex: startIndex,
                     endIndex: endIndex,
+                    enhancedResolution: true,
                   ),
                 ),
               );
@@ -683,6 +688,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                     width: durationPx,
                     startIndex: startIndex,
                     endIndex: endIndex,
+                    enhancedResolution: true,
                   ),
                 ),
               );
@@ -892,7 +898,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                       currentTime += details.primaryDelta! / oneSecondPx;
                       currentTime = currentTime.clamp(0.0, _duration);
                     });
-                    print('setState: onVerticalDragUpdate');
+                    if (showLogs) print('setState: onVerticalDragUpdate');
                   }
                 : null,
             onVerticalDragEnd: isPortrait
@@ -928,7 +934,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                       currentTime -= details.primaryDelta! / oneSecondPx;
                       currentTime = currentTime.clamp(0.0, _duration);
                     });
-                    print('setState: onHorizontalDragUpdate');
+                    if (showLogs) print('setState: onHorizontalDragUpdate');
                   }
                 : null,
             onHorizontalDragEnd: !isPortrait
@@ -1025,7 +1031,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           setState(() {
             currentTime = value;
           });
-          print('setState: _playbackSlider onChanged');
+          if (showLogs) print('setState: _playbackSlider onChanged');
         },
         onChangeStart: (value) {
           // If fling in progress, abort it
