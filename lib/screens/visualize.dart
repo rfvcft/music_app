@@ -98,43 +98,6 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
         print('AUDIO DURATION COMPUTED BY C++ LIBRARY: ${widget.duration} seconds');
       }
     });
-
-    /*
-    // Sync currentTime with audio player position stream (if player is playing)
-    _player.positionStream.listen((position) {
-      if (!mounted) return;
-      if (isPlaying) {
-        double newTime = position.inMilliseconds / 1000.0;
-        print('TIME DIFFERENCE FROM AUDIO PLAYER POSITION: ${newTime - currentTime} seconds');
-        if (newTime >= currentTime) {
-          setState(() {
-            currentTime = newTime;
-          });
-        } else { // Safeguard against non-monotone increasing position stream values (might happen when audio player is buffering)
-          print('POSITION STREAM NOT MONOTONE INCREASING: newTime=$newTime, currentTime=$currentTime');
-        }
-        print('setState: positionStream listener');
-        print('CURRENT TIME UPDATED FROM AUDIO PLAYER POSITION: $currentTime seconds');
-      }
-    });
-    */
-    
-    
-    // Listen for state changes
-    _player.playerStateStream.listen((state) {
-      print('PLAYER STATE CHANGED: ${state.processingState}, playing: ${state.playing}');
-      /*
-      if (state.processingState == ja.ProcessingState.completed && state.playing == true) { // This conditional should capture when audio playback completes naturally (not by a fling)
-        if (!mounted) return;
-        setState(() {
-          isPlaying = false;
-          currentTime = _duration;
-        });
-        print('setState: playerStateStream (completed)');
-      }
-      */
-    });
-    
   }
 
   // Clean up resources
@@ -464,6 +427,13 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             double keyTextPx = (availableHeight - currentLinePx) + 0.075 * currentLinePx; // Distance of key text from top of screen
 
             // Chromagram pitch intensity bars
+            double safetyMarginPx = 0.5 * oneSecondPx; // Safety margin in pixels
+            double heightAboveCurrentSeconds = heightAboveCurrent / oneSecondPx; // Height above current line in seconds
+            double deltaHeightSeconds = deltaHeightPx / oneSecondPx; // Vertical offset in seconds
+            double safetyMarginSeconds = safetyMarginPx / oneSecondPx; // Safety margin in seconds
+            int safetyMarginFrames = (safetyMarginSeconds / (_duration / widget.numFrames)).ceil(); // Safety margin in frames
+            int startIndex = max(0, ((currentTime - deltaHeightSeconds) / _duration * widget.numFrames).ceil() - safetyMarginFrames); // Index of first frame to display, with safety margin
+            int endIndex = min(widget.numFrames, ((currentTime + heightAboveCurrentSeconds) / _duration * widget.numFrames).floor() + safetyMarginFrames); // Index of last frame to display, with safety margin
             for (int i = 0; i < cnst.numPitches; i++) {
               double width = deltaWidthPx / 2;
               Widget pitchIntensityBar = Positioned(
@@ -476,6 +446,8 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                     orientation: 'vertical',
                     width: width, 
                     height: durationPx,
+                    startIndex: startIndex,
+                    endIndex: endIndex,
                   ),
                 ),
               );
@@ -483,17 +455,16 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             }
 
             // 12 vertical lines for pitch classes
+            double topOfVerticalPitchLinePx = (availableHeight - currentLinePx) - (durationPx - currentTimePx);
             for (int i = 1; i <= cnst.numPitches; i++) {
               Widget verticalPitchLine = Positioned(
                 left: (i + 1) * deltaWidthPx,
-                bottom: currentLinePx,
-                child: Transform.translate(
-                  offset: Offset(0, currentTimePx), 
-                  child: Container(
-                    width: 1,
-                    height: durationPx,
-                    color: Colors.grey,
-                  ),
+                width: 1,
+                bottom: currentLinePx - min(currentTimePx, deltaHeightPx), 
+                top: max(topOfVerticalPitchLinePx, 0),
+                child: Container(
+                  width: 1,
+                  color: Colors.grey,
                 ),
               );
               allWidgets.add(verticalPitchLine);
@@ -691,6 +662,13 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             double playButtonPx = 0.06 * availableWidth; // Distance of play button from right of screen
 
             // Chromagram pitch intensity bars
+            double safetyMarginPx = 0.5 * oneSecondPx; // Safety margin in pixels
+            double widthToRightOfCurrentSeconds = widthToRightOfCurrent / oneSecondPx; // Width to right of current line in seconds
+            double deltaWidthSeconds = deltaWidthPx / oneSecondPx; // Horizontal offset in seconds
+            double safetyMarginSeconds = safetyMarginPx / oneSecondPx; // Safety margin in seconds
+            int safetyMarginFrames = (safetyMarginSeconds / (_duration / widget.numFrames)).ceil(); // Safety margin in frames
+            int startIndex = max(0, ((currentTime - deltaWidthSeconds) / _duration * widget.numFrames).ceil() - safetyMarginFrames); // Index of first frame to display, with safety margin
+            int endIndex = min(widget.numFrames, ((currentTime + widthToRightOfCurrentSeconds) / _duration * widget.numFrames).floor() + safetyMarginFrames); // Index of last frame to display, with safety margin
             for (int i = 0; i < cnst.numPitches; i++) {
               double height = deltaHeightPx / 2;
               Widget pitchIntensityBar = Positioned(
@@ -703,23 +681,25 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                     orientation: 'horizontal',
                     height: height, 
                     width: durationPx,
+                    startIndex: startIndex,
+                    endIndex: endIndex,
                   ),
                 ),
               );
               allWidgets.add(pitchIntensityBar);
             }
 
+            // 12 horizontal lines for pitch classes
+            double rightOfHorizontalPitchLinePx = (availableWidth - currentLinePx) - (durationPx - currentTimePx);
             for (int i = 0; i < cnst.numPitches; i++) {
               Widget horizontalPitchLine = Positioned(
-                left: currentLinePx,
                 top: (i + 2) * deltaHeightPx,
-                child: Transform.translate(
-                  offset: Offset(-currentTimePx, 0), // Move left as currentTime increases
-                  child: Container(
-                    height: 1,
-                    width: durationPx,
-                    color: Colors.grey,
-                  ),
+                height: 1,
+                left: currentLinePx - min(currentTimePx, deltaWidthPx), 
+                right: max(rightOfHorizontalPitchLinePx, 0),
+                child: Container(
+                  height: 1,
+                  color: Colors.grey,
                 ),
               );
               allWidgets.add(horizontalPitchLine);

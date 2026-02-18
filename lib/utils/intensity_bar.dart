@@ -6,6 +6,8 @@ class IntensityBar extends StatelessWidget {
   final double width;
   final double height;
   final String orientation; // 'vertical' or 'horizontal'
+  final int? startIndex;
+  final int? endIndex;
 
   const IntensityBar({
     super.key,
@@ -13,6 +15,8 @@ class IntensityBar extends StatelessWidget {
     required this.width,
     required this.height,
     required this.orientation,
+    this.startIndex,
+    this.endIndex,
   });
 
   @override
@@ -21,7 +25,9 @@ class IntensityBar extends StatelessWidget {
       size: Size(width, height),
       painter: _IntensityBarPainter(
         values: values, 
-        orientation: orientation
+        orientation: orientation,
+        startIndex: startIndex,
+        endIndex: endIndex,
       ),
     );
   }
@@ -30,18 +36,27 @@ class IntensityBar extends StatelessWidget {
 class _IntensityBarPainter extends CustomPainter {
   final List<double> values;
   final String orientation;
+  final int? startIndex;
+  final int? endIndex;
 
   _IntensityBarPainter({
     required this.values, 
-    required this.orientation
+    required this.orientation,
+    this.startIndex,
+    this.endIndex,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
+    int start = startIndex ?? 0;
+    if (start < 0) start = 0;
+    int end = endIndex ?? values.length;
+    if (end > values.length) end = values.length;
+    
     if (orientation == 'horizontal') {
       final rectHeight = size.height;
       final rectWidth = size.width / values.length;
-      for (int i = 0; i < values.length; i++) {
+      for (int i = start; i < end; i++) {
         final intensity = values[i].clamp(0.0, 1.0);
         if (intensity < 0.1) continue;
         final color = conv.infernoColormap(intensity);
@@ -57,7 +72,7 @@ class _IntensityBarPainter extends CustomPainter {
     } else {
       final rectWidth = size.width;
       final rectHeight = size.height / values.length;
-      for (int i = 0; i < values.length; i++) {
+      for (int i = start; i < end; i++) {
         final intensity = values[i].clamp(0.0, 1.0);
         if (intensity < 0.1) continue;
         final color = conv.infernoColormap(intensity);
