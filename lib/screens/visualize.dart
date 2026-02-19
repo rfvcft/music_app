@@ -1,10 +1,10 @@
+import 'dart:io'; // For platform checks 
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-import 'package:just_audio/just_audio.dart' as ja;
+import 'package:just_audio/just_audio.dart' as ja; // Audio player package
 
 import 'package:music_app/core/app_settings.dart'; // App settings
 import 'package:music_app/screens/settings.dart'; // Settings page
@@ -452,7 +452,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                     height: durationPx,
                     startIndex: startIndex,
                     endIndex: endIndex,
-                    enhancedResolution: true,
+                    enhancedResolution: Platform.isIOS ? true : false, // Enhanced resolution on iOS only
                   ),
                 ),
               );
@@ -688,7 +688,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                     width: durationPx,
                     startIndex: startIndex,
                     endIndex: endIndex,
-                    enhancedResolution: true,
+                    enhancedResolution: Platform.isIOS ? true : false, // Enhanced resolution on iOS only
                   ),
                 ),
               );
