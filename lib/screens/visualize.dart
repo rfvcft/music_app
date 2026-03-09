@@ -407,6 +407,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           final availableHeight = constraints.maxHeight; 
 
           late double oneSecondPx; 
+          late double leftShiftToPx;
           List<Widget> allWidgets = [];
 
           final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
@@ -450,14 +451,17 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                 bottom: currentLinePx, 
                 child: Transform.translate(
                   offset: Offset(0, currentTimePx),  // Translate vertically down based on current playback time
-                  child: ib.IntensityBar(
-                    values: widget.chromagram[(i + _tonicIndex) % cnst.numPitches],
-                    orientation: 'vertical',
-                    width: width, 
-                    height: durationPx,
-                    startIndex: startIndex,
-                    endIndex: endIndex,
-                    enhancedResolution: Platform.isIOS ? true : false, // Enhanced resolution on iOS only
+                  child: Opacity(
+                    opacity: 1.0, // Portrait mode: always fully visible unless you want to add fade logic
+                    child: ib.IntensityBar(
+                      values: widget.chromagram[(i + _tonicIndex) % cnst.numPitches],
+                      orientation: 'vertical',
+                      width: width, 
+                      height: durationPx,
+                      startIndex: startIndex,
+                      endIndex: endIndex,
+                      enhancedResolution: Platform.isIOS ? true : false, // Enhanced resolution on iOS only
+                    ),
                   ),
                 ),
               );
@@ -663,7 +667,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
             double currentLinePx = heightBelowCurrent; // Distance of current line from bottom of screen
 
-            int numberOfSemitonesToDisplay = 12;
+            int numberOfSemitonesToDisplay = 32;
             double deltaWidthPx = availableWidth / (2 + numberOfSemitonesToDisplay - 1 + 2); // Horizontal offset for vertical lines 
             double deltaHeightPx = 0.6 * heightBelowCurrent; // Vertical offset between current line and bottom line 
 
@@ -673,7 +677,8 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             double pitchLabelPx = (availableHeight - currentLinePx);
             double keyTextPx = (availableHeight - currentLinePx) + 0.3 * currentLinePx; // Distance of key text from top of screen
 
-            double leftShiftPx = leftShift * (widget.numBins - numberOfSemitonesToDisplay) * deltaWidthPx; // Horizontal shift to the left (based on leftShift value from horizontal scroll gestures)
+            leftShiftToPx = (widget.numBins - numberOfSemitonesToDisplay) * deltaWidthPx; // Maximum horizontal shift in pixels (when leftShift = 1.0)
+            double leftShiftPx = leftShift * leftShiftToPx; // Horizontal shift to the left (based on leftShift value from horizontal scroll gestures)
 
             // Chromagram pitch intensity bars
             double safetyMarginPx = 0.5 * oneSecondPx; // Safety margin in pixels
@@ -684,20 +689,30 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             int startIndex = max(0, ((currentTime - deltaHeightSeconds) / _duration * widget.numFrames).ceil() - safetyMarginFrames); // Index of first frame to display, with safety margin
             int endIndex = min(widget.numFrames, ((currentTime + heightAboveCurrentSeconds) / _duration * widget.numFrames).floor() + safetyMarginFrames); // Index of last frame to display, with safety margin
             for (int i = 0; i < widget.numBins; i++) {
-              double width = deltaWidthPx / 2;
+              double width = 0.5*deltaWidthPx;
+              double centerOfPitchBarPx = (i + 2) * deltaWidthPx - leftShiftPx; // Center of pitch bar in pixels
+              double opacityOfPitchBar = 1.0;
+              if (centerOfPitchBarPx < 2 * deltaWidthPx) {
+                opacityOfPitchBar = ((centerOfPitchBarPx - deltaWidthPx) / deltaWidthPx).clamp(0.0, 1.0);
+              } else if (centerOfPitchBarPx > (availableWidth - 2 * deltaWidthPx)) {
+                opacityOfPitchBar = ((availableWidth - deltaWidthPx - centerOfPitchBarPx) / deltaWidthPx).clamp(0.0, 1.0);
+              }
               Widget pitchIntensityBar = Positioned(
-                left: (i + 2) * deltaWidthPx - width / 2 - leftShiftPx,
+                left: centerOfPitchBarPx - width / 2,
                 bottom: currentLinePx, 
                 child: Transform.translate(
                   offset: Offset(0, currentTimePx),  // Translate vertically down based on current playback time
-                  child: ib.IntensityBar(
-                    values: widget.chromagram[i],
-                    orientation: 'vertical',
-                    width: width, 
-                    height: durationPx,
-                    startIndex: startIndex,
-                    endIndex: endIndex,
-                    enhancedResolution: Platform.isIOS ? true : false, // Enhanced resolution on iOS only
+                  child: Opacity(
+                    opacity: opacityOfPitchBar,
+                    child: ib.IntensityBar(
+                      values: widget.chromagram[i],
+                      orientation: 'vertical',
+                      width: width, 
+                      height: durationPx,
+                      startIndex: startIndex,
+                      endIndex: endIndex,
+                      enhancedResolution: Platform.isIOS ? true : false, // Enhanced resolution on iOS only
+                    ),
                   ),
                 ),
               );
@@ -707,28 +722,41 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             // 12 vertical lines for pitch classes
             double topOfVerticalPitchLinePx = (availableHeight - currentLinePx) - (durationPx - currentTimePx);
             for (int i = 1; i <= widget.numBins; i++) {
+              double leftOfVerticalPitchLinePx = (i + 1) * deltaWidthPx - leftShiftPx;
+              double opacityOfVerticalPitchLine = 1.0;
+              if (leftOfVerticalPitchLinePx < 2 * deltaWidthPx) {
+                opacityOfVerticalPitchLine = ((leftOfVerticalPitchLinePx - deltaWidthPx) / deltaWidthPx).clamp(0.0, 1.0);
+              } else if (leftOfVerticalPitchLinePx > (availableWidth - 2 * deltaWidthPx)) {
+                opacityOfVerticalPitchLine = ((availableWidth - deltaWidthPx - leftOfVerticalPitchLinePx) / deltaWidthPx).clamp(0.0, 1.0);
+              }
               Widget verticalPitchLine = Positioned(
-                left: (i + 1) * deltaWidthPx - leftShiftPx,
+                left: leftOfVerticalPitchLinePx,
                 width: 1,
                 bottom: currentLinePx - min(currentTimePx, deltaHeightPx), 
                 top: max(topOfVerticalPitchLinePx, 0),
-                child: Container(
-                  width: 1,
-                  color: Colors.grey,
+                child: Opacity(
+                  opacity: opacityOfVerticalPitchLine,
+                  child: Container(
+                    width: 1,
+                    color: Colors.grey,
+                  ),
                 ),
               );
+
               allWidgets.add(verticalPitchLine);
             }
 
             // Start horizontal line
+            double startLineLeftPx = 2*deltaWidthPx - leftShiftPx;
+            double startLineRightPx = availableWidth - (2 * deltaWidthPx - leftShiftPx + (widget.numBins - 1) * deltaWidthPx);
             Widget startLine = Positioned(
-              left: 2*deltaWidthPx - leftShiftPx,
+              left: max(startLineLeftPx, deltaWidthPx),
+              right: max(startLineRightPx, deltaWidthPx),
               bottom: currentLinePx,
               child: Transform.translate(
                 offset: Offset(0, min(currentTimePx, deltaHeightPx)), 
                 child: Container(
                   height: 1,
-                  width: (widget.numBins - 1) * deltaWidthPx,
                   color: Colors.grey,
                 ),
               ),
@@ -781,14 +809,16 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             allWidgets.add(keyText);
 
             // End horizontal line
+            double endLineLeftPx = 2*deltaWidthPx - leftShiftPx;
+            double endLineRightPx = availableWidth - (2 * deltaWidthPx - leftShiftPx + (widget.numBins - 1) * deltaWidthPx);
             Widget endLine = Positioned(
-              left: 2*deltaWidthPx - leftShiftPx,
+              left: max(endLineLeftPx, deltaWidthPx),
+              right: max(endLineRightPx, deltaWidthPx) - 1,
               bottom: currentLinePx + durationPx,
               child: Transform.translate(
                 offset: Offset(0, currentTimePx), 
                 child: Container(
                   height: 1,
-                  width: (widget.numBins - 1) * deltaWidthPx,
                   color: Colors.grey,
                 ),
               ),
@@ -812,8 +842,15 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
               // Determine if pitch is in scale
               final scalePattern = cnst.scalePatterns[_scale];
               final isInScale = scalePattern != null && scalePattern[(i - _tonicIndex) % cnst.numPitches] == 1;
+              double centerOfPitchLabelPx = (i + 2) * deltaWidthPx - leftShiftPx;
+              double opacityOfPitchLabel = 1.0;
+              if (centerOfPitchLabelPx < 2 * deltaWidthPx) {
+                opacityOfPitchLabel = ((centerOfPitchLabelPx - deltaWidthPx) / deltaWidthPx).clamp(0.0, 1.0);
+              } else if (centerOfPitchLabelPx > (availableWidth - 2 * deltaWidthPx)) {
+                opacityOfPitchLabel = ((availableWidth - deltaWidthPx - centerOfPitchLabelPx) / deltaWidthPx).clamp(0.0, 1.0);
+              }
               Widget pitchLabel = Positioned(
-                left: (i + 2) * deltaWidthPx - 16 - leftShiftPx, // Center label under line
+                left: centerOfPitchLabelPx - 16, // Center label under line
                 top: pitchLabelPx,
                 child: Transform.translate(
                   offset: Offset(0, min(currentTimePx, deltaHeightPx)),
@@ -823,7 +860,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
                       child: Text(
                         cnst.absoluteNoteNames[i],
                         style: TextStyle(
-                          color: isInScale ? Colors.white : Colors.grey,
+                            color: isInScale ? Colors.white.withValues(alpha: opacityOfPitchLabel) : Colors.grey.withValues(alpha: opacityOfPitchLabel),
                           fontSize: 12,
                           fontWeight: isInScale ? FontWeight.bold : FontWeight.normal,
                         ),
@@ -909,7 +946,15 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
             // --- Landscape mode: horizontal drag to scrub/fling ---
             onHorizontalDragStart: null,
-            onHorizontalDragUpdate: null,
+            onHorizontalDragUpdate: (details) {
+              // Update leftShift based on horizontal drag
+              if (!mounted) return;
+              setState(() {
+                leftShift -= details.primaryDelta! / leftShiftToPx; // Adjust divisor for sensitivity
+                leftShift = leftShift.clamp(0.0, 1.0);
+              });
+              if (showLogs) print('setState: onHorizontalDragUpdate, leftShift: $leftShift');
+            },
 
             // The main visual stack (timeline, bars, labels, etc.)
             child: SizedBox.expand(
