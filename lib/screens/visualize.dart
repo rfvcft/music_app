@@ -44,12 +44,15 @@ class Visualizer extends StatefulWidget {
 class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateMixin {
   
   double currentTime = 0.0; // Current time in seconds. Visuals are based on this variable.
-
   late double _initialTime; // Auxilliary variable used for starting tickers
+
+  double leftShift = 0.0; // Track horizontal shift from horizontal scroll gestures (0.0 = no shift, 1.0 = maximum shift)
+  late double _initialLeftShift; // Auxilliary variable used for starting fling ticker
 
   late double _flingVelocity; // Velocity of fling in seconds per second
   late Ticker _flingTicker; // Ticker for fling animation
   late bool _resumePlayingLater; // Track if playback should resume after scrolling
+  late bool _isVerticalFling; // Track if fling is vertical (for controlling playback) or horizontal (for controlling leftShift)
   bool isFlinging = false; // Track whether a fling animation is in progress
 
   late Ticker _timeTicker; // Ticker for updating currentTime while audio playback
@@ -60,7 +63,6 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
   bool get isComplete => (currentTime >= _duration); // Track whether audio has completed playing
 
-  double leftShift = 0.0; // Track horizontal shift from horizontal scroll gestures (0.0 = no shift, 1.0 = maximum shift)
 
   String _musicalKey = ''; // Musical key of the audio (may be edited by user)
   int _tonicIndex = -1; // Tonic index of the audio
@@ -221,9 +223,14 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   }
 
   // Start fling animation
-  void _startFling(double flingVelocity) {
+  void _startFling(double flingVelocity, bool isVertical) {
     _flingVelocity = flingVelocity; // Set fling velocity
-    _initialTime = currentTime; // Fix initial time for fling ticker updates
+    _isVerticalFling = isVertical; // Set fling direction
+    if (isVertical) {
+      _initialTime = currentTime; // Fix initial time for vertical fling ticker updates
+    } else {
+      _initialLeftShift = leftShift; // Fix initial leftShift for horizontal fling ticker updates
+    }
     _flingTicker.start(); // Start fling by starting ticker. See _flingUpdate for details 
     isFlinging = true;
   }
@@ -237,7 +244,10 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   // End fling animation and resume playback if needed
   void _endFling() {
     _abortFling();
-    if (_resumePlayingLater) play();
+    if (_resumePlayingLater) {
+      play();
+      _resumePlayingLater = false;
+    }
   }
 
   // Update current time based on fling velocity. To be called by fling ticker
@@ -246,31 +256,55 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
     // Exponential decay model for fling
     const double dampingFactor = 4.0;
-    double timeDelta = (_flingVelocity / dampingFactor) * (1 - exp(-dampingFactor * elapsed.inMilliseconds / 1000.0));
-    double timeDeltaLimit = (_flingVelocity / dampingFactor); 
-    double timeDiff = (timeDeltaLimit - timeDelta).abs();
+    double delta = (_flingVelocity / dampingFactor) * (1 - exp(-dampingFactor * elapsed.inMilliseconds / 1000.0));
+    double deltaLimit = (_flingVelocity / dampingFactor); 
+    double diff = (deltaLimit - delta).abs();
 
     if (!mounted) return;
+      if (_isVerticalFling) {
+      setState(() {
+        // Update currentTime based on fling velocity and elapsed time
+        currentTime = _initialTime + delta; 
+        
+        // Clamp currentTime within valid range and end fling if limits are reached or velocity is low
+        if (currentTime < 0.0) {
+          currentTime = 0.0;
+          _endFling();
+          return;
+        } 
+        if (currentTime > _duration) {
+          currentTime = _duration;
+          pause();
+          _abortFling();
+          return;
+        } 
+        if (diff < 0.1) {
+          _endFling();
+          return;
+        } 
+      });
+      if (showLogs) print('setState: _flingUpdate()');
+      return;
+    }
+
     setState(() {
-      // Update currentTime based on fling velocity and elapsed time
-      currentTime = _initialTime + timeDelta; 
-      
-      // Clamp currentTime within valid range and end fling if limits are reached or velocity is low
-      if (currentTime < 0.0) {
-        currentTime = 0.0;
+      // Update leftShift based on fling velocity and elapsed time
+      leftShift = _initialLeftShift + delta;
+
+      if (leftShift < 0.0) {
+        leftShift = 0.0;
         _endFling();
         return;
-      } 
-      if (currentTime > _duration) {
-        currentTime = _duration;
-        pause();
-        _abortFling();
-        return;
-      } 
-      if (timeDiff < 0.1) {
+      }
+      if (leftShift > 1.0) {
+        leftShift = 1.0;
         _endFling();
         return;
-      } 
+      }
+      if (diff < 0.1) {
+        _endFling();
+        return;
+      }
     });
     if (showLogs) print('setState: _flingUpdate()');
   }
@@ -725,7 +759,6 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           return GestureDetector(
             behavior: HitTestBehavior.opaque, // Ensures gestures are detected anywhere in the area
 
-            // --- Portrait mode: vertical drag to scrub/fling ---
             onVerticalDragStart: (_) {
               // Abort any ongoing fling if user starts a new drag
               if (isFlinging) {
@@ -752,11 +785,16 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             onVerticalDragEnd: (details) {
               // Start a fling animation based on drag velocity
               double flingVelocity = (details.primaryVelocity ?? 0.0) / oneSecondPx; // Convert pixels/sec to seconds/sec
-              _startFling(flingVelocity);
+              bool isVertical = true;
+              _startFling(flingVelocity, isVertical);
             },
 
-            // --- Landscape mode: horizontal drag to scrub/fling ---
-            onHorizontalDragStart: null,
+            onHorizontalDragStart: (_) {
+              if (isFlinging) {
+                _abortFling();
+                return;
+              }
+            },
             onHorizontalDragUpdate: (details) {
               // Update leftShift based on horizontal drag
               if (!mounted) return;
@@ -768,8 +806,9 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             },
             onHorizontalDragEnd: (details) {
               // Start fling animation based on horizontal drag velocity
-              double flingVelocity = (details.primaryVelocity ?? 0.0) / leftShiftToPx; // Convert pixels/sec to leftShift/sec
-              //_startFling(flingVelocity);
+              double flingVelocity = -(details.primaryVelocity ?? 0.0) / leftShiftToPx; // Convert pixels/sec to leftShift/sec
+              bool isVertical = false;
+              _startFling(flingVelocity, isVertical);
             },
 
             // The main visual stack (timeline, bars, labels, etc.)
