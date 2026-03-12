@@ -471,7 +471,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           double bottomLinePx = currentLinePx - deltaHeightPx; // Distance of bottom line from bottom of screen 
           double chromaBlockerPx = availableHeight - bottomLinePx; // Height of chroma blocker from top of screen
 
-          double playButtonPx = isPortrait ? (availableHeight - sliderLinePx) + 0.15 *sliderLinePx : 0.0; // Distance of top of audio player to top of screen
+          double playButtonPx = isPortrait ? (availableHeight - sliderLinePx) + 0.15 * sliderLinePx : 0.0; // Distance of top of audio player to top of screen
           double timeDisplayPx = isPortrait ? (availableHeight - sliderLinePx) + 0.05 * sliderLinePx : 0.0; // Distance of top of time display to top of screen (not used in landscape mode)
 
           double pitchLabelPx = (availableHeight - currentLinePx); // Distance of top of pitch labels from bottom of screen
@@ -567,8 +567,8 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           double startLineLeftPx = 2*deltaWidthPx - leftShiftPx;
           double startLineRightPx = availableWidth - (2 * deltaWidthPx - leftShiftPx + ((isPortrait ? numberOfNotesInScale : widget.numBins) - 1) * deltaWidthPx);
           Widget startLine = Positioned(
-            left: max(startLineLeftPx, deltaWidthPx),
-            right: max(startLineRightPx, deltaWidthPx),
+            left: max(startLineLeftPx, 2 * deltaWidthPx),
+            right: max(startLineRightPx, 2 * deltaWidthPx),
             bottom: currentLinePx,
             child: Transform.translate(
               offset: Offset(0, min(currentTimePx, deltaHeightPx)), 
@@ -579,6 +579,55 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             ),
           );
           allWidgets.add(startLine);
+
+          double startLineLeftBoundaryPx = 2 * deltaWidthPx - leftShiftPx;
+          Widget startLineLeftBoundary = Positioned(
+            left: max(startLineLeftBoundaryPx, deltaWidthPx),
+            right: availableWidth - 2 * deltaWidthPx,
+            bottom: currentLinePx,
+            child: Transform.translate(
+              offset: Offset(0, min(currentTimePx, deltaHeightPx)), 
+              child: Container(
+                height: 1,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.center,
+                    end: Alignment.centerLeft,
+                    colors: [
+                      Colors.grey,
+                      Colors.grey.withValues(alpha: 0.25),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+          allWidgets.add(startLineLeftBoundary);
+
+          // Add startLineRightBoundary analogous to startLineLeftBoundary
+          double startLineRightBoundaryWidthPx = ((isPortrait ? numberOfNotesInScale : widget.numBins) - numberOfNotesToDisplay) * deltaWidthPx - leftShiftPx;
+          Widget startLineRightBoundary = Positioned(
+            left: availableWidth - 2 * deltaWidthPx,
+            bottom: currentLinePx,
+            child: Transform.translate(
+              offset: Offset(0, min(currentTimePx, deltaHeightPx)),
+              child: Container(
+                height: 1,
+                width: min(startLineRightBoundaryWidthPx, deltaWidthPx),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.center,
+                    end: Alignment.centerRight,
+                    colors: [
+                      Colors.grey,
+                      Colors.grey.withValues(alpha: 0.25),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+          allWidgets.add(startLineRightBoundary);
 
           // Estimated key text below the start line
           double fadeOutTime = 0.5 * (deltaHeightPx / oneSecondPx); // Time in seconds over which text fades out
@@ -627,10 +676,10 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
           // End horizontal line
           double endLineLeftPx = 2*deltaWidthPx - leftShiftPx;
-          double endLineRightPx = availableWidth - (2 * deltaWidthPx - leftShiftPx + (widget.numBins - 1) * deltaWidthPx);
+          double endLineRightPx = availableWidth - (2 * deltaWidthPx - leftShiftPx + ((isPortrait ? numberOfNotesInScale : widget.numBins) - 1) * deltaWidthPx);
           Widget endLine = Positioned(
-            left: max(endLineLeftPx, deltaWidthPx),
-            right: max(endLineRightPx, deltaWidthPx) - 1,
+            left: max(endLineLeftPx, 2 * deltaWidthPx),
+            right: max(endLineRightPx, 2 * deltaWidthPx) - 1,
             bottom: currentLinePx + durationPx,
             child: Transform.translate(
               offset: Offset(0, currentTimePx), 
@@ -641,6 +690,55 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             ),
           );
           allWidgets.add(endLine);
+
+          double endLineLeftBoundaryPx = 2 * deltaWidthPx - leftShiftPx;
+          Widget endLineLeftBoundary = Positioned(
+            left: max(endLineLeftBoundaryPx, deltaWidthPx),
+            right: availableWidth - 2 * deltaWidthPx,
+            bottom: currentLinePx + durationPx,
+            child: Transform.translate(
+              offset: Offset(0, currentTimePx), 
+              child: Container(
+                height: 1,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.center,
+                    end: Alignment.centerLeft,
+                    colors: [
+                      Colors.grey,
+                      Colors.grey.withValues(alpha: 0.25),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+          allWidgets.add(endLineLeftBoundary);
+
+          // Add endLineRightBoundary analogous to endLineLeftBoundary
+          double endLineRightBoundaryWidthPx = ((isPortrait ? numberOfNotesInScale : widget.numBins) - numberOfNotesToDisplay) * deltaWidthPx - leftShiftPx;
+          Widget endLineRightBoundary = Positioned(
+            left: availableWidth - 2 * deltaWidthPx,
+            bottom: currentLinePx + durationPx,
+            child: Transform.translate(
+              offset: Offset(0, currentTimePx),
+              child: Container(
+                height: 1,
+                width: min(endLineRightBoundaryWidthPx, deltaWidthPx),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.center,
+                    end: Alignment.centerRight,
+                    colors: [
+                      Colors.grey,
+                      Colors.grey.withValues(alpha: 0.25),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+          allWidgets.add(endLineRightBoundary);
 
           // Blocker to cover chroma bars below pitch line
           Widget chromaBlocker = Positioned(
