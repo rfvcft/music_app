@@ -255,7 +255,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     if (!isFlinging) return;
 
     // Exponential decay model for fling
-    const double dampingFactor = 4.0;
+    double dampingFactor = _isVerticalFling ? 4.0 : 6.0;
     double delta = (_flingVelocity / dampingFactor) * (1 - exp(-dampingFactor * elapsed.inMilliseconds / 1000.0));
     double deltaLimit = (_flingVelocity / dampingFactor); 
     double diff = (deltaLimit - delta).abs();
