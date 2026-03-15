@@ -9,6 +9,7 @@ import 'package:just_audio/just_audio.dart' as ja; // Audio player package
 import 'package:music_app/core/app_settings.dart'; // App settings
 import 'package:music_app/screens/settings.dart'; // Settings page
 import 'package:music_app/utils/intensity_bar.dart' as ib; // Intensity bar widget
+import 'package:music_app/utils/chromagram_builder.dart' as cb; // Chromagram builder for visualization
 import 'package:music_app/utils/conversion.dart' as conv; // Conversion utilities
 import 'package:music_app/utils/constants.dart' as cnst; // Import constants
 
@@ -68,11 +69,20 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   int _tonicIndex = -1; // Tonic index of the audio
   String _scale = ''; // Scale of the audio 
 
+  late cb.ChromagramBuilder _chromagramBuilder; // Chromagram builder for building chromagram visualization based on current parameters
+
   // Initialize states
   @override
   void initState() {
     super.initState();
     if (showLogs) print('INITIALIZING VISUALIZER FOR ${widget.audioName}');
+
+    // Initialize chromagram builder
+    _chromagramBuilder = cb.ChromagramBuilder(
+      duration: widget.duration,
+      chromagram: widget.chromagram,
+      onEditMusicalKey: () => _editMusicalKey(context),
+    );
 
     // Initialize musical key
     _musicalKey = widget.musicalKey;
@@ -479,6 +489,18 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
           double leftShiftToPx =  ((isPortrait ? numberOfNotesInScale : widget.numBins) - numberOfNotesToDisplay) * deltaWidthPx; // Maximum horizontal shift in pixels (when leftShift = 1.0)
           double leftShiftPx = leftShift * leftShiftToPx; // Horizontal shift to the left (based on leftShift value from horizontal scroll gestures)
+
+          List<Widget> chromagramWidgets = _chromagramBuilder.buildChromagram(
+            context: context,
+            availableWidthPx: availableWidth,
+            availableHeightPx: availableHeight,
+            currentTime: currentTime,
+            leftShift: leftShift,
+            isPortrait: isPortrait,
+            musicalKey: _musicalKey,
+            tonicIndex: _tonicIndex,
+            scale: _scale,
+          );
 
           // Chromagram pitch intensity bars
           double safetyMarginPx = 0.5 * oneSecondPx; // Safety margin in pixels (we draw a few extra pixels above and below visual window)
@@ -912,7 +934,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             // The main visual stack (timeline, bars, labels, etc.)
             child: SizedBox.expand(
               child: Stack(
-                children: allWidgets,
+                children: chromagramWidgets,//allWidgets,
               ),
             ),
           );
