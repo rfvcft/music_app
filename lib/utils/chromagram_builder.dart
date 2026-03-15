@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -10,10 +11,20 @@ import 'package:music_app/utils/intensity_bar.dart' as ib; // Intensity bar widg
 // Builds non-interactive parts of the chromagram visualization
 class ChromagramBuilder {
     final VoidCallback onEditMusicalKey;
+    final ValueChanged<double> onSliderChanged;
+    final ValueChanged<double> onSliderChangeStart;
+    final ValueChanged<double> onSliderChangeEnd;
+    final VoidCallback onPlayButtonPressed;
+    final VoidCallback onPlayButtonReset;
     ChromagramBuilder({
       required double duration,
       required List<List<double>> chromagram,
       required this.onEditMusicalKey,
+      required this.onSliderChanged,
+      required this.onSliderChangeStart,
+      required this.onSliderChangeEnd,
+      required this.onPlayButtonPressed,
+      required this.onPlayButtonReset,
     }) :
         _duration = duration,
         _chromagram = chromagram,
@@ -34,6 +45,8 @@ class ChromagramBuilder {
     required double currentTime, // Current playback time in seconds
     required double leftShift, // Shift of chromagram to the left. Range [0.0, 1.0]
     required bool isPortrait, // Whether the device is in portrait or landscape orientation
+    required bool isPlaying, // Whether the audio is currently playing (for play/pause button)
+    required bool isComplete, // Wheter the audio playback is complete (for reset button)
     required String musicalKey, // Musical key of the audio (e.g., "C major", "A minor")
     required int tonicIndex, // Pitch class of tonic (0-11)
     required String scale, // Scale type (e.g., "major", "minor")
@@ -51,6 +64,8 @@ class ChromagramBuilder {
     _currentTime = currentTime;
     _leftShift = leftShift;
     _isPortrait = isPortrait;
+    _isPlaying = isPlaying;
+    _isComplete = isComplete;
 
     print('Building chromagram with parameters:');
     print('Available width (px): $_availableWidthPx');
@@ -108,7 +123,10 @@ class ChromagramBuilder {
 
     chromagramWidgets.add(_currentLine());
     chromagramWidgets.add(_rightArrow());
+
     chromagramWidgets.add(_timeDisplay());
+    chromagramWidgets.add(_slider());
+    chromagramWidgets.add(_playButton());
 
     return chromagramWidgets;
   }
@@ -120,6 +138,8 @@ class ChromagramBuilder {
   double? _currentTime;
   double? _leftShift;
   bool? _isPortrait;
+  bool? _isPlaying;
+  bool? _isComplete;
   String? _musicalKey;
   int? _tonicIndex;
   String? _scale;
@@ -466,49 +486,114 @@ class ChromagramBuilder {
     );
   }
 
+  Widget _slider() {
+    if (!_isPortrait!) return SizedBox.shrink(); // Only show slider in portrait mode
+    double sliderRadius = 8; 
+    return Positioned(
+        left: _deltaWidthPx - sliderRadius,
+        right: _deltaWidthPx - sliderRadius,
+        bottom: _sliderLinePx - sliderRadius,
+        child: SliderTheme(
+        data: SliderTheme.of(_context!).copyWith(
+          trackShape: const RoundedRectSliderTrackShape(),
+          trackHeight: 3,
+          overlayShape: SliderComponentShape.noOverlay,
+          thumbShape: RoundSliderThumbShape(enabledThumbRadius: sliderRadius),
+        ),
+        child: Slider(
+          value: _currentTime!.clamp(0.0, _duration),
+          min: 0.0,
+          max: _duration,
+          onChanged: onSliderChanged,
+          onChangeStart: onSliderChangeStart,
+          onChangeEnd: onSliderChangeEnd,
+          activeColor: Colors.white,
+          inactiveColor: Colors.grey,
+        ),
+      ),
+    );
+  }
+
   Widget _keyText() {
-          double fadeOutTime = 0.5 * (_deltaHeightPx / _oneSecondPx); // Time in seconds over which text fades out
-          double keyTextOpacity = (1 - (_currentTime! / fadeOutTime)).clamp(0.0, 1.0);
-          Widget keyText = Positioned(
-            left: 2*_deltaWidthPx,
-            right: 2*_deltaWidthPx,
-            top: _keyTextPx,
-            child: Transform.translate(
-              offset: Offset(0, min(_currentTimePx, _deltaHeightPx)),
-              child: Opacity(
-                opacity: keyTextOpacity,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Key: ',
-                      style: Theme.of(_context!).textTheme.titleLarge?.copyWith(fontSize: 15, fontWeight: FontWeight.normal),
+    double fadeOutTime = 0.5 * (_deltaHeightPx / _oneSecondPx); // Time in seconds over which text fades out
+    double keyTextOpacity = (1 - (_currentTime! / fadeOutTime)).clamp(0.0, 1.0);
+    Widget keyText = Positioned(
+      left: 2*_deltaWidthPx,
+      right: 2*_deltaWidthPx,
+      top: _keyTextPx,
+      child: Transform.translate(
+        offset: Offset(0, min(_currentTimePx, _deltaHeightPx)),
+        child: Opacity(
+          opacity: keyTextOpacity,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Key: ',
+                style: Theme.of(_context!).textTheme.titleLarge?.copyWith(fontSize: 15, fontWeight: FontWeight.normal),
+              ),
+              const SizedBox(width: 4),
+              InkWell(
+                borderRadius: BorderRadius.circular(6),
+                onTap: onEditMusicalKey,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[850],
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    _musicalKey!,
+                    style: Theme.of(_context!).textTheme.titleLarge?.copyWith(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
-                    const SizedBox(width: 4),
-                    InkWell(
-                      borderRadius: BorderRadius.circular(6),
-                      onTap: onEditMusicalKey,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[850],
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          _musicalKey!,
-                          style: Theme.of(_context!).textTheme.titleLarge?.copyWith(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          );
-          return keyText;
+            ],
+          ),
+        ),
+      ),
+    );
+    return keyText;
+  }
+
+  Widget _playButton() {
+    double playButtonRadius = 30;
+    double playButtonIconSize = 38;
+    late Widget playButton;
+    if (_isComplete!) {
+      playButton = CircleAvatar(
+        radius: playButtonRadius,
+        backgroundColor: Colors.white,
+        child: IconButton(
+          icon: const Icon(Icons.replay),
+          iconSize: playButtonIconSize,
+          color: Colors.black,
+          onPressed: onPlayButtonReset,
+        ),
+      );
+    } else {
+      playButton = CircleAvatar(
+        radius: playButtonRadius,
+        backgroundColor: Colors.white,
+        child: IconButton(
+          icon: Icon(_isPlaying! ? Icons.pause : Icons.play_arrow),
+          iconSize: playButtonIconSize,
+          color: Colors.black,
+          onPressed: onPlayButtonPressed,
+        ),
+      );
+    }
+    return Positioned(
+      right: 0,
+      left: _isPortrait! ? 0 : null, // In portrait mode, center the play button. In landscape mode, align it to the right.
+      top: _playButtonPx,
+      child: Center(
+        child: playButton,
+      ),
+    );
   }
 }
