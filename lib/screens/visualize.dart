@@ -82,6 +82,34 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
       duration: widget.duration,
       chromagram: widget.chromagram,
       onEditMusicalKey: () => _editMusicalKey(context),
+      onSliderChanged: (value) {
+        setState(() {
+          currentTime = value;
+        });
+      },
+      onSliderChangeStart: (value) {
+        if (isFlinging) _abortFling();
+        if (isPlaying) {
+          _resumePlayingLater = true;
+          pause();
+        }
+      },
+      onSliderChangeEnd: (value) {
+        if (_resumePlayingLater) {
+          play();
+        }
+      },
+      onPlayButtonPressed: () {
+        if (isFlinging) _abortFling();
+        if (isPlaying) {
+          pause();
+        } else {
+          play();
+        }
+      },
+      onPlayButtonReset: () {
+        reset();
+      },
     );
 
     // Initialize musical key
@@ -497,6 +525,8 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             currentTime: currentTime,
             leftShift: leftShift,
             isPortrait: isPortrait,
+            isPlaying: isPlaying,
+            isComplete: isComplete,
             musicalKey: _musicalKey,
             tonicIndex: _tonicIndex,
             scale: _scale,
