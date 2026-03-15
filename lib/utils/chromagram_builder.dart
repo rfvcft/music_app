@@ -67,15 +67,6 @@ class ChromagramBuilder {
     _isPlaying = isPlaying;
     _isComplete = isComplete;
 
-    print('Building chromagram with parameters:');
-    print('Available width (px): $_availableWidthPx');
-    print('Available height (px): $_availableHeightPx');
-    print('Current time (s): $_currentTime');
-    print('Left shift: $_leftShift');
-    print('Is portrait: $_isPortrait');
-    print('Tonic index: $_tonicIndex');
-    print('Scale: $_scale');
-
     // Update derived parameters
     _numSecondsAboveCurrent = _isPortrait! ? 5 : 4; // Number of seconds to display above current line
     _numberOfNotesToDisplay = _isPortrait! ? 12 : 35; // How many notes to display
@@ -182,6 +173,14 @@ class ChromagramBuilder {
       if (isInScale) count++;
     }
     return count;
+  }
+
+  double getOneSecondPx() {
+    return _oneSecondPx;
+  }
+
+  double getLeftShiftToPx() {
+    return _leftShiftToPx;
   }
 
   // Chromagram pitch intensity bars
