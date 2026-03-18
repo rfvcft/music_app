@@ -1,4 +1,3 @@
-import 'dart:ffi';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -43,7 +42,7 @@ class ChromagramBuilder {
     required double availableWidthPx,
     required double availableHeightPx,
     required double currentTime, // Current playback time in seconds
-    required double leftShift, // Shift of chromagram to the left. Range [0.0, 1.0]
+    required double? leftShift, // Shift of chromagram to the left. Range [0.0, 1.0]
     required bool isPortrait, // Whether the device is in portrait or landscape orientation
     required bool isPlaying, // Whether the audio is currently playing (for play/pause button)
     required bool isComplete, // Wheter the audio playback is complete (for reset button)
@@ -56,8 +55,9 @@ class ChromagramBuilder {
       _musicalKey = musicalKey;
       _tonicIndex = tonicIndex;
       _scale = scale;
-      _numberOfNotesInScale = _getNumberOfNotesInScale(tonicIndex, scale);
+      _numberOfNotesInScale = _computeNumberOfNotesInScale(tonicIndex, scale);
     }
+
     _context = context;
     _availableWidthPx =availableWidthPx;
     _availableHeightPx = availableHeightPx;
@@ -68,33 +68,33 @@ class ChromagramBuilder {
     _isComplete = isComplete;
 
     // Update derived parameters
-    _numSecondsAboveCurrent = _isPortrait! ? 5 : 4; // Number of seconds to display above current line
-    _numberOfNotesToDisplay = _isPortrait! ? 12 : 35; // How many notes to display
+    _numSecondsAboveCurrent = _isPortrait ? 5 : 4; // Number of seconds to display above current line
+    _numberOfNotesToDisplay = _isPortrait ? 13 : 35; // How many notes to display
 
-    _heightAboveCurrentPx = _isPortrait! ? cnst.goldenFactorLarge * _availableHeightPx! : 0.75 * _availableHeightPx!; // Available height above current line
-    _heightBelowCurrentPx = _isPortrait! ? cnst.goldenFactorSmall * _availableHeightPx! : 0.25 * _availableHeightPx!; // Available height below current line
+    _heightAboveCurrentPx = _isPortrait ? cnst.goldenFactorLarge * _availableHeightPx : 0.75 * _availableHeightPx; // Available height above current line
+    _heightBelowCurrentPx = _isPortrait ? cnst.goldenFactorSmall * _availableHeightPx : 0.25 * _availableHeightPx; // Available height below current line
 
     _oneSecondPx = _heightAboveCurrentPx / _numSecondsAboveCurrent; // One second in pixels
     _durationPx = _duration * _oneSecondPx; // Total duration in pixels
-    _currentTimePx = _currentTime! * _oneSecondPx; // Current time in pixels
+    _currentTimePx = _currentTime * _oneSecondPx; // Current time in pixels
 
     _currentLinePx = _heightBelowCurrentPx; // Distance of current line from bottom of screen
-    _sliderLinePx = _isPortrait! ? cnst.goldenFactorLarge * _heightBelowCurrentPx : 0.0; // Distance of slider line from bottom of screen (not used in landscape mode)
+    _sliderLinePx = _isPortrait ? cnst.goldenFactorLarge * _heightBelowCurrentPx : 0.0; // Distance of slider line from bottom of screen (not used in landscape mode)
 
-    _deltaWidthPx = _availableWidthPx! / (2 + _numberOfNotesToDisplay - 1 + 2); // Horizontal offset for vertical lines 
-    _deltaHeightPx = _isPortrait! ? cnst.goldenFactorLarge * (_currentLinePx - _sliderLinePx) : 0.6 * _heightBelowCurrentPx; // Vertical offset between current line and bottom line
+    _deltaWidthPx = _availableWidthPx / (2 + _numberOfNotesToDisplay - 1 + 2); // Horizontal offset for vertical lines 
+    _deltaHeightPx = _isPortrait ? cnst.goldenFactorLarge * (_currentLinePx - _sliderLinePx) : 0.6 * _heightBelowCurrentPx; // Vertical offset between current line and bottom line
 
     _bottomLinePx = _currentLinePx - _deltaHeightPx; // Distance of bottom line from bottom of screen 
-    _chromaBlockerPx = _availableHeightPx! - _bottomLinePx; // Height of chroma blocker from top of screen
+    _chromaBlockerPx = _availableHeightPx - _bottomLinePx; // Height of chroma blocker from top of screen
 
-    _playButtonPx = _isPortrait! ? (_availableHeightPx! - _sliderLinePx) + 0.15 * _sliderLinePx : 0.0; // Distance of top of audio player to top of screen
-    _timeDisplayPx = _isPortrait! ? (_availableHeightPx! - _sliderLinePx) + 0.05 * _sliderLinePx : 0.0; // Distance of top of time display to top of screen (not used in landscape mode)
+    _playButtonPx = _isPortrait ? (_availableHeightPx - _sliderLinePx) + 0.15 * _sliderLinePx : 0.0; // Distance of top of audio player to top of screen
+    _timeDisplayPx = _isPortrait ? (_availableHeightPx - _sliderLinePx) + 0.05 * _sliderLinePx : 0.0; // Distance of top of time display to top of screen (not used in landscape mode)
 
-    _pitchLabelPx = (_availableHeightPx! - _currentLinePx); // Distance of top of pitch labels from bottom of screen
-    _keyTextPx = _isPortrait! ? (_availableHeightPx! - _currentLinePx) + 0.075 * _currentLinePx : (_availableHeightPx! - _currentLinePx) + 0.3 * _currentLinePx; // Distance of key text from top of screen
+    _pitchLabelPx = (_availableHeightPx - _currentLinePx); // Distance of top of pitch labels from bottom of screen
+    _keyTextPx = _isPortrait ? (_availableHeightPx - _currentLinePx) + 0.075 * _currentLinePx : (_availableHeightPx - _currentLinePx) + 0.3 * _currentLinePx; // Distance of key text from top of screen
     
-    _leftShiftToPx =  ((_isPortrait! ? _numberOfNotesInScale : _numBins) - _numberOfNotesToDisplay) * _deltaWidthPx; // Maximum horizontal shift in pixels (when leftShift = 1.0)
-    _leftShiftPx = leftShift * _leftShiftToPx; // Horizontal shift to the left (based on leftShift)
+    _leftShiftToPx =  ((_isPortrait ? _numberOfNotesInScale : _numBins) - _numberOfNotesToDisplay) * _deltaWidthPx; // Maximum horizontal shift in pixels (when leftShift = 1.0)
+    _leftShiftPx = (leftShift != null) ? leftShift * _leftShiftToPx : _computeLeftShiftPx(); // Horizontal shift to the left (based on leftShift)
 
     List<Widget> chromagramWidgets = [];
     chromagramWidgets.addAll(_pitchIntensityBars());
@@ -123,17 +123,17 @@ class ChromagramBuilder {
   }
 
   // Current parameters
-  BuildContext? _context;
-  double? _availableWidthPx;
-  double? _availableHeightPx;
-  double? _currentTime;
-  double? _leftShift;
-  bool? _isPortrait;
-  bool? _isPlaying;
-  bool? _isComplete;
+  late BuildContext _context;
+  late double _availableWidthPx;
+  late double _availableHeightPx;
+  late double _currentTime;
+  late double? _leftShift;
+  late bool _isPortrait;
+  late bool _isPlaying;
+  late bool _isComplete;
   String? _musicalKey;
-  int? _tonicIndex;
-  String? _scale;
+  late int _tonicIndex;
+  late String _scale;
 
   // Derived parameters
   late int _numberOfNotesInScale; // How many notes in range [0, numBins) are in the scale
@@ -165,7 +165,7 @@ class ChromagramBuilder {
   late double _leftShiftToPx; // Maximum left shift in pixels (when leftShift is 1.0)
   late double _leftShiftPx; // Current left shift in pixels
 
-  int _getNumberOfNotesInScale(int tonicIndex, String scale) {
+  int _computeNumberOfNotesInScale(int tonicIndex, String scale) {
     final scalePattern = cnst.scalePatterns[scale];
     int count = 0;
     for (int i = 0; i < _numBins; i++) {
@@ -175,12 +175,37 @@ class ChromagramBuilder {
     return count;
   }
 
+  double _computeLeftShiftPx() {
+    if (!_isPortrait) {
+      double leftShiftPx = _tonicIndex * _deltaWidthPx; // In landscape, shift so that tonic (C3 - B3) is the left most note
+      _leftShift = leftShiftPx / _leftShiftToPx; // Update leftShift based on leftShiftPx
+      return leftShiftPx; 
+    }
+    // In portrait, shift so that tonic in range (C3 - B3) is the left most note
+    double leftShiftPx = 0.0;
+    final scalePattern = cnst.scalePatterns[_scale];
+    for (int i = 0; i < _numBins; i++) {
+      if (i == _tonicIndex + 12) break; // Index at tonic in range (C3 - B3)
+      final bool isInScale = scalePattern != null && scalePattern[(i - _tonicIndex) % cnst.numPitches] == 1;
+      if (isInScale) {
+        leftShiftPx += _deltaWidthPx; // Increase leftShiftPx for each note in scale until we reach the tonic in range (C3 - B3)
+      }
+    }
+    leftShiftPx -= 0.5 * _deltaWidthPx;
+    _leftShift = leftShiftPx / _leftShiftToPx; // Update leftShift based on leftShiftPx
+    return leftShiftPx;
+  }
+
   double getOneSecondPx() {
     return _oneSecondPx;
   }
 
   double getLeftShiftToPx() {
     return _leftShiftToPx;
+  }
+
+  double getLeftShift() {
+    return _leftShift ?? 0.0;
   }
 
   // Chromagram pitch intensity bars
@@ -193,25 +218,25 @@ class ChromagramBuilder {
     double deltaHeightSeconds = _deltaHeightPx / _oneSecondPx; 
     double safetyMarginSeconds = safetyMarginPx / _oneSecondPx; 
     int safetyMarginFrames = (safetyMarginSeconds / (_duration / _numFrames)).ceil(); // Safety margin in frames
-    int startIndex = max(0, ((_currentTime! - deltaHeightSeconds) / _duration * _numFrames).ceil() - safetyMarginFrames); // Index of first frame to display, with safety margin
-    int endIndex = min(_numFrames, ((_currentTime! + heightAboveCurrentSeconds) / _duration * _numFrames).floor() + safetyMarginFrames); // Index of last frame to display, with safety margin
+    int startIndex = max(0, ((_currentTime - deltaHeightSeconds) / _duration * _numFrames).ceil() - safetyMarginFrames); // Index of first frame to display, with safety margin
+    int endIndex = min(_numFrames, ((_currentTime + heightAboveCurrentSeconds) / _duration * _numFrames).floor() + safetyMarginFrames); // Index of last frame to display, with safety margin
 
     int currentNumberOfPitchBars = 0; // Counter needed for only displaying notes within scale (in portrait mode)
     double pitchBarWidthPx = 0.5 * _deltaWidthPx; // Width of each pitch intensity bar in pixels
     final scalePattern = cnst.scalePatterns[_scale];
     for (int i = 0; i < _numBins; i++) {
-      final isInScale = scalePattern != null && scalePattern[(i - _tonicIndex!) % cnst.numPitches] == 1; // Determine if pitch class is in scale
-      if (_isPortrait! && !isInScale) continue; // In portrait mode, only show pitch classes in the scale to reduce clutter
+      final isInScale = scalePattern != null && scalePattern[(i - _tonicIndex) % cnst.numPitches] == 1; // Determine if pitch class is in scale
+      if (_isPortrait && !isInScale) continue; // In portrait mode, only show pitch classes in the scale to reduce clutter
       currentNumberOfPitchBars++;
       double centerOfPitchBarPx = (currentNumberOfPitchBars + 1) * _deltaWidthPx - _leftShiftPx; // Center of pitch bar in pixels
-      if (centerOfPitchBarPx < 0 || centerOfPitchBarPx > _availableWidthPx!) {
+      if (centerOfPitchBarPx < 0 || centerOfPitchBarPx > _availableWidthPx) {
         continue; // Skip drawing pitch bars that are completely outside of the visual window
       }
       double opacityOfPitchBar = 1.0; // Fade out pitch bar at boundary 
       if (centerOfPitchBarPx < 2 * _deltaWidthPx) {
         opacityOfPitchBar = ((centerOfPitchBarPx - _deltaWidthPx) / _deltaWidthPx).clamp(0.0, 1.0);
-      } else if (centerOfPitchBarPx > (_availableWidthPx! - 2 * _deltaWidthPx)) {
-        opacityOfPitchBar = ((_availableWidthPx! - _deltaWidthPx - centerOfPitchBarPx) / _deltaWidthPx).clamp(0.0, 1.0);
+      } else if (centerOfPitchBarPx > (_availableWidthPx - 2 * _deltaWidthPx)) {
+        opacityOfPitchBar = ((_availableWidthPx - _deltaWidthPx - centerOfPitchBarPx) / _deltaWidthPx).clamp(0.0, 1.0);
       }
       Widget pitchIntensityBar = Positioned(
         left: centerOfPitchBarPx - pitchBarWidthPx / 2,
@@ -240,22 +265,22 @@ class ChromagramBuilder {
   // Vertical lines for each pitch 
   List<Widget> _verticalPitchLines() {
     List<Widget> verticalPitchLines = [];
-    double topOfVerticalPitchLinePx = (_availableHeightPx! - _currentLinePx) - (_durationPx - _currentTimePx);
+    double topOfVerticalPitchLinePx = (_availableHeightPx - _currentLinePx) - (_durationPx - _currentTimePx);
     int currentNumberOfNotes = 0;
     final scalePattern = cnst.scalePatterns[_scale];
     for (int i = 0; i < _numBins; i++) {
-      final isInScale = scalePattern != null && scalePattern[(i - _tonicIndex!) % cnst.numPitches] == 1; // Determine if pitch class is in scale
-      if (_isPortrait! && !isInScale) continue; // In portrait mode, only show pitch classes in the scale to reduce clutter
+      final isInScale = scalePattern != null && scalePattern[(i - _tonicIndex) % cnst.numPitches] == 1; // Determine if pitch class is in scale
+      if (_isPortrait && !isInScale) continue; // In portrait mode, only show pitch classes in the scale to reduce clutter
       currentNumberOfNotes++;
       double centerOfVerticalPitchLinePx = (currentNumberOfNotes + 1) * _deltaWidthPx - _leftShiftPx;
-      if (centerOfVerticalPitchLinePx < _deltaWidthPx || centerOfVerticalPitchLinePx > (_availableWidthPx! - _deltaWidthPx)) {
+      if (centerOfVerticalPitchLinePx < _deltaWidthPx || centerOfVerticalPitchLinePx > (_availableWidthPx - _deltaWidthPx)) {
         continue; // Skip drawing vertical lines that are completely outside of the visual window
       }
       double opacityOfVerticalPitchLine = 1.0;
       if (centerOfVerticalPitchLinePx < 2 * _deltaWidthPx) {
         opacityOfVerticalPitchLine = ((centerOfVerticalPitchLinePx - _deltaWidthPx) / _deltaWidthPx).clamp(0.0, 1.0);
-      } else if (centerOfVerticalPitchLinePx > (_availableWidthPx! - 2 * _deltaWidthPx)) {
-        opacityOfVerticalPitchLine = ((_availableWidthPx! - _deltaWidthPx - centerOfVerticalPitchLinePx) / _deltaWidthPx).clamp(0.0, 1.0);
+      } else if (centerOfVerticalPitchLinePx > (_availableWidthPx - 2 * _deltaWidthPx)) {
+        opacityOfVerticalPitchLine = ((_availableWidthPx - _deltaWidthPx - centerOfVerticalPitchLinePx) / _deltaWidthPx).clamp(0.0, 1.0);
       }
       Widget verticalPitchLine = Positioned(
         left: centerOfVerticalPitchLinePx,
@@ -280,7 +305,7 @@ class ChromagramBuilder {
     late double bottomPx;
     late double offsetPx;
     double leftPx = 2*_deltaWidthPx - _leftShiftPx;
-    double rightPx = _availableWidthPx! - (2 * _deltaWidthPx - _leftShiftPx + ((_isPortrait! ? _numberOfNotesInScale : _numBins) - 1) * _deltaWidthPx);
+    double rightPx = _availableWidthPx - (2 * _deltaWidthPx - _leftShiftPx + ((_isPortrait ? _numberOfNotesInScale : _numBins) - 1) * _deltaWidthPx);
     if (position == 'start'){
       bottomPx = _currentLinePx;
       offsetPx = min(_currentTimePx, _deltaHeightPx);
@@ -320,7 +345,7 @@ class ChromagramBuilder {
     }
     return Positioned(
       left: max(leftPx, _deltaWidthPx),
-      right: _availableWidthPx! - 2 * _deltaWidthPx,
+      right: _availableWidthPx - 2 * _deltaWidthPx,
       bottom: bottomPx,
       child: Transform.translate(
         offset: Offset(0, offsetPx), 
@@ -345,7 +370,7 @@ class ChromagramBuilder {
   Widget _horizontalLineRightBoundary({required String position}) {
     late double bottomPx;
     late double offsetPx;
-    double widthPx = ((_isPortrait! ? _numberOfNotesInScale : _numBins) - _numberOfNotesToDisplay) * _deltaWidthPx - _leftShiftPx;
+    double widthPx = ((_isPortrait ? _numberOfNotesInScale : _numBins) - _numberOfNotesToDisplay) * _deltaWidthPx - _leftShiftPx;
     if (position == 'start'){
       bottomPx = _currentLinePx;
       offsetPx = min(_currentTimePx, _deltaHeightPx);
@@ -356,7 +381,7 @@ class ChromagramBuilder {
       throw ArgumentError('Invalid position for horizontal line: $position');
     }
     return Positioned(
-      left: _availableWidthPx! - 2 * _deltaWidthPx,
+      left: _availableWidthPx - 2 * _deltaWidthPx,
       bottom: bottomPx,
       child: Transform.translate(
         offset: Offset(0, offsetPx),
@@ -398,18 +423,19 @@ class ChromagramBuilder {
       // Add pitch class label below startLine, translated with currentTimePx
       // Determine if pitch is in scale
       
-      final isInScale = scalePattern != null && scalePattern[(i - _tonicIndex!) % cnst.numPitches] == 1;
-      if (_isPortrait! && !isInScale) continue; // In portrait mode, only show pitch classes in the scale to reduce clutter
+      final isInScale = scalePattern != null && scalePattern[(i - _tonicIndex) % cnst.numPitches] == 1;
+      final isTonic = (i - _tonicIndex) % cnst.numPitches == 0;
+      if (_isPortrait && !isInScale) continue; // In portrait mode, only show pitch classes in the scale to reduce clutter
       currentNumberOfPitchLabels++;
       double centerOfPitchLabelPx = (currentNumberOfPitchLabels + 1) * _deltaWidthPx - _leftShiftPx;
-      if (centerOfPitchLabelPx < _deltaWidthPx || centerOfPitchLabelPx > (_availableWidthPx! - _deltaWidthPx)) {
+      if (centerOfPitchLabelPx < _deltaWidthPx || centerOfPitchLabelPx > (_availableWidthPx - _deltaWidthPx)) {
         continue; // Skip drawing pitch labels that are completely outside of the visual window
       }
       double opacityOfPitchLabel = 1.0;
       if (centerOfPitchLabelPx < 2 * _deltaWidthPx) {
         opacityOfPitchLabel = ((centerOfPitchLabelPx - _deltaWidthPx) / _deltaWidthPx).clamp(0.0, 1.0);
-      } else if (centerOfPitchLabelPx > (_availableWidthPx! - 2 * _deltaWidthPx)) {
-        opacityOfPitchLabel = ((_availableWidthPx! - _deltaWidthPx - centerOfPitchLabelPx) / _deltaWidthPx).clamp(0.0, 1.0);
+      } else if (centerOfPitchLabelPx > (_availableWidthPx - 2 * _deltaWidthPx)) {
+        opacityOfPitchLabel = ((_availableWidthPx - _deltaWidthPx - centerOfPitchLabelPx) / _deltaWidthPx).clamp(0.0, 1.0);
       }
       Widget pitchLabel = Positioned(
         left: centerOfPitchLabelPx - 16, // Center label under line
@@ -422,9 +448,11 @@ class ChromagramBuilder {
               child: Text(
                 cnst.absoluteNoteNames[i],
                 style: TextStyle(
-                    color: isInScale ? Colors.white.withValues(alpha: opacityOfPitchLabel) : Colors.grey[600]!.withValues(alpha: opacityOfPitchLabel),
+                  color: isInScale && isTonic ? Colors.white.withValues(alpha: opacityOfPitchLabel) : 
+                         isInScale ? Colors.grey[200]!.withValues(alpha: opacityOfPitchLabel) : 
+                         Colors.grey[700]!.withValues(alpha: opacityOfPitchLabel),
                   fontSize: 12,
-                  fontWeight: isInScale ? FontWeight.bold : FontWeight.normal,
+                  fontWeight: isTonic ? FontWeight.w900 : FontWeight.w400,
                 ),
               ),
             ),
@@ -464,7 +492,7 @@ class ChromagramBuilder {
 
   // Widget to display current time and total duration aligned with slider ends
   Widget _timeDisplay() {
-    if (!_isPortrait!) return SizedBox.shrink(); // Only show time display in portrait mode
+    if (!_isPortrait) return SizedBox.shrink(); // Only show time display in portrait mode
     return Positioned(
       left: _deltaWidthPx,
       right: _deltaWidthPx,
@@ -473,7 +501,7 @@ class ChromagramBuilder {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            conv.formatTime(_currentTime!),
+            conv.formatTime(_currentTime),
             style: const TextStyle(color: Colors.white, fontSize: 12),
           ),
           Text(
@@ -486,21 +514,21 @@ class ChromagramBuilder {
   }
 
   Widget _slider() {
-    if (!_isPortrait!) return SizedBox.shrink(); // Only show slider in portrait mode
+    if (!_isPortrait) return SizedBox.shrink(); // Only show slider in portrait mode
     double sliderRadius = 8; 
     return Positioned(
         left: _deltaWidthPx - sliderRadius,
         right: _deltaWidthPx - sliderRadius,
         bottom: _sliderLinePx - sliderRadius,
         child: SliderTheme(
-        data: SliderTheme.of(_context!).copyWith(
+        data: SliderTheme.of(_context).copyWith(
           trackShape: const RoundedRectSliderTrackShape(),
           trackHeight: 3,
           overlayShape: SliderComponentShape.noOverlay,
           thumbShape: RoundSliderThumbShape(enabledThumbRadius: sliderRadius),
         ),
         child: Slider(
-          value: _currentTime!.clamp(0.0, _duration),
+          value: _currentTime.clamp(0.0, _duration),
           min: 0.0,
           max: _duration,
           onChanged: onSliderChanged,
@@ -515,7 +543,7 @@ class ChromagramBuilder {
 
   Widget _keyText() {
     double fadeOutTime = 0.5 * (_deltaHeightPx / _oneSecondPx); // Time in seconds over which text fades out
-    double keyTextOpacity = (1 - (_currentTime! / fadeOutTime)).clamp(0.0, 1.0);
+    double keyTextOpacity = (1 - (_currentTime / fadeOutTime)).clamp(0.0, 1.0);
     Widget keyText = Positioned(
       left: 2*_deltaWidthPx,
       right: 2*_deltaWidthPx,
@@ -529,7 +557,7 @@ class ChromagramBuilder {
             children: [
               Text(
                 'Key: ',
-                style: Theme.of(_context!).textTheme.titleLarge?.copyWith(fontSize: 15, fontWeight: FontWeight.normal),
+                style: Theme.of(_context).textTheme.titleLarge?.copyWith(fontSize: 15, fontWeight: FontWeight.normal),
               ),
               const SizedBox(width: 4),
               InkWell(
@@ -543,7 +571,7 @@ class ChromagramBuilder {
                   ),
                   child: Text(
                     _musicalKey!,
-                    style: Theme.of(_context!).textTheme.titleLarge?.copyWith(
+                    style: Theme.of(_context).textTheme.titleLarge?.copyWith(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -563,7 +591,7 @@ class ChromagramBuilder {
     double playButtonRadius = 30;
     double playButtonIconSize = 38;
     late Widget playButton;
-    if (_isComplete!) {
+    if (_isComplete) {
       playButton = CircleAvatar(
         radius: playButtonRadius,
         backgroundColor: Colors.white,
@@ -579,7 +607,7 @@ class ChromagramBuilder {
         radius: playButtonRadius,
         backgroundColor: Colors.white,
         child: IconButton(
-          icon: Icon(_isPlaying! ? Icons.pause : Icons.play_arrow),
+          icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
           iconSize: playButtonIconSize,
           color: Colors.black,
           onPressed: onPlayButtonPressed,
@@ -588,7 +616,7 @@ class ChromagramBuilder {
     }
     return Positioned(
       right: 0,
-      left: _isPortrait! ? 0 : null, // In portrait mode, center the play button. In landscape mode, align it to the right.
+      left: _isPortrait ? 0 : null, // In portrait mode, center the play button. In landscape mode, align it to the right.
       top: _playButtonPx,
       child: Center(
         child: playButton,

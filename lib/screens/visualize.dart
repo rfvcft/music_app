@@ -8,12 +8,11 @@ import 'package:just_audio/just_audio.dart' as ja; // Audio player package
 
 import 'package:music_app/core/app_settings.dart'; // App settings
 import 'package:music_app/screens/settings.dart'; // Settings page
-import 'package:music_app/utils/intensity_bar.dart' as ib; // Intensity bar widget
 import 'package:music_app/utils/chromagram_builder.dart' as cb; // Chromagram builder for visualization
 import 'package:music_app/utils/conversion.dart' as conv; // Conversion utilities
 import 'package:music_app/utils/constants.dart' as cnst; // Import constants
 
-const bool showLogs = false; // Set to true to enable logs for debugging
+const bool showLogs = true; // Set to true to enable logs for debugging
 
 // Screen for visualizing the chromagram of an audio file. Users can control playback via scroll, fling gestures or a slider. 
 class Visualizer extends StatefulWidget {
@@ -47,7 +46,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
   double currentTime = 0.0; // Current time in seconds. Visuals are based on this variable.
   late double _initialTime; // Auxilliary variable used for starting tickers
 
-  double leftShift = 0.0; // Track horizontal shift from horizontal scroll gestures (0.0 = no shift, 1.0 = maximum shift)
+  double? leftShift; // Track horizontal shift from horizontal scroll gestures (0.0 = no shift, 1.0 = maximum shift)
   late double _initialLeftShift; // Auxilliary variable used for starting fling ticker
 
   late double _flingVelocity; // Velocity of fling in seconds per second
@@ -64,53 +63,17 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
   bool get isComplete => (currentTime >= _duration); // Track whether audio has completed playing
 
-
   String _musicalKey = ''; // Musical key of the audio (may be edited by user)
   int _tonicIndex = -1; // Tonic index of the audio
   String _scale = ''; // Scale of the audio 
 
-  late cb.ChromagramBuilder _chromagramBuilder; // Chromagram builder for building chromagram visualization based on current parameters
+  cb.ChromagramBuilder? _chromagramBuilder; // Chromagram builder for building chromagram visualization based on current parameters
 
   // Initialize states
   @override
   void initState() {
     super.initState();
     if (showLogs) print('INITIALIZING VISUALIZER FOR ${widget.audioName}');
-
-    // Initialize chromagram builder
-    _chromagramBuilder = cb.ChromagramBuilder(
-      duration: widget.duration,
-      chromagram: widget.chromagram,
-      onEditMusicalKey: () => _editMusicalKey(context),
-      onSliderChanged: (value) {
-        setState(() {
-          currentTime = value;
-        });
-      },
-      onSliderChangeStart: (value) {
-        if (isFlinging) _abortFling();
-        if (isPlaying) {
-          _resumePlayingLater = true;
-          pause();
-        }
-      },
-      onSliderChangeEnd: (value) {
-        if (_resumePlayingLater) {
-          play();
-        }
-      },
-      onPlayButtonPressed: () {
-        if (isFlinging) _abortFling();
-        if (isPlaying) {
-          pause();
-        } else {
-          play();
-        }
-      },
-      onPlayButtonReset: () {
-        reset();
-      },
-    );
 
     // Initialize musical key
     _musicalKey = widget.musicalKey;
@@ -133,10 +96,10 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
     // Get duration from audio player stream (should be fixed since we are reading an audio file)
     _player.durationStream.listen((duration) {
-      if (!mounted) return;
       if (duration != null) {
         double newDuration = duration.inMilliseconds / 1000.0;
         if (newDuration == _duration) return;
+        if (!mounted) return;
         setState(() {
           _duration = newDuration;
         });
@@ -267,7 +230,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     if (isVertical) {
       _initialTime = currentTime; // Fix initial time for vertical fling ticker updates
     } else {
-      _initialLeftShift = leftShift; // Fix initial leftShift for horizontal fling ticker updates
+      _initialLeftShift = leftShift!; // Fix initial leftShift for horizontal fling ticker updates
     }
     _flingTicker.start(); // Start fling by starting ticker. See _flingUpdate for details 
     isFlinging = true;
@@ -329,12 +292,12 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
       // Update leftShift based on fling velocity and elapsed time
       leftShift = _initialLeftShift + delta;
 
-      if (leftShift < 0.0) {
+      if (leftShift! < 0.0) {
         leftShift = 0.0;
         _endFling();
         return;
       }
-      if (leftShift > 1.0) {
+      if (leftShift! > 1.0) {
         leftShift = 1.0;
         _endFling();
         return;
@@ -475,12 +438,47 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
+          // Initialize chromagram builder (if not already initialized)
+          _chromagramBuilder ??= cb.ChromagramBuilder(
+            duration: _duration,
+            chromagram: widget.chromagram,
+            onEditMusicalKey: () => _editMusicalKey(context),
+            onSliderChanged: (value) {
+              setState(() {
+                currentTime = value;
+              });
+            },
+            onSliderChangeStart: (value) {
+              if (isFlinging) _abortFling();
+              if (isPlaying) {
+                _resumePlayingLater = true;
+                pause();
+              }
+            },
+            onSliderChangeEnd: (value) {
+              if (_resumePlayingLater) {
+                play();
+              }
+            },
+            onPlayButtonPressed: () {
+              if (isFlinging) _abortFling();
+              if (isPlaying) {
+                pause();
+              } else {
+                play();
+              }
+            },
+            onPlayButtonReset: () {
+              reset();
+            },
+          );
+
           final availableWidthPx = constraints.maxWidth; 
           final availableHeightPx = constraints.maxHeight; 
           final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
 
           // Build visuals based on current parameters using chromagram builder
-          List<Widget> chromagramWidgets = _chromagramBuilder.buildChromagram(
+          List<Widget> chromagramWidgets = _chromagramBuilder!.buildChromagram(
             context: context,
             availableWidthPx: availableWidthPx,
             availableHeightPx: availableHeightPx,
@@ -494,8 +492,10 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             scale: _scale,
           );
 
-          double oneSecondPx = _chromagramBuilder.getOneSecondPx(); // Get pixel equivalent of one second for converting drag distances to time changes
-          double leftShiftToPx = _chromagramBuilder.getLeftShiftToPx(); // Get pixel equivalent of maximum left shift for converting drag distances to leftShift changes
+          leftShift = _chromagramBuilder!.getLeftShift(); //leftShift might be changed by chromagram builder at initialization or when musical key is edited
+
+          double oneSecondPx = _chromagramBuilder!.getOneSecondPx(); // Get pixel equivalent of one second for converting drag distances to time changes
+          double leftShiftToPx = _chromagramBuilder!.getLeftShiftToPx(); // Get pixel equivalent of maximum left shift for converting drag distances to leftShift changes
           
           // Main gesture handler for scrubbing and flinging through the audio timeline.
           // Handles vertical drags in portrait and horizontal drags in landscape.
@@ -540,10 +540,11 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
             },
             onHorizontalDragUpdate: (details) {
               // Update leftShift based on horizontal drag
+              if (leftShift == null) return; // If leftShift is not initialized, ignore drag updates
               if (!mounted) return;
               setState(() {
-                leftShift -= details.primaryDelta! / leftShiftToPx; // Adjust divisor for sensitivity
-                leftShift = leftShift.clamp(0.0, 1.0);
+                leftShift = leftShift! - details.primaryDelta! / leftShiftToPx; 
+                leftShift = leftShift!.clamp(0.0, 1.0);
               });
               if (showLogs) print('setState: onHorizontalDragUpdate, leftShift: $leftShift');
             },
