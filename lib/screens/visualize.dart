@@ -51,7 +51,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
   late double _flingVelocity; // Velocity of fling in seconds per second
   late Ticker _flingTicker; // Ticker for fling animation
-  late bool _resumePlayingLater; // Track if playback should resume after scrolling
+  bool _resumePlayingLater = false; // Track if playback should resume after scrolling
   late bool _isVerticalFling; // Track if fling is vertical (for controlling playback) or horizontal (for controlling leftShift)
   bool isFlinging = false; // Track whether a fling animation is in progress
 
