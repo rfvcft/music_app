@@ -12,7 +12,7 @@ import 'package:music_app/utils/chromagram_builder.dart' as cb; // Chromagram bu
 import 'package:music_app/utils/conversion.dart' as conv; // Conversion utilities
 import 'package:music_app/utils/constants.dart' as cnst; // Import constants
 
-const bool showLogs = true; // Set to true to enable logs for debugging
+const bool showLogs = false; // Set to true to enable logs for debugging
 
 // Screen for visualizing the chromagram of an audio file. Users can control playback via scroll, fling gestures or a slider. 
 class Visualizer extends StatefulWidget {
@@ -397,6 +397,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
         _musicalKey = '$selectedTonic $selectedScale';
         _tonicIndex = cnst.pitchClassNameToIndex[selectedTonic] ?? -1;
         _scale = selectedScale;
+        leftShift = null; 
       });
       if (showLogs) print('setState: _editMusicalKey dialog result');
     }

@@ -87,7 +87,7 @@ class ChromagramBuilder {
     _bottomLinePx = _currentLinePx - _deltaHeightPx; // Distance of bottom line from bottom of screen 
     _chromaBlockerPx = _availableHeightPx - _bottomLinePx; // Height of chroma blocker from top of screen
 
-    _playButtonPx = _isPortrait ? (_availableHeightPx - _sliderLinePx) + 0.15 * _sliderLinePx : 0.0; // Distance of top of audio player to top of screen
+    _playButtonPx = _isPortrait ? (_availableHeightPx - _sliderLinePx) + 0.15 * _sliderLinePx : 0.25 * _deltaWidthPx; // Distance of top of audio player to top of screen
     _timeDisplayPx = _isPortrait ? (_availableHeightPx - _sliderLinePx) + 0.05 * _sliderLinePx : 0.0; // Distance of top of time display to top of screen (not used in landscape mode)
 
     _pitchLabelPx = (_availableHeightPx - _currentLinePx); // Distance of top of pitch labels from bottom of screen
@@ -317,7 +317,7 @@ class ChromagramBuilder {
     }
     return Positioned(
       left: max(leftPx, 2 * _deltaWidthPx),
-      right: max(rightPx, 2 * _deltaWidthPx),
+      right: max(rightPx, 2 * _deltaWidthPx) - 1, // -1 to align the lines at the top right corner perfectly
       bottom: bottomPx,
       child: Transform.translate(
         offset: Offset(0, offsetPx), 
@@ -415,28 +415,34 @@ class ChromagramBuilder {
     );
   }
 
+  // Note labels below the chromagram, aligned with vertical pitch lines
   List<Widget> _pitchLabels() {
     List<Widget> pitchLabels = [];
     int currentNumberOfPitchLabels = 0;
-    final scalePattern = cnst.scalePatterns[_scale];
+    final scalePattern = cnst.scalePatterns[_scale]; // Scale pattern of current musical key 
+    final noteNames = cnst.noteNames[_scale]![_tonicIndex]!; // Note names for current musical key
     for (int i = 0; i < _numBins; i++) {
-      // Add pitch class label below startLine, translated with currentTimePx
-      // Determine if pitch is in scale
-      
-      final isInScale = scalePattern != null && scalePattern[(i - _tonicIndex) % cnst.numPitches] == 1;
-      final isTonic = (i - _tonicIndex) % cnst.numPitches == 0;
+      final int octaveNumber = (i / cnst.numPitches).floor() + 2; // Octave number based on index (C2 starts at index 0)
+      final int pitchClassIndex = i % cnst.numPitches; // Pitch class index (0-11)
+      final bool isInScale = scalePattern != null && scalePattern[(i - _tonicIndex) % cnst.numPitches] == 1; // Determine if note is in scale
+      final bool isTonic = (i - _tonicIndex) % cnst.numPitches == 0; // Determine if note is tonic
+      final String absoluteNoteName = noteNames[pitchClassIndex] + octaveNumber.toString(); // Absolute note name (e.g., C4, G#3)]
+
       if (_isPortrait && !isInScale) continue; // In portrait mode, only show pitch classes in the scale to reduce clutter
       currentNumberOfPitchLabels++;
-      double centerOfPitchLabelPx = (currentNumberOfPitchLabels + 1) * _deltaWidthPx - _leftShiftPx;
+
+      double centerOfPitchLabelPx = (currentNumberOfPitchLabels + 1) * _deltaWidthPx - _leftShiftPx; // Where to put the label horizontally
       if (centerOfPitchLabelPx < _deltaWidthPx || centerOfPitchLabelPx > (_availableWidthPx - _deltaWidthPx)) {
         continue; // Skip drawing pitch labels that are completely outside of the visual window
       }
-      double opacityOfPitchLabel = 1.0;
+
+      double opacityOfPitchLabel = 1.0; // Opacity fades out at boundary
       if (centerOfPitchLabelPx < 2 * _deltaWidthPx) {
         opacityOfPitchLabel = ((centerOfPitchLabelPx - _deltaWidthPx) / _deltaWidthPx).clamp(0.0, 1.0);
       } else if (centerOfPitchLabelPx > (_availableWidthPx - 2 * _deltaWidthPx)) {
         opacityOfPitchLabel = ((_availableWidthPx - _deltaWidthPx - centerOfPitchLabelPx) / _deltaWidthPx).clamp(0.0, 1.0);
       }
+
       Widget pitchLabel = Positioned(
         left: centerOfPitchLabelPx - 16, // Center label under line
         top: _pitchLabelPx,
@@ -446,7 +452,7 @@ class ChromagramBuilder {
             width: 32,
             child: Center(
               child: Text(
-                cnst.absoluteNoteNames[i],
+                absoluteNoteName,
                 style: TextStyle(
                   color: isInScale && isTonic ? Colors.white.withValues(alpha: opacityOfPitchLabel) : 
                          isInScale ? Colors.grey[200]!.withValues(alpha: opacityOfPitchLabel) : 
@@ -542,6 +548,9 @@ class ChromagramBuilder {
   }
 
   Widget _keyText() {
+
+    final noteNames = cnst.noteNames[_scale]![_tonicIndex]!; // Note names for current musical key
+    final String musicalKey = noteNames[_tonicIndex]! + ' ' + _scale; // Musical key (e.g., "C major")
     double fadeOutTime = 0.5 * (_deltaHeightPx / _oneSecondPx); // Time in seconds over which text fades out
     double keyTextOpacity = (1 - (_currentTime / fadeOutTime)).clamp(0.0, 1.0);
     Widget keyText = Positioned(
@@ -570,7 +579,7 @@ class ChromagramBuilder {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    _musicalKey!,
+                    musicalKey,
                     style: Theme.of(_context).textTheme.titleLarge?.copyWith(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
@@ -614,9 +623,9 @@ class ChromagramBuilder {
         ),
       );
     }
-    return Positioned(
-      right: 0,
-      left: _isPortrait ? 0 : null, // In portrait mode, center the play button. In landscape mode, align it to the right.
+    return Positioned( // In portrait, center play button towards bottom of screen. In landscape, align it to the top right corner
+      right: _isPortrait ? 0 : 0.25 * _deltaWidthPx,
+      left: _isPortrait ? 0 : null, 
       top: _playButtonPx,
       child: Center(
         child: playButton,

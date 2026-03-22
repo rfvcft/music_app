@@ -52,12 +52,41 @@ const Map<int, String> pitchClassIndexToName = {
   11: 'B',
 }; // Map from pitch class indices to names
 
-// ABSOLUTE NOTES 
-const List<String> absoluteNoteNames = ['C2', 'C#2', 'D2', 'D#2', 'E2', 'F2', 'F#2', 'G2', 'G#2', 'A2', 'A#2', 'B2',
-  'C3', 'C#3', 'D3', 'D#3', 'E3', 'F3', 'F#3', 'G3', 'G#3', 'A3', 'A#3', 'B3',
-  'C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4', 'A4', 'A#4', 'B4',
-  'C5', 'C#5', 'D5', 'D#5', 'E5', 'F5', 'F#5', 'G5', 'G#5', 'A5', 'A#5', 'B5',
-  'C6']; // Note names for 49 bins from C2 to C6
+
+// SHARP AND FLAT KEYS
+const List<String> sharpKey = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B']; 
+const List<String> flatKey = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'G♭', 'G', 'A♭', 'A', 'B♭', 'B'];
+// Enter scale ('major' or 'minor') and tonic index (0-11) to get note names for that key
+const Map<String, Map<int, List<String>>> noteNames = {
+  'major': {
+    0: sharpKey, // C major,
+    7: sharpKey, // G major,
+    2: sharpKey, // D major,
+    9: sharpKey, // A major,
+    4: sharpKey, // E major,
+    11: sharpKey, // B major,
+    6: sharpKey, // F# major,
+    5: flatKey, // F major,
+    10: flatKey, // Bb major,
+    3: flatKey, // Eb major,
+    8: flatKey, // Ab major,
+    1: flatKey, // Db major,
+  },
+  'minor': {
+    9 : sharpKey, // A minor,
+    4 : sharpKey, // E minor,
+    11 : sharpKey, // B minor,
+    6 : sharpKey, // F# minor,
+    1 : sharpKey, // C# minor,
+    8 : sharpKey, // G# minor,
+    2 : flatKey, // D minor,
+    7 : flatKey, // G minor,
+    0 : flatKey, // C minor,
+    5 : flatKey, // F minor,
+    10 : flatKey, // Bb minor,
+    3 : flatKey, // Eb minor,
+  },
+};
 
 // SCALES 
 const List<String> scaleDegrees = ['1', '♭2', '2', '♭3', '3', '4', '♯4', '5', '♭6', '6', '♭7', '7']; // Scale degree names
