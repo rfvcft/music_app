@@ -24,8 +24,15 @@ class Visualizer extends StatefulWidget {
     required this.musicalKey,
     required this.chromagram,
   }) :
-      numBins = chromagram.length,
-      numFrames = chromagram[0].length;
+        numBins = chromagram.length,
+        numFrames = chromagram.isNotEmpty ? chromagram[0].length : 0 {
+    if (chromagram.isEmpty) {
+      throw ArgumentError('Chromagram must not be empty.');
+    }
+    if (numBins != 49) {
+      throw ArgumentError('Chromagram must have 49 bins, got $numBins.');
+    }
+  }
   
 
   final String audioName; // Name of the audio file (without extension)
