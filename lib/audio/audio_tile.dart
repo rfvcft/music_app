@@ -3,10 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import '../screens/analyze.dart';
 
+
+typedef RenameCallback = Future<void> Function(File? newFile);
+typedef DeleteCallback = Future<void> Function();
+
 class AudioTile extends StatefulWidget {
   final File file;
-  final Future<void> Function() onRename;
-  final Future<void> Function() onDelete;
+  final RenameCallback onRename;
+  final DeleteCallback onDelete;
 
   const AudioTile({
     super.key,
@@ -25,11 +29,11 @@ class _AudioTileState extends State<AudioTile> {
   @override
   void initState() {
     super.initState();
-    _fetchModified();
+    _fetchModifiedForFile(widget.file);
   }
 
-  Future<void> _fetchModified() async {
-    final stat = await widget.file.stat();
+  Future<void> _fetchModifiedForFile(File file) async {
+    final stat = await file.stat();
     setState(() {
       _modified = stat.modified;
     });
@@ -125,9 +129,11 @@ class _AudioTileState extends State<AudioTile> {
           if (newBase != null && newBase.isNotEmpty && newBase != oldBase) {
             final file = File(audioUrl);
             final newPath = p.join(file.parent.path, newBase + ext);
-            await file.rename(newPath);
-            await widget.onRename();
-            await _fetchModified();
+            final renamed = await file.rename(newPath);
+            await widget.onRename(renamed);
+            await _fetchModifiedForFile(renamed);
+          } else {
+            await widget.onRename(null);
           }
         } else if (result == 'delete') {
           final fileName = p.basename(audioUrl);

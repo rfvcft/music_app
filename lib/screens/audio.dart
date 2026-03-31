@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:music_app/audio/audio_recorder.dart';
+import 'package:music_app/audio/audio_tile.dart';
+import 'dart:io';
 
 class AudioPage extends StatefulWidget {
   const AudioPage({super.key});
@@ -10,7 +12,7 @@ class AudioPage extends StatefulWidget {
 }
 
 class _AudioPageState extends State<AudioPage> {
-  String? audioPath;
+  final List<File> _sessionFiles = [];
 
   @override
   void initState() {
@@ -23,15 +25,44 @@ class _AudioPageState extends State<AudioPage> {
       appBar: AppBar(
         title: Text("Record audio"),
       ),
-      body: Center(
-        child: Recorder(
-          onStop: (path) {
-            if (kDebugMode) print('Recorded file path: $path');
-            setState(() {
-              audioPath = path;
-            });
-          },
-        ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Recorder(
+            onStop: (path) {
+              if (kDebugMode) print('Recorded file path: $path');
+              setState(() {
+                _sessionFiles.insert(0, File(path)); // Newest first
+              });
+            },
+          ),
+          const SizedBox(height: 24),
+          if (_sessionFiles.isNotEmpty)
+            Expanded(
+              child: ListView.separated(
+                itemCount: _sessionFiles.length,
+                separatorBuilder: (context, index) => const Divider(),
+                itemBuilder: (context, index) {
+                  final file = _sessionFiles[index];
+                  return AudioTile(
+                    file: file,
+                    onRename: (renamedFile) async {
+                      if (renamedFile != null) {
+                        setState(() {
+                          _sessionFiles[index] = renamedFile;
+                        });
+                      }
+                    },
+                    onDelete: () async {
+                      setState(() {
+                        _sessionFiles.removeAt(index);
+                      });
+                    },
+                  );
+                },
+              ),
+            ),
+        ],
       ),
     );
   }

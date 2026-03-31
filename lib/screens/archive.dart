@@ -57,7 +57,7 @@ class _ArchivePageState extends State<ArchivePage> {
                   height: 60,
                   child: AudioTile(
                     file: files[index],
-                    onRename: () async {
+                    onRename: (renamedFile) async {
                       setState(() {
                         _audioFiles = _getAudioFiles();
                       });
