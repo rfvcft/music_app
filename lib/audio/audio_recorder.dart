@@ -87,13 +87,8 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
     if (path != null) {
       // Notify the parent widget with the file path
       widget.onStop(path);
-      //downloadWebData(path); // TODO necessary? 
     }
   }
-
-  Future<void> _pause() => _audioRecorder.pause();
-
-  Future<void> _resume() => _audioRecorder.resume();
 
   /// Updates the recorder's state and manages the timer based on the new recording state.
   /// Ensures the UI and timer reflect the current state (record, pause, stop).
@@ -138,7 +133,6 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
         }
       }
     }
-
     return isSupported;
   }
 
@@ -155,17 +149,14 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             _buildRecordStopControl(), // Record or stop button
-            const SizedBox(width: 20),
-            _buildPauseResumeControl(), // Pause or resume button
-            const SizedBox(width: 20),
-            _buildText(), // Timer or waiting text
           ],
         ),
         // Show amplitude (volume) feedback if available
         if (_amplitude != null) ...[
           const SizedBox(height: 40),
-          Text('Current: ${_amplitude?.current ?? 0.0}'), // Current amplitude
-          Text('Max: ${_amplitude?.max ?? 0.0}'), // Maximum amplitude
+          _buildTimer(), // Current record duration
+          Text('Current amplitude: ${(_amplitude?.current ?? 0.0).toStringAsFixed(1)}'), // Current amplitude
+          Text('Max amplitude: ${_amplitude?.max ?? 0.0}'), // Maximum amplitude
         ],
       ],
     );
@@ -182,66 +173,29 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
 
   Widget _buildRecordStopControl() {
     late Icon icon;
-    late Color color;
+    Color iconColor = Colors.white;
 
     if (_recordState != RecordState.stop) {
-      icon = const Icon(Icons.stop, color: Colors.red, size: 30);
-      color = Colors.red.withValues(alpha: 0.1);
+      icon = Icon(Icons.stop, color: iconColor, size: 30);
     } else {
-      final theme = Theme.of(context);
-      icon = Icon(Icons.mic, color: theme.primaryColor, size: 30);
-      color = theme.primaryColor.withValues(alpha: 0.1);
+      icon = Icon(Icons.mic, color: iconColor, size: 30);
     }
 
     return ClipOval(
       child: Material(
-        color: color,
+        color: null,
         child: InkWell(
           child: SizedBox(width: 56, height: 56, child: icon),
-          onTap: () {
-            (_recordState != RecordState.stop) ? _stop() : _start();
+          onTap: () async {
+            if (_recordState != RecordState.stop) {
+              await _stop();
+            } else {
+              await _start();
+            }
           },
         ),
       ),
     );
-  }
-
-  Widget _buildPauseResumeControl() {
-    if (_recordState == RecordState.stop) {
-      return const SizedBox.shrink();
-    }
-
-    late Icon icon;
-    late Color color;
-
-    if (_recordState == RecordState.record) {
-      icon = const Icon(Icons.pause, color: Colors.red, size: 30);
-      color = Colors.red.withValues(alpha: 0.1);
-    } else {
-      final theme = Theme.of(context);
-      icon = const Icon(Icons.play_arrow, color: Colors.red, size: 30);
-      color = theme.primaryColor.withValues(alpha: 0.1);
-    }
-
-    return ClipOval(
-      child: Material(
-        color: color,
-        child: InkWell(
-          child: SizedBox(width: 56, height: 56, child: icon),
-          onTap: () {
-            (_recordState == RecordState.pause) ? _resume() : _pause();
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildText() {
-    if (_recordState != RecordState.stop) {
-      return _buildTimer();
-    }
-
-    return const Text("Waiting to record");
   }
 
   Widget _buildTimer() {
@@ -249,8 +203,8 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
     final String seconds = _formatNumber(_recordDuration % 60);
 
     return Text(
-      '$minutes : $seconds',
-      style: const TextStyle(color: Colors.red),
+      'Duration: $minutes : $seconds',
+      style: const TextStyle(color: Colors.white),
     );
   }
 

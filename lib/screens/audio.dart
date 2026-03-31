@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:music_app/audio/audio_player.dart';
 import 'package:music_app/audio/audio_recorder.dart';
 
 class AudioPage extends StatefulWidget {
@@ -11,12 +10,10 @@ class AudioPage extends StatefulWidget {
 }
 
 class _AudioPageState extends State<AudioPage> {
-  bool showPlayer = false;
   String? audioPath;
 
   @override
   void initState() {
-    showPlayer = false;
     super.initState();
   }
 
@@ -24,25 +21,17 @@ class _AudioPageState extends State<AudioPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Audio Recorder"),
+        title: Text("Record audio"),
       ),
       body: Center(
-        child: showPlayer
-            ? AudioPlayer(
-                source: audioPath!,
-                onDelete: () {
-                  setState(() => showPlayer = false);
-                },
-              )
-            : Recorder(
-                onStop: (path) {
-                  if (kDebugMode) print('Recorded file path: $path');
-                  setState(() {
-                    audioPath = path;
-                    showPlayer = true;
-                  });
-                },
-              ),
+        child: Recorder(
+          onStop: (path) {
+            if (kDebugMode) print('Recorded file path: $path');
+            setState(() {
+              audioPath = path;
+            });
+          },
+        ),
       ),
     );
   }
