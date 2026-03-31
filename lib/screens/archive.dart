@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:music_app/screens/analyze.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import '../audio/audio_tile.dart';
+
 
 class ArchivePage extends StatefulWidget {
   const ArchivePage({super.key});
@@ -11,6 +13,8 @@ class ArchivePage extends StatefulWidget {
   @override
   State<ArchivePage> createState() => _ArchivePageState();
 }
+
+
 
 class _ArchivePageState extends State<ArchivePage> {
   late Future<List<File>> _audioFiles;
@@ -23,30 +27,13 @@ class _ArchivePageState extends State<ArchivePage> {
 
   Future<List<File>> _getAudioFiles() async {
     Directory dir = await getApplicationDocumentsDirectory();
-    return dir.listSync().whereType<File>().toList();
-  }
-
-  Widget _audioTile(String name, String audioUrl) {
-    return ListTile(
-      title: Text(name),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AnalyzePage(
-              audioUrl: audioUrl,
-            ),
-          ),
-        );
-      },
-      trailing: IconButton(
-        onPressed: () {
-          //TODO: add possibility to play the audio here as well?
-          /* PLAY AUDIO */
-        },
-        icon: Icon(Icons.play_arrow),
-      ),
-    );
+    final files = dir.listSync().whereType<File>().toList();
+    files.sort((a, b) {
+      final aMod = a.statSync().modified;
+      final bMod = b.statSync().modified;
+      return bMod.compareTo(aMod);
+    });
+    return files;
   }
 
   @override
@@ -67,8 +54,20 @@ class _ArchivePageState extends State<ArchivePage> {
             return ListView.separated(
               itemBuilder: (context, index) {
                 return Container(
-                  height: 50,
-                  child: _audioTile("Entry ${p.basename(files[index].path)}", files[index].path),
+                  height: 60,
+                  child: AudioTile(
+                    file: files[index],
+                    onRename: () async {
+                      setState(() {
+                        _audioFiles = _getAudioFiles();
+                      });
+                    },
+                    onDelete: () async {
+                      setState(() {
+                        _audioFiles = _getAudioFiles();
+                      });
+                    },
+                  ),
                 );
               },
               separatorBuilder: (context, index) => const Divider(),
