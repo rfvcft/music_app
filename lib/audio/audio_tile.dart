@@ -94,10 +94,15 @@ class _AudioTileState extends State<AudioTile> {
           final oldBase = p.basenameWithoutExtension(audioUrl);
           final ext = p.extension(audioUrl);
           String tempName = oldBase;
+          final dialogContext = context;
           final newBase = await showDialog<String>(
-            context: context,
-            builder: (context) {
+            context: dialogContext,
+            builder: (dialogContext) {
               final controller = TextEditingController(text: tempName);
+              // Select all text after the first frame
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                controller.selection = TextSelection(baseOffset: 0, extentOffset: controller.text.length);
+              });
               return AlertDialog(
                 title: Text('Rename File'),
                 content: Row(
@@ -115,45 +120,70 @@ class _AudioTileState extends State<AudioTile> {
                 ),
                 actions: [
                   TextButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Navigator.pop(dialogContext),
                     child: Text('Cancel'),
                   ),
                   TextButton(
-                    onPressed: () => Navigator.pop(context, controller.text),
+                    onPressed: () => Navigator.pop(dialogContext, controller.text),
                     child: Text('Rename'),
                   ),
                 ],
               );
             },
           );
+          if (!mounted) return;
           if (newBase != null && newBase.isNotEmpty && newBase != oldBase) {
             final file = File(audioUrl);
             final newPath = p.join(file.parent.path, newBase + ext);
-            final renamed = await file.rename(newPath);
-            await widget.onRename(renamed);
-            await _fetchModifiedForFile(renamed);
+            final newFile = File(newPath);
+            if (await newFile.exists()) {
+              // Show error dialog if file exists
+              final errorDialogContext = context;
+              await showDialog<void>(
+                context: errorDialogContext,
+                builder: (errorDialogContext) => AlertDialog(
+                  title: Text('Rename Failed'),
+                  content: Text('A file with that name already exists.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(errorDialogContext),
+                      child: Text('OK'),
+                    ),
+                  ],
+                ),
+              );
+              if (!mounted) return;
+              await widget.onRename(null);
+            } else {
+              final renamed = await file.rename(newPath);
+              if (!mounted) return;
+              await widget.onRename(renamed);
+              await _fetchModifiedForFile(renamed);
+            }
           } else {
             await widget.onRename(null);
           }
         } else if (result == 'delete') {
           final fileName = p.basename(audioUrl);
+          final dialogContext = context;
           final confirm = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
+            context: dialogContext,
+            builder: (dialogContext) => AlertDialog(
               title: Text('Delete File'),
               content: Text('Are you sure you want to delete "$fileName"?'),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context, false),
+                  onPressed: () => Navigator.pop(dialogContext, false),
                   child: Text('Cancel'),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.pop(context, true),
+                  onPressed: () => Navigator.pop(dialogContext, true),
                   child: Text('Delete'),
                 ),
               ],
             ),
           );
+          if (!mounted) return;
           if (confirm == true) {
             final file = File(audioUrl);
             await file.delete();
