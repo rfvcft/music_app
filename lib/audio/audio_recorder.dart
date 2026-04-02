@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:record/record.dart';
@@ -83,10 +84,26 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
     // Stop the recording and get the file path where the audio was saved
     final path = await _audioRecorder.stop();
 
-    // If a valid file path is returned
     if (path != null) {
-      // Notify the parent widget with the file path
-      widget.onStop(path);
+      try {
+        final originalFile = File(path);
+        final dir = originalFile.parent;
+        String baseName = 'New Recording';
+        String ext = originalFile.path.split('.').last;
+        int counter = 1;
+        String newName;
+        File newFile;
+        do {
+          newName = '$baseName $counter.$ext';
+          newFile = File(dir.path + Platform.pathSeparator + newName);
+          counter++;
+        } while (await newFile.exists());
+        await originalFile.rename(newFile.path);
+        widget.onStop(newFile.path);
+      } catch (e) {
+        // Fallback: if renaming fails, use the original path
+        widget.onStop(path);
+      }
     }
   }
 
