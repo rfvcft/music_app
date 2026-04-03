@@ -21,6 +21,7 @@ class ArchivePage extends StatefulWidget {
 
 class _ArchivePageState extends State<ArchivePage> {
   List<File> _audioFiles = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -38,6 +39,7 @@ class _ArchivePageState extends State<ArchivePage> {
     });
     setState(() {
       _audioFiles = files;
+      _isLoading = false;
     });
   }
 
@@ -47,9 +49,20 @@ class _ArchivePageState extends State<ArchivePage> {
       appBar: AppBar(
         title: Text("Archive"),
       ),
-      body: _audioFiles.isEmpty
-          ? Center(child: CircularProgressIndicator())
-          : ListView.separated(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _audioFiles.isEmpty
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 32.0),
+                    child: Text(
+                      'No audio files yet.\nRecord or import audio to get started.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey, fontSize: 16),
+                    ),
+                  ),
+                )
+              : ListView.separated(
               itemBuilder: (context, index) {
                 return Container(
                   height: 60,

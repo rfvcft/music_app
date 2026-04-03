@@ -8,6 +8,7 @@ import 'package:record/record.dart';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:music_app/utils/conversion.dart' as conv;
+import 'package:music_app/main.dart' show routeObserver;
 import 'platform/audio_recorder_platform.dart';
 
 class Recorder extends StatefulWidget {
@@ -22,7 +23,7 @@ class Recorder extends StatefulWidget {
   State<Recorder> createState() => _RecorderState();
 }
 
-class _RecorderState extends State<Recorder> with AudioRecorderMixin {
+class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware {
   String? _nextRecordingName; // Name for the next recording
   int _recordDurationMs = 0; // Duration of the current recording in milliseconds
   Timer? _timer; // Timer to update the recording duration every second
@@ -66,6 +67,31 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
 
     // Call the parent class's initState
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is ModalRoute<void>) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPushNext() {
+    // Another route was pushed on top — stop recording if active
+    if (_recordState != RecordState.stop) {
+      _stop();
+    }
+  }
+
+  @override
+  void didPop() {
+    // This route was popped (e.g. back navigation) — stop recording if active
+    if (_recordState != RecordState.stop) {
+      _stop();
+    }
   }
 
   /// Starts a new audio recording session if permissions and encoder support are available.
@@ -138,9 +164,11 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
     _amplitude = null; // Reset amplitude data for next recording
     _smoothedAmplitude = null; // Reset smoothed amplitude for next recording
     // Clear the next recording name after stopping
-    setState(() {
-      _nextRecordingName = null;
-    });
+    if (mounted) {
+      setState(() {
+        _nextRecordingName = null;
+      });
+    }
   }
 
   /// Returns the next available recording file name in the documents directory.
@@ -236,6 +264,7 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
 
   @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _timer?.cancel();
     _recordSub?.cancel();
     _amplitudeSub?.cancel();

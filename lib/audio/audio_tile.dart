@@ -53,9 +53,16 @@ class _AudioTileState extends State<AudioTile> {
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
+    final now = DateTime.now();
+    final isToday = _modified != null &&
+        _modified!.year == now.year &&
+        _modified!.month == now.month &&
+        _modified!.day == now.day;
     final dateStr = _modified == null
         ? ''
-        : '${_modified!.day} ${months[_modified!.month - 1]} ${_modified!.year}';
+        : isToday
+            ? '${_modified!.hour.toString().padLeft(2, '0')}:${_modified!.minute.toString().padLeft(2, '0')}'
+            : '${_modified!.day} ${months[_modified!.month - 1]} ${_modified!.year}';
     return Dismissible(
       key: ValueKey(widget.file.path),
       direction: DismissDirection.endToStart,
@@ -95,7 +102,7 @@ class _AudioTileState extends State<AudioTile> {
       },
       child: ListTile(
         title: Text(name),
-        subtitle: Text(dateStr),
+        subtitle: Text(dateStr, style: const TextStyle(color: Colors.grey)),
         onTap: () {
           Navigator.push(
             context,
@@ -133,6 +140,7 @@ class _AudioTileState extends State<AudioTile> {
               );
             },
           );
+          if (!mounted) return;
           if (result == 'rename') {
             final oldBase = p.basenameWithoutExtension(audioUrl);
             final ext = p.extension(audioUrl);
@@ -180,6 +188,7 @@ class _AudioTileState extends State<AudioTile> {
               final newPath = p.join(file.parent.path, newBase + ext);
               final newFile = File(newPath);
               if (await newFile.exists()) {
+                if (!mounted) return;
                 // Show error dialog if file exists
                 final errorDialogContext = context;
                 await showDialog<void>(

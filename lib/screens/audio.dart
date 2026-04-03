@@ -27,6 +27,49 @@ class _AudioPageState extends State<AudioPage> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
+          final isLandscape = constraints.maxWidth > constraints.maxHeight;
+          if (isLandscape) {
+            final recorderSize = constraints.maxHeight;
+            return Row(
+              children: [
+                Recorder(
+                  width: recorderSize,
+                  height: recorderSize,
+                  onStop: (path) {
+                    if (kDebugMode) print('Recorded file path: $path');
+                    setState(() {
+                      _sessionFiles.insert(0, File(path));
+                    });
+                  },
+                ),
+                if (_sessionFiles.isNotEmpty)
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: _sessionFiles.length,
+                      separatorBuilder: (context, index) => const Divider(),
+                      itemBuilder: (context, index) {
+                        final file = _sessionFiles[index];
+                        return AudioTile(
+                          file: file,
+                          onRename: (renamedFile) async {
+                            if (renamedFile != null) {
+                              setState(() {
+                                _sessionFiles[index] = renamedFile;
+                              });
+                            }
+                          },
+                          onDelete: () async {
+                            setState(() {
+                              _sessionFiles.removeAt(index);
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            );
+          }
           final size = constraints.maxWidth;
           return Column(
             mainAxisAlignment: MainAxisAlignment.start,
@@ -37,7 +80,7 @@ class _AudioPageState extends State<AudioPage> {
                 onStop: (path) {
                   if (kDebugMode) print('Recorded file path: $path');
                   setState(() {
-                    _sessionFiles.insert(0, File(path)); // Newest first
+                    _sessionFiles.insert(0, File(path));
                   });
                 },
               ),
