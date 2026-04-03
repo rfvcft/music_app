@@ -24,7 +24,7 @@ class Recorder extends StatefulWidget {
 
 class _RecorderState extends State<Recorder> with AudioRecorderMixin {
   String? _nextRecordingName; // Name for the next recording
-  int _recordDuration = 0; // Duration of the current recording in seconds
+  int _recordDurationMs = 0; // Duration of the current recording in milliseconds
   Timer? _timer; // Timer to update the recording duration every second
   late final AudioRecorder
   _audioRecorder; // AudioRecorder instance for handling recording
@@ -173,16 +173,16 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
         _timer?.cancel();
         break;
       case RecordState.record:
-        // Record: start or resume the timer (update duration every second)
+        // Record: start or resume the timer (update duration every 20ms)
         _timer?.cancel();
-        _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
-          setState(() => _recordDuration++);
+        _timer = Timer.periodic(const Duration(milliseconds: 20), (Timer t) {
+          setState(() => _recordDurationMs += 20);
         });
         break;
       case RecordState.stop:
         // Stop: cancel the timer and reset the duration counter
         _timer?.cancel();
-        _recordDuration = 0;
+        _recordDurationMs = 0;
         break;
     }
   }
@@ -223,17 +223,9 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildRecordingStatusText(),
-                if (_amplitude != null) ...[
-                  const SizedBox(height: 40),
-                  _buildTimer(),
-                  Text(
-                    'Current amplitude: \\${(_amplitude?.current ?? 0.0).toStringAsFixed(1)}',
-                  ),
-                  Text(
-                    'Smoothed amplitude: \\${_smoothedAmplitude?.toStringAsFixed(1) ?? "N/A"}',
-                  ),
-                  Text('Max amplitude: \\${_amplitude?.max ?? 0.0}'),
-                ],
+                const SizedBox(height: 10),
+                _buildTimer(),
+                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -355,7 +347,7 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
         padding: const EdgeInsets.only(top: 12.0),
         child: Text(
           _nextRecordingName!.replaceFirst(RegExp(r'\.[^.]+$'), ''),
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
         ),
       );
     } else if (_recordState == RecordState.stop) {
@@ -363,7 +355,7 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
         padding: EdgeInsets.only(top: 12.0),
         child: Text(
           'Waiting to record',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
         ),
       );
     } else {
@@ -372,12 +364,14 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin {
   }
 
   Widget _buildTimer() {
-    final String minutes = _formatNumber(_recordDuration ~/ 60);
-    final String seconds = _formatNumber(_recordDuration % 60);
+    final int totalMs = _recordDurationMs;
+    final String minutes = _formatNumber(totalMs ~/ 60000);
+    final String seconds = _formatNumber((totalMs ~/ 1000) % 60);
+    final String millis = _formatNumber((totalMs % 1000) ~/ 10);
 
     return Text(
-      'Duration: $minutes : $seconds',
-      style: const TextStyle(color: Colors.white),
+      '$minutes:$seconds:$millis',
+      style: const TextStyle(color: Colors.white, fontSize: 16),
     );
   }
 
