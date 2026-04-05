@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'package:music_app/screens/home.dart';
 
+/// Global route observer that allows widgets (e.g. Recorder) to detect
+/// navigation events like pushing or popping routes.
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+
 void main() {
   runApp(const MusicApp());
 }
@@ -41,6 +45,7 @@ class MusicApp extends StatelessWidget {
           ),
         ),
       ),
+      navigatorObservers: [routeObserver],
       home: const HomePage(title: 'DODECA'),
     );
   }
