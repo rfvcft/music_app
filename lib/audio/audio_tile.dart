@@ -166,7 +166,6 @@ class _AudioTileState extends State<AudioTile> {
                       Expanded(
                         child: TextField(
                           autofocus: true,
-                          maxLength: 30,
                           decoration: InputDecoration(hintText: 'Enter new name'),
                           controller: controller,
                           onChanged: (value) => tempName = value,
@@ -256,7 +255,7 @@ class _AudioTileState extends State<AudioTile> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: Theme.of(context).textTheme.titleMedium),
+                Text(name, style: Theme.of(context).textTheme.titleMedium, overflow: TextOverflow.ellipsis, maxLines: 1),
                 Text(dateStr, style: const TextStyle(color: Colors.grey)),
               ],
             ),
