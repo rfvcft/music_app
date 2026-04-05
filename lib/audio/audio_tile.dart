@@ -66,11 +66,18 @@ class _AudioTileState extends State<AudioTile> {
     return Dismissible(
       key: ValueKey(widget.file.path),
       direction: DismissDirection.endToStart,
-      background: Container(
-        color: Colors.red,
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
+      background: Row(
+        children: [
+          const Spacer(flex: 2),
+          Expanded(
+            flex: 1,
+            child: Container(
+              color: Colors.red,
+              alignment: Alignment.center,
+              child: const Icon(Icons.delete, color: Colors.white),
+            ),
+          ),
+        ],
       ),
       confirmDismiss: (direction) async {
         // Show confirmation dialog before deleting
@@ -100,9 +107,7 @@ class _AudioTileState extends State<AudioTile> {
         await file.delete();
         await widget.onDelete();
       },
-      child: ListTile(
-        title: Text(name),
-        subtitle: Text(dateStr, style: const TextStyle(color: Colors.grey)),
+      child: InkWell(
         onTap: () {
           Navigator.push(
             context,
@@ -161,6 +166,7 @@ class _AudioTileState extends State<AudioTile> {
                       Expanded(
                         child: TextField(
                           autofocus: true,
+                          maxLength: 30,
                           decoration: InputDecoration(hintText: 'Enter new name'),
                           controller: controller,
                           onChanged: (value) => tempName = value,
@@ -243,6 +249,19 @@ class _AudioTileState extends State<AudioTile> {
             }
           }
         },
+        child: SizedBox.expand(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: Theme.of(context).textTheme.titleMedium),
+                Text(dateStr, style: const TextStyle(color: Colors.grey)),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

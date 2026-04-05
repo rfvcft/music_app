@@ -400,7 +400,11 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
 
     return Text(
       '$minutes:$seconds:$millis',
-      style: const TextStyle(color: Colors.white, fontSize: 16),
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 16,
+        fontFeatures: [FontFeature.tabularFigures()],
+      ),
     );
   }
 

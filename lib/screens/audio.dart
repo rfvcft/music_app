@@ -13,6 +13,7 @@ class AudioPage extends StatefulWidget {
 
 class _AudioPageState extends State<AudioPage> {
   final List<File> _sessionFiles = [];
+  final _recorderKey = GlobalKey(); // Preserves Recorder state across orientation changes
 
   @override
   void initState() {
@@ -33,6 +34,7 @@ class _AudioPageState extends State<AudioPage> {
             return Row(
               children: [
                 Recorder(
+                  key: _recorderKey,
                   width: recorderSize,
                   height: recorderSize,
                   onStop: (path) {
@@ -49,7 +51,9 @@ class _AudioPageState extends State<AudioPage> {
                       separatorBuilder: (context, index) => const Divider(),
                       itemBuilder: (context, index) {
                         final file = _sessionFiles[index];
-                        return AudioTile(
+                        return SizedBox(
+                          height: 60,
+                          child: AudioTile(
                           file: file,
                           onRename: (renamedFile) async {
                             if (renamedFile != null) {
@@ -63,6 +67,7 @@ class _AudioPageState extends State<AudioPage> {
                               _sessionFiles.removeAt(index);
                             });
                           },
+                        ),
                         );
                       },
                     ),
@@ -75,6 +80,7 @@ class _AudioPageState extends State<AudioPage> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Recorder(
+                key: _recorderKey,
                 width: size,
                 height: size,
                 onStop: (path) {
@@ -92,7 +98,9 @@ class _AudioPageState extends State<AudioPage> {
                     separatorBuilder: (context, index) => const Divider(),
                     itemBuilder: (context, index) {
                       final file = _sessionFiles[index];
-                      return AudioTile(
+                      return SizedBox(
+                        height: 60,
+                        child: AudioTile(
                         file: file,
                         onRename: (renamedFile) async {
                           if (renamedFile != null) {
@@ -106,6 +114,7 @@ class _AudioPageState extends State<AudioPage> {
                             _sessionFiles.removeAt(index);
                           });
                         },
+                      ),
                       );
                     },
                   ),
