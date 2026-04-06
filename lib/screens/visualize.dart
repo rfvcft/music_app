@@ -98,7 +98,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     if (widget.audioUrl.startsWith('assets/')) {
       _player.setAudioSource(ja.AudioSource.asset(widget.audioUrl));
     } else {
-      _player.setAudioSource(ja.AudioSource.uri(Uri.parse(widget.audioUrl)));
+      _player.setAudioSource(ja.AudioSource.uri(Uri.file(widget.audioUrl)));
     }
 
     // Get duration from audio player stream (should be fixed since we are reading an audio file)
