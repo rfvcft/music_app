@@ -1,8 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:music_app/audio/audio_player.dart';
 import 'package:music_app/audio/audio_recorder.dart';
-
+import 'package:music_app/audio/audio_tile.dart';
 import 'dart:io';
 
 class AudioPage extends StatefulWidget {
@@ -13,84 +12,116 @@ class AudioPage extends StatefulWidget {
 }
 
 class _AudioPageState extends State<AudioPage> {
-  bool showPlayer = false;
-  String? audioPath;
+  final List<File> _sessionFiles = [];
+  final _recorderKey = GlobalKey(); // Preserves Recorder state across orientation changes
 
   @override
   void initState() {
-    showPlayer = false;
     super.initState();
   }
-
-  Future<void> _promptForNameAndShowPlayer(String path) async {
-    String? audioName = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        final TextEditingController controller = TextEditingController();
-        return AlertDialog(
-          title: const Text('Name your recording'),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: const InputDecoration(hintText: 'Enter audio name'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-    if (audioName != null && audioName.isNotEmpty) {
-      // Rename the file to the user-chosen name in the same directory
-      try {
-        final oldFile = File(path);
-        final dir = oldFile.parent;
-        final newPath = dir.path + '/$audioName.m4a';
-        final newFile = await oldFile.rename(newPath);
-        setState(() {
-          audioPath = newFile.path;
-          showPlayer = true;
-        });
-        if (kDebugMode) print('Audio renamed to: $newPath');
-      } catch (e) {
-        if (kDebugMode) print('Rename failed: $e');
-        // Fallback: show original file
-        setState(() {
-          audioPath = path;
-          showPlayer = true;
-        });
-      }
-    }
-  }
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Audio Recorder"),
+        title: Text("Record audio"),
       ),
-      body: Center(
-        child: showPlayer
-            ? AudioPlayer(
-                source: audioPath!,
-                onDelete: () {
-                  setState(() => showPlayer = false);
-                },
-              )
-            : Recorder(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isLandscape = constraints.maxWidth > constraints.maxHeight;
+          if (isLandscape) {
+            final recorderSize = constraints.maxHeight;
+            return Row(
+              children: [
+                Recorder(
+                  key: _recorderKey,
+                  width: recorderSize,
+                  height: recorderSize,
+                  onStop: (path) {
+                    if (kDebugMode) print('Recorded file path: $path');
+                    setState(() {
+                      _sessionFiles.insert(0, File(path));
+                    });
+                  },
+                ),
+                if (_sessionFiles.isNotEmpty)
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: _sessionFiles.length,
+                      separatorBuilder: (context, index) => const Divider(),
+                      itemBuilder: (context, index) {
+                        final file = _sessionFiles[index];
+                        return SizedBox(
+                          height: 60,
+                          child: AudioTile(
+                          file: file,
+                          onRename: (renamedFile) async {
+                            if (renamedFile != null) {
+                              setState(() {
+                                _sessionFiles[index] = renamedFile;
+                              });
+                            }
+                          },
+                          onDelete: () async {
+                            setState(() {
+                              _sessionFiles.removeAt(index);
+                            });
+                          },
+                        ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            );
+          }
+          final size = constraints.maxWidth;
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Recorder(
+                key: _recorderKey,
+                width: size,
+                height: size,
                 onStop: (path) {
                   if (kDebugMode) print('Recorded file path: $path');
-                  _promptForNameAndShowPlayer(path);
+                  setState(() {
+                    _sessionFiles.insert(0, File(path));
+                  });
                 },
               ),
+              const SizedBox(height: 24),
+              if (_sessionFiles.isNotEmpty)
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: _sessionFiles.length,
+                    separatorBuilder: (context, index) => const Divider(),
+                    itemBuilder: (context, index) {
+                      final file = _sessionFiles[index];
+                      return SizedBox(
+                        height: 60,
+                        child: AudioTile(
+                        file: file,
+                        onRename: (renamedFile) async {
+                          if (renamedFile != null) {
+                            setState(() {
+                              _sessionFiles[index] = renamedFile;
+                            });
+                          }
+                        },
+                        onDelete: () async {
+                          setState(() {
+                            _sessionFiles.removeAt(index);
+                          });
+                        },
+                      ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
