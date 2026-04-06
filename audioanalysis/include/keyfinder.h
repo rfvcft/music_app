@@ -8,15 +8,22 @@
 class KeyFinder {
 public:
     KeyFinder(
-        const std::vector<std::vector<float>>& chromaMat, // Input: chroma matrix ( time frames x pitch classes)
-        std::vector<std::string>& keys // Output: detected musical keys, sorted by correlation score
+        const std::vector<std::vector<float>>& chromaMatrix, // Input: chroma matrix ( time frames x pitch classes)
+        std::vector<std::string>& musicalKeys, // Output: detected musical keys, sorted by correlation score
+        const std::vector<float>& majorProfile, // Parameter: major key template profile (size 12)
+        const std::vector<float>& minorProfile // Parameter: minor key template profile (size 12)
     );
+
+    // Music related parameters
+    std::vector<std::string> keyNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 
     void computeKey();
 
 private:
-    const std::vector<std::vector<float>>& chromaMatrix; // Input chroma matrix (time frames x pitch classes)
-    std::vector<std::string>& musicalKeys; // Output detected musical keys, sorted by correlation score
+    const std::vector<std::vector<float>>& chromaMatrix; 
+    std::vector<std::string>& musicalKeys; 
+    const std::vector<float>& majorProfile; 
+    const std::vector<float>& minorProfile; 
 
     std::vector<float> computeAverageChroma() const;
     float computeCorrelation(const std::vector<float>& v1, float mean1, float stddev1,

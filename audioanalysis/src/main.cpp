@@ -36,11 +36,12 @@ int main(int argc, char** argv) {
         std::cerr << "Usage: " << argv[0] << " audio.wav \n";
         return 1;
     }
+    int sampleRate = 44100; // sample rate in Hz
 
     // Load audio buffer to memory
     //std::vector<float> audio = loadRawFile(argv[1]);  // Uncomment to load .raw files
     std::vector<float> audio;
-    AudioLoader audioLoader(argv[1], audio);
+    AudioLoader audioLoader(argv[1], sampleRate, audio);
     audioLoader.load();
 
     // Convert to float* for C API

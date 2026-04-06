@@ -4,11 +4,25 @@
 #include <algorithm>
 
 
-PeakFinder::PeakFinder(const std::vector<float>& magnitudeBuffer,
-                          std::vector<Peak>& peakBuffer)
-    : magnitudes(magnitudeBuffer), peaks(peakBuffer) {
-                peaks.reserve(maxPeaks);
-      }
+PeakFinder::PeakFinder(
+    const std::vector<float>& magnitudes,
+    std::vector<Peak>& peaks,
+    int sampleRate, 
+    int frameSize,
+    float minFrequency,
+    float maxFrequency,
+    int maxPeaks
+): 
+    magnitudes(magnitudes), 
+    peaks(peaks),
+    sampleRate(sampleRate),
+    frameSize(frameSize),
+    minFrequency(minFrequency),
+    maxFrequency(maxFrequency),
+    maxPeaks(maxPeaks)
+{
+    peaks.reserve(maxPeaks);
+}
 
 // Find local peaks in magnitude spectrum. We only consider peaks within [minFrequency, maxFrequency].  
 void PeakFinder::computePeaks() {
@@ -51,14 +65,12 @@ int PeakFinder::roundToInt(float x) const {
 
 // Convert bin index to frequency in Hz
 float PeakFinder::binToFrequency(float bin) const {
-    int N = (magnitudes.size() - 1) * 2; // since magnitudes size is N/2 + 1
-    return bin * static_cast<float>(sampleRate) / static_cast<float>(N);
+    return bin * static_cast<float>(sampleRate) / frameSize;
 }
 
 // Convert frequency in Hz to bin index
 float PeakFinder::frequencyToBin(float frequency) const {
-    int N = (magnitudes.size() - 1) * 2; // since magnitudes size is N/2 + 1
-    return frequency * static_cast<float>(N) / static_cast<float>(sampleRate);
+    return frequency * frameSize / static_cast<float>(sampleRate);
 }
 
 // Maintain a max-heap of peaks. We only keep the top maxPeaks peaks.

@@ -8,14 +8,23 @@
 #endif
 
 
-FrameCutter::FrameCutter(const float* audio_buffer, int audio_buffer_length, std::vector<float>& frameBuffer)
-    : audioBuffer(audio_buffer), audioBufferLength(audio_buffer_length), frame(frameBuffer), hanningWindow(frameSize) {
-
-    // Calculate expected number of frames
-    numFrames = static_cast<int>(std::ceil(static_cast<float>(audioBufferLength) / hopSize));
-
+FrameCutter::FrameCutter(
+    const float* audio_buffer,
+    int audio_buffer_length,
+    std::vector<float>& frame,
+    int frameSize,
+    int hopSize,
+    const std::string& currentPositionAt
+):
+    audio_buffer(audio_buffer),
+    audio_buffer_length(audio_buffer_length),
+    frame(frame),
+    frameSize(frameSize),
+    hopSize(hopSize),
+    currentPositionAt(currentPositionAt)
+{
     // Initialize output frame buffer
-    frame.resize(frameSize, 0.0f); 
+    frame.resize(frameSize, 0.0f);
 
     // Precompute Hanning window
     hanningWindow.resize(frameSize);
@@ -24,10 +33,14 @@ FrameCutter::FrameCutter(const float* audio_buffer, int audio_buffer_length, std
     }
 }
 
+int FrameCutter::getExpectedNumberOfFrames() {
+    return static_cast<int>(std::ceil(static_cast<float>(audio_buffer_length) / hopSize));
+}
+
 // Cuts the next frame from the audio buffer
 void FrameCutter::computeNextFrame() {
     // If current position is past the end of the audio buffer, return empty frame
-    if (currentPosition >= audioBufferLength) {
+    if (currentPosition >= audio_buffer_length) {
         frame.clear();
         return;
     }
@@ -53,12 +66,12 @@ void FrameCutter::computeNextFrame() {
 
     // Compute valid region in input and output
     int inputStart = std::max(frameStart, 0);
-    int inputEnd = std::min(frameEnd, audioBufferLength);
+    int inputEnd = std::min(frameEnd, audio_buffer_length);
     int outputStart = std::max(0, -frameStart);
     int validSamples = inputEnd - inputStart;
 
     if (validSamples > 0) {
-        std::memcpy(frame.data() + outputStart, audioBuffer + inputStart, static_cast<size_t>(validSamples) * sizeof(float));
+        std::memcpy(frame.data() + outputStart, audio_buffer + inputStart, static_cast<size_t>(validSamples) * sizeof(float));
     }
 
     currentPosition += hopSize;

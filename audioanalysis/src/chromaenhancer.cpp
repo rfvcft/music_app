@@ -1,3 +1,4 @@
+#include "conversion.h"
 #include "chromaenhancer.h"
 #include <algorithm>
 #include <cmath>
@@ -9,57 +10,126 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-ChromaEnhancer::ChromaEnhancer(const std::vector<std::vector<float>>& inputChroma, std::vector<std::vector<float>>& outputChroma)
-                               : chromaMatrix(inputChroma), enhancedChromaMatrix(outputChroma){}
+ChromaEnhancer::ChromaEnhancer(
+    const std::vector<std::vector<float>>& chromaMatrix,
+    std::vector<std::vector<float>>& enhancedChromaMatrix,
+    int sampleRate,
+    int hopSize,
+    float localMaxWindowSizeInSeconds,
+    float lowAmplitudeThreshold,
+    float medianLengthInSeconds,
+    float minDurationInSeconds
+): 
+    chromaMatrix(chromaMatrix), 
+    enhancedChromaMatrix(enhancedChromaMatrix),
+    sampleRate(sampleRate),
+    hopSize(hopSize),
+    localMaxWindowSizeInSeconds(localMaxWindowSizeInSeconds),
+    lowAmplitudeThreshold(lowAmplitudeThreshold),
+    medianLengthInSeconds(medianLengthInSeconds),
+    minDurationInSeconds(minDurationInSeconds)
+{
+    // Convert median filter window size and minimum duration from seconds to frames
+    localMaxWindowSizeInFrames = secondsToFrames(localMaxWindowSizeInSeconds, sampleRate, hopSize);
+    medianLengthInFrames = secondsToFrames(medianLengthInSeconds, sampleRate, hopSize);
+    minDurationInFrames = secondsToFrames(minDurationInSeconds, sampleRate, hopSize);
+
+    if (medianLengthInFrames <= 0) {
+        medianLengthInFrames = 0; // bypass
+    } else if ((medianLengthInFrames % 2) == 0) { 
+        ++medianLengthInFrames; // Force odd 
+    }
+}
 
 // Enhance inputChroma and write to outputChroma
 void ChromaEnhancer::computeEnhancement() {
     convertToLogScale();
+    normalizeByLocalMaximaInTime();
     dropLowAmplitudes(lowAmplitudeThreshold);
-    medianTimeFilterSliding(medianFilterWindowSize);
-    dropShortTimeExcitations(minDuration); 
-    normalizeChroma(normalize); // typically bypassed
+    medianTimeFilterSliding(medianLengthInFrames);
+    dropShortTimeExcitations(minDurationInFrames); 
 }
 
-// Convert chroma values to log scale and resize to [0, 1]
+// Convert chroma values to log scale 
 void ChromaEnhancer::convertToLogScale() {
     size_t numFrames = chromaMatrix.size();
     if (numFrames == 0) return;
     size_t numBins = chromaMatrix[0].size();
     enhancedChromaMatrix.assign(numFrames, std::vector<float>(numBins, 0.0f));
 
-    // Find global max
-    float maxChroma = 0.0f;
-    for (const auto& frame : chromaMatrix)
-        for (float v : frame) maxChroma = std::max(maxChroma, v);
+    for (size_t frame = 0; frame < numFrames; ++frame) {
+        for (size_t bin = 0; bin < numBins; ++bin) {
+            float v = chromaMatrix[frame][bin];
+            enhancedChromaMatrix[frame][bin] = v > eps ? std::log2f(v) : std::log2f(eps); // log scale with floor at 0
+        }
+    }
+}
 
-    // Convert to log scale and resize to [0, 1]
-    float eps = 1e-12f; // small constant to avoid log(0)
-    if (maxChroma <= 10 * eps) return;
-    float denom = std::logf(maxChroma) - std::logf(eps);
-    for (size_t t = 0; t < numFrames; ++t) {
-        for (size_t k = 0; k < numBins; ++k) {
-            float v = chromaMatrix[t][k];
-            if (v < eps) v = 0.0f;
-            else v = (std::logf(v) - std::logf(eps)) / denom;
-            enhancedChromaMatrix[t][k] = v;
+void ChromaEnhancer::normalizeByLocalMaximaInTime() {
+    size_t numFrames = enhancedChromaMatrix.size();
+    if (numFrames == 0) return;
+    size_t numBins = enhancedChromaMatrix[0].size();
+
+    if (localMaxWindowSizeInFrames <= 0) { // Use global maximum
+        float globalMax = 0.0f;
+        for (size_t frame = 0; frame < numFrames; ++frame) {
+            for (size_t bin = 0; bin < numBins; ++bin) {
+                globalMax = std::max(globalMax, enhancedChromaMatrix[frame][bin]);
+            }
+        }
+        if (globalMax < std::log2f(eps) + 1.0f) return; // Avoid division by near-zero and also means chroma is essentially silent
+        for (size_t frame = 0; frame < numFrames; ++frame) {
+            for (size_t bin = 0; bin < numBins; ++bin) {
+                float v = enhancedChromaMatrix[frame][bin];
+                enhancedChromaMatrix[frame][bin] = (v - std::log2f(eps)) / (globalMax - std::log2f(eps)); // normalize to [0, 1] based on global max
+            }
+        }
+        return;
+    }
+
+    // Find average maximum across all frames
+    float averageMax = 0.0f;
+    for (int frame = 0; frame < numFrames; ++frame) {
+        float currentMax = 0.0f;
+        for (int bin = 0; bin < numBins; ++bin) {
+            currentMax = std::max(currentMax, enhancedChromaMatrix[frame][bin]);
+        }
+        averageMax += currentMax;
+    }
+    averageMax /= numFrames;
+
+    // Use local maximum in the window [frame - localMaxWindowSizeInFrames, frame] with zero-padding at the beginning. We cap from below with averageMax.
+    for (int frame = numFrames - 1; frame >= 0; --frame) {
+        float localMax = averageMax; // start with average max as a floor
+        for (int offset = 0; offset < localMaxWindowSizeInFrames; ++offset) {
+            int idx = static_cast<int>(frame) - offset;
+            if (idx < 0) break; // zero-padding at the beginning
+            for (size_t bin = 0; bin < numBins; ++bin) {
+                localMax = std::max(localMax, enhancedChromaMatrix[idx][bin]);
+            }
+        }
+        if (localMax < std::log2f(eps) + 1.0f) continue; // Avoid division by near-zero and also means chroma is essentially silent
+        for (int bin = 0; bin < numBins; ++bin) {
+            float v = enhancedChromaMatrix[frame][bin];
+            enhancedChromaMatrix[frame][bin] = (v - std::log2f(eps)) / (localMax - std::log2f(eps)); // normalize to [0, 1] based on local max
         }
     }
 }
 
 // Drop chroma values below threshold and resize to [0, 1]
 void ChromaEnhancer::dropLowAmplitudes(float threshold) {
+    if (threshold <= 0.0f) return; // no drop
     size_t numFrames = enhancedChromaMatrix.size();
     if (numFrames == 0) return;
     size_t numBins = enhancedChromaMatrix[0].size();
 
-    for (size_t t = 0; t < numFrames; ++t) {
-        for (size_t k = 0; k < numBins; ++k) {
-            float v = enhancedChromaMatrix[t][k];
+    for (size_t frame = 0; frame < numFrames; ++frame) {
+        for (size_t bin = 0; bin < numBins; ++bin) {
+            float v = enhancedChromaMatrix[frame][bin];
             // Thresholding
             if (v < threshold) v = 0.0f;
             else v = (v - threshold) / (1.0f - threshold);
-            enhancedChromaMatrix[t][k] = v;
+            enhancedChromaMatrix[frame][bin] = v;
         }
     }
 }
@@ -181,25 +251,4 @@ void ChromaEnhancer::medianTimeFilterSliding(int windowSize) {
         }
     }
     enhancedChromaMatrix.swap(outMatrix);
-}
-
-// Normalize each chroma vector using max norm
-void ChromaEnhancer::normalizeChroma(bool normalize) {
-    if (!normalize) return; // bypass
-
-    size_t numFrames = enhancedChromaMatrix.size();
-    if (numFrames == 0) return;
-    size_t numBins = enhancedChromaMatrix[0].size();
-
-    for (size_t t = 0; t < numFrames; ++t) {
-        float maxVal = 0.0f;
-        for (size_t k = 0; k < numBins; ++k) {
-            maxVal = std::max(maxVal, enhancedChromaMatrix[t][k]);
-        }
-        if (maxVal > 1e-6f) {
-            for (size_t k = 0; k < numBins; ++k) {
-                enhancedChromaMatrix[t][k] /= maxVal;
-            }
-        }
-    }
 }

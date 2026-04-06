@@ -1,8 +1,8 @@
+#include "conversion.h"
 #include "percussionremover.h"
 #include <cmath>
 #include <algorithm>
 #include <vector>
-
 
 // Erase one instance of x from sorted vector vec
 void erase_one(std::vector<float>& vec, float x) {
@@ -28,10 +28,51 @@ void insert(std::vector<float>& vec, float x) {
 }
 
 PercussionRemover::PercussionRemover(
-    const std::vector<float>& magnitudeBuffer,
-    std::vector<float>& noPercussionMagnitudeBuffer)
-    : magnitudes(magnitudeBuffer), noPercussionMagnitudes(noPercussionMagnitudeBuffer) {
+    const std::vector<float>& magnitudes,
+    std::vector<float>& noPercussionMagnitudes,
+    int sampleRate, 
+    int frameSize,
+    int hopSize,
+    float medianLengthInSeconds,
+    float medianLengthInHertz,
+    float minFrequency,
+    float maxFrequency,
+    bool deactive
+): 
+    magnitudes(magnitudes), 
+    noPercussionMagnitudes(noPercussionMagnitudes), 
+    sampleRate(sampleRate), 
+    frameSize(frameSize), 
+    hopSize(hopSize),
+    medianLengthInSeconds(medianLengthInSeconds),
+    medianLengthInHertz(medianLengthInHertz),
+    minFrequency(minFrequency),
+    maxFrequency(maxFrequency),
+    deactive(deactive)
+{   
+    // Convert median lengths from seconds and hertz to frames and bins
+    medianLengthInFrames = secondsToFrames(medianLengthInSeconds, sampleRate, hopSize);
+    medianLengthInBins = frequencyToBin(medianLengthInHertz, sampleRate, frameSize);
     
+    // Force odd lengths
+    if (medianLengthInFrames % 2 == 0) medianLengthInFrames += 1;
+    if (medianLengthInBins % 2 == 0) medianLengthInBins += 1;
+
+    // Frequency range in bins
+    minBin = frequencyToBin(minFrequency, sampleRate, frameSize);
+    maxBin = frequencyToBin(maxFrequency, sampleRate, frameSize);
+
+    // Make sure that the frequency range is valid
+    if (minBin < 0) minBin = 0;
+    if (maxBin >= frameSize / 2 + 1) maxBin = frameSize / 2; // Nyquist frequency bin
+
+    // Size of magnitudes buffers (number of frequency bins)
+    magnitudesSize = frameSize / 2 + 1;
+
+    magMatrixRows = static_cast<size_t>(medianLengthInFrames);
+    magMatrixCols = static_cast<size_t>(maxBin - minBin + 1);
+    sufficientMagCount = magMatrixRows / 2 + 1;
+
     // Initialize magMatrix with 0's
     magMatrix.resize(magMatrixRows, std::vector<float>(magMatrixCols, 0.0f)); // time frames x frequency bins
 
@@ -135,6 +176,8 @@ void PercussionRemover::computePercussionRemoval() {
 
     // Add input to internal state
     updateInternalStates();
+
+    // Don't produce output if not enough history yet, or, history is exhausted
     if (magCount < sufficientMagCount) {
         noPercussionMagnitudes.clear();
         return;
@@ -168,6 +211,15 @@ void PercussionRemover::computePercussionRemoval() {
 
         noPercussionMagnitudes[i + minBin] = smoothMask * middleFrameSlice[i];
     }
+}
+
+bool PercussionRemover::hasNotSeenEnoughFrames() {
+    if (deactive) return false; // In deactive mode, we produce output immediately
+    return !magnitudes.empty() && (magCount < sufficientMagCount);
+}
+
+bool PercussionRemover::isFinished() {
+    return magnitudes.empty() && (magCount < sufficientMagCount);
 }
 
 // Update magMatrix and sortedBinSlices with the current magnitudes buffer

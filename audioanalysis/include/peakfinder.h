@@ -12,21 +12,25 @@ struct Peak {
 class PeakFinder {
 public:
     PeakFinder(
-        const std::vector<float>& magnitudeBuffer, // Input: magnitude spectrum
-        std::vector<Peak>& peakBuffer // Output: peaks of magnitudes spectrum (magnitude and frequency)
+        const std::vector<float>& magnitudes, // Input: magnitude spectrum (size frameSize/2 + 1)
+        std::vector<Peak>& peaks, // Output: peaks of magnitudes spectrum (magnitude and frequency)
+        int sampleRate, // Parameter: sample rate corresponding to the magnitude spectrum, in Hz
+        int frameSize, // Parameter: frame size corresponding to the magnitude spectrum (used for frequency computations)
+        float minFrequency, // Parameter: minimum frequency to consider, in Hz (Default: 40.0 Hz)
+        float maxFrequency, // Parameter: maximum frequency to consider, in Hz (Default: 3500.0 Hz)
+        int maxPeaks // Parameter: maximum number of peaks to detect (Default: 30)
     );
-
-    // Parameters
-    int maxPeaks = 30; // maximum number of peaks to detect
-    int sampleRate = 44100; // sampleRate corresponding to the magnitude spectrum
-    float minFrequency = 40.0f; // minimum frequency to consider, in Hz
-    float maxFrequency = 3500.0f; // maximum frequency to consider, in Hz
 
     void computePeaks();
 
 private:
     const std::vector<float>& magnitudes; 
     std::vector<Peak>& peaks;   
+    int sampleRate;
+    int frameSize;
+    float minFrequency;
+    float maxFrequency;
+    int maxPeaks;
 
     int roundToInt(float x) const;
     float binToFrequency(float bin) const;

@@ -6,11 +6,11 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-FourierTransformer::FourierTransformer(const std::vector<float>& frameBuffer,
-                                       std::vector<float>& magnitudeBuffer)
-    : frame(frameBuffer), magnitudes(magnitudeBuffer)
+FourierTransformer::FourierTransformer(const std::vector<float>& frame,
+                                       std::vector<float>& magnitudes)
+    : frame(frame), magnitudes(magnitudes)
 #ifdef __APPLE__
-    , fftSetup(nullptr), real(frameBuffer.size(), 0.0f), imag(frameBuffer.size(), 0.0f)
+    , fftSetup(nullptr), real(frame.size(), 0.0f), imag(frame.size(), 0.0f)
 #endif
 {   
     // Preallocate buffers
@@ -44,6 +44,7 @@ void FourierTransformer::computeMagnitudes() {
 #else
     primitiveFFT();
 #endif
+
 
     // Write magnitudes to output buffer
     int N = frame.size();
@@ -135,20 +136,23 @@ void FourierTransformer::accelerateFFT() {
         spectrum[k] = std::complex<float>(splitComplex.realp[k], splitComplex.imagp[k]);
     }
     spectrum[N / 2] = std::complex<float>(splitComplex.imagp[0], 0.0f);
-}
 
-#elif defined(__ANDROID__) || defined(__linux__)
+    // Normalize: divide each element in spectrum by 2 because of Accelerate's scaling
+    for (auto& val : spectrum) {
+        val /= 2.0f;
+    }
+}
+#endif
+
 void FourierTransformer::pocketFFT() {
     int N = frame.size();
     if (N == 0) return;
 
-    // adjust input shape (length) and output (spectrum) size to the current input (frame) size
-    // input of length N produces output of length N/2 + 1 for real-to-complex FFT
+    // Ensure input_shape is properly sized
+    input_shape.resize(1);
     input_shape[0] = N;
     spectrum.resize(N/2 + 1);
 
     pocketfft::r2c<float>(input_shape, input_stride, output_stride, 0, pocketfft::FORWARD, frame.data(), spectrum.data(), 1.0f);
 }
-
-#endif
 

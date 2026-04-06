@@ -3,8 +3,15 @@
 #include "audioloader.h"
 
 
-AudioLoader::AudioLoader(const char* file_path, std::vector<float>& audio_buffer)
-    : file_path(file_path), audio_buffer(audio_buffer) {}
+AudioLoader::AudioLoader(
+    const char* file_path, 
+    int sampleRate,
+    std::vector<float>& audio_buffer
+): 
+    file_path(file_path), 
+    sampleRate(sampleRate),
+    audio_buffer(audio_buffer) 
+{}
 
 void AudioLoader::load_wav() {
     drwav wav;
