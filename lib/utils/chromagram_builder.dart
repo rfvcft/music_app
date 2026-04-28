@@ -101,13 +101,9 @@ class ChromagramBuilder {
     List<Widget> chromagramWidgets = [];
     chromagramWidgets.addAll(_pitchIntensityBars());
     chromagramWidgets.addAll(_verticalPitchLines());
-    chromagramWidgets.add(_horizontalLine(position: 'start'));
-    chromagramWidgets.add(_horizontalLineLeftBoundary(position: 'start'));
-    chromagramWidgets.add(_horizontalLineRightBoundary(position: 'start'));
 
-    chromagramWidgets.add(_horizontalLine(position: 'end'));
-    chromagramWidgets.add(_horizontalLineLeftBoundary(position: 'end'));
-    chromagramWidgets.add(_horizontalLineRightBoundary(position: 'end'));
+    chromagramWidgets.addAll(_bottomLine());
+    chromagramWidgets.addAll(_topLine());
 
     chromagramWidgets.add(_keyText());
 
@@ -116,8 +112,7 @@ class ChromagramBuilder {
     chromagramWidgets.addAll(_pitchLabels());
     chromagramWidgets.addAll(_octaveBars());
 
-    chromagramWidgets.add(_currentLine());
-    chromagramWidgets.add(_rightArrow());
+    chromagramWidgets.addAll(_currentLine());
 
     chromagramWidgets.add(_timeDisplay());
     chromagramWidgets.add(_slider());
@@ -282,28 +277,41 @@ class ChromagramBuilder {
       if (centerOfVerticalPitchLinePx < _deltaWidthPx || centerOfVerticalPitchLinePx > (_availableWidthPx - _deltaWidthPx)) {
         continue; // Skip drawing vertical lines that are completely outside of the visual window
       }
-      double opacityOfVerticalPitchLine = 1.0;
-      if (centerOfVerticalPitchLinePx < 2 * _deltaWidthPx) {
-        opacityOfVerticalPitchLine = ((centerOfVerticalPitchLinePx - _deltaWidthPx) / _deltaWidthPx).clamp(0.0, 1.0);
-      } else if (centerOfVerticalPitchLinePx > (_availableWidthPx - 2 * _deltaWidthPx)) {
-        opacityOfVerticalPitchLine = ((_availableWidthPx - _deltaWidthPx - centerOfVerticalPitchLinePx) / _deltaWidthPx).clamp(0.0, 1.0);
-      }
-      Widget verticalPitchLine = Positioned(
-        left: centerOfVerticalPitchLinePx,
-        width: 1,
-        bottom: _currentLinePx - min(_currentTimePx, _deltaHeightPx), 
-        top: max(topOfVerticalPitchLinePx, 0),
-        child: Opacity(
-          opacity: opacityOfVerticalPitchLine,
-          child: Container(
-            width: 1,
-            color: isInScale ? Colors.grey[400]! : Colors.grey[900]!, // Lighter vertical line for pitch classes in the scale, darker for those not in the scale
-          ),
-        ),
-      );
-      verticalPitchLines.add(verticalPitchLine);
+      final Color lineColor = isInScale ? Colors.grey[400]! : Colors.grey[900]!;
+      verticalPitchLines.add(_verticalLineWithFadeOutBoundary(
+        startPx: _currentLinePx - min(_currentTimePx, _deltaHeightPx),
+        endPx: _availableHeightPx - max(topOfVerticalPitchLinePx, 0),
+        leftPx: centerOfVerticalPitchLinePx,
+        color: lineColor,
+      ));
     }
     return verticalPitchLines;
+  }
+
+  // Horizontal line at the end (top) of the chromagram, with fade-out at screen boundaries
+  List<Widget> _topLine() {
+    final double startPx = 2 * _deltaWidthPx - _leftShiftPx;
+    final double endPx = startPx + ((_isPortrait ? _numberOfNotesInScale : _numBins) - 1) * _deltaWidthPx;
+    return _horizontalLineWithFadeOutBoundary(
+      startPx: startPx,
+      endPx: endPx + 1, // +1 to align the lines at the top right corner perfectly
+      bottomPx: _currentLinePx + _durationPx,
+      offsetPx: _currentTimePx,
+      color: Colors.grey,
+    );
+  }
+
+  // Horizontal line at the start (bottom) of the chromagram, with fade-out at screen boundaries
+  List<Widget> _bottomLine() {
+    final double startPx = 2 * _deltaWidthPx - _leftShiftPx;
+    final double endPx = startPx + ((_isPortrait ? _numberOfNotesInScale : _numBins) - 1) * _deltaWidthPx;
+    return _horizontalLineWithFadeOutBoundary(
+      startPx: startPx,
+      endPx: endPx,
+      bottomPx: _currentLinePx,
+      offsetPx: min(_currentTimePx, _deltaHeightPx),
+      color: Colors.grey,
+    );
   }
 
   // Horizontal line for the start and end of the chromagram
@@ -351,7 +359,6 @@ class ChromagramBuilder {
     double bottomPx = _currentLinePx - (_deltaHeightOctaveBarPx - _deltaHeightPx); // Initial bottom position of octave bars (currentTimePx = 0)
     double offsetPx = min(_currentTimePx, _deltaHeightPx); // Vertical offset, depending on currentTimePx, capped at _deltaHeightPx
 
-
     double startPx = 2 * _deltaWidthPx + leftBinIndex * _deltaWidthPx - _leftShiftPx; // Start position of octave bars (distance from left edge of screen)
     double endPx = 2 * _deltaWidthPx + rightBinIndex * _deltaWidthPx - _leftShiftPx; // End position of octave bars (distance from left edge of screen)
 
@@ -364,6 +371,13 @@ class ChromagramBuilder {
     double rightBoundaryStartPx = max(_availableWidthPx - 2 * _deltaWidthPx, startPx); // Start of right boundary, where octave bars start to fade out
     double rightBoundaryEndPx = _availableWidthPx - min(max(_availableWidthPx - endPx, _deltaWidthPx), 2 * _deltaWidthPx); // End of right boundary, where octave bars end to fade out
 
+    // Calculate the center and gap width for the middle segment
+    double centerPx = (startPx + endPx) / 2;
+    double gapWidthPx = 32; // Width of the gap for the octave number
+    double middleLeftEndPx = centerPx - gapWidthPx / 2;
+    double middleRightStartPx = centerPx + gapWidthPx / 2;
+
+    // Left boundary
     Widget octaveBarLeft = Positioned(
       left: leftBoundaryStartPx,
       right: _availableWidthPx - leftBoundaryEndPx,
@@ -387,6 +401,7 @@ class ChromagramBuilder {
     );
     octaveBar.add(octaveBarLeft);
 
+    // Right boundary
     Widget octaveBarRight = Positioned(
       left: rightBoundaryStartPx,
       right: _availableWidthPx - rightBoundaryEndPx,
@@ -410,93 +425,185 @@ class ChromagramBuilder {
     );
     octaveBar.add(octaveBarRight);
 
-    Widget octaveBarMiddle = Positioned(
-      left: middleStartPx,
-      right: _availableWidthPx - middleEndPx,
-      bottom: bottomPx,
+    // Middle left segment (before gap)
+    if (middleLeftEndPx > middleStartPx) {
+      Widget octaveBarMiddleLeft = Positioned(
+        left: middleStartPx,
+        right: _availableWidthPx - middleLeftEndPx,
+        bottom: bottomPx,
+        child: Transform.translate(
+          offset: Offset(0, offsetPx),
+          child: Container(
+            height: 1,
+            color: Colors.white,
+          ),
+        ),
+      );
+      octaveBar.add(octaveBarMiddleLeft);
+    }
+
+    // Middle right segment (after gap)
+    if (middleRightStartPx < middleEndPx) {
+      Widget octaveBarMiddleRight = Positioned(
+        left: middleRightStartPx,
+        right: _availableWidthPx - middleEndPx,
+        bottom: bottomPx,
+        child: Transform.translate(
+          offset: Offset(0, offsetPx),
+          child: Container(
+            height: 1,
+            color: Colors.white,
+          ),
+        ),
+      );
+      octaveBar.add(octaveBarMiddleRight);
+    }
+
+
+    // Octave number in the gap, styled and faded like notes in the scale
+    double opacityOfOctaveNumber = 1.0;
+    double centerOfOctaveNumberPx = centerPx;
+    // Fade out at boundaries, similar to _pitchLabels
+    if (centerOfOctaveNumberPx < 2 * _deltaWidthPx) {
+      opacityOfOctaveNumber = ((centerOfOctaveNumberPx - _deltaWidthPx) / _deltaWidthPx).clamp(0.0, 1.0);
+    } else if (centerOfOctaveNumberPx > (_availableWidthPx - 2 * _deltaWidthPx)) {
+      opacityOfOctaveNumber = ((_availableWidthPx - _deltaWidthPx - centerOfOctaveNumberPx) / _deltaWidthPx).clamp(0.0, 1.0);
+    }
+
+    const double textHeight = 14.0;
+    Widget octaveNumberWidget = Positioned(
+      left: centerPx - gapWidthPx / 2,
+      width: gapWidthPx,
+      bottom: bottomPx - textHeight / 4, // Center text vertically on the horizontal line
       child: Transform.translate(
         offset: Offset(0, offsetPx),
-        child: Container(
-          height: 1,
-          color: Colors.white,
+        child: SizedBox(
+          height: textHeight,
+          child: Center(
+            child: Text(
+              octaveNumber.toString(),
+              style: TextStyle(
+                color: Colors.grey[200]!.withValues(alpha: opacityOfOctaveNumber),
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
         ),
       ),
     );
-
-    octaveBar.add(octaveBarMiddle);
+    octaveBar.add(octaveNumberWidget);
 
     return octaveBar;
   }
 
-  // Left boundary of horizontal line (fades out with a gradient)
-  Widget _horizontalLineLeftBoundary({required String position}) {
-    late double bottomPx;
-    late double offsetPx;
-    double leftPx = 2 * _deltaWidthPx - _leftShiftPx;
-    if (position == 'start'){
-      bottomPx = _currentLinePx;
-      offsetPx = min(_currentTimePx, _deltaHeightPx);
-    } else if (position == 'end') {
-      bottomPx = _currentLinePx + _durationPx;
-      offsetPx = _currentTimePx;
-    } else {
-      throw ArgumentError('Invalid position for horizontal line: $position');
-    }
-    return Positioned(
-      left: max(leftPx, _deltaWidthPx),
-      right: _availableWidthPx - 2 * _deltaWidthPx,
-      bottom: bottomPx,
-      child: Transform.translate(
-        offset: Offset(0, offsetPx), 
-        child: Container(
-          height: 1,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.center,
-              end: Alignment.centerLeft,
-              colors: [
-                Colors.grey,
-                Colors.grey.withValues(alpha: 0.25),
-              ],
+
+  // Horizontal line from startPx to endPx (relative to left edge of screen), at bottomPx from the bottom.
+  // Fades out at the screen boundaries (between _deltaWidthPx and 2*_deltaWidthPx on each side).
+  // offsetPx is applied as a vertical Transform.translate for animation.
+  List<Widget> _horizontalLineWithFadeOutBoundary({
+    required double startPx,
+    required double endPx,
+    required double bottomPx,
+    double offsetPx = 0.0,
+    Color color = Colors.grey,
+  }) {
+    List<Widget> widgets = [];
+
+    // Left fade zone: startPx.._deltaWidthPx -> 2*_deltaWidthPx, transparent to opaque
+    final double leftFadeStart = max(startPx, _deltaWidthPx);
+    final double leftFadeEnd = min(2 * _deltaWidthPx, endPx);
+    if (leftFadeEnd > leftFadeStart) {
+      widgets.add(Positioned(
+        left: leftFadeStart,
+        right: _availableWidthPx - leftFadeEnd,
+        bottom: bottomPx,
+        child: Transform.translate(
+          offset: Offset(0, offsetPx),
+          child: Container(
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [color.withValues(alpha: 0.25), color],
+              ),
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  // Right boundary of horizontal line (fades out with a gradient)
-  Widget _horizontalLineRightBoundary({required String position}) {
-    late double bottomPx;
-    late double offsetPx;
-    double widthPx = ((_isPortrait ? _numberOfNotesInScale : _numBins) - _numberOfNotesToDisplay) * _deltaWidthPx - _leftShiftPx;
-    if (position == 'start'){
-      bottomPx = _currentLinePx;
-      offsetPx = min(_currentTimePx, _deltaHeightPx);
-    } else if (position == 'end') {
-      bottomPx = _currentLinePx + _durationPx;
-      offsetPx = _currentTimePx;
-    } else {
-      throw ArgumentError('Invalid position for horizontal line: $position');
+      ));
     }
-    return Positioned(
-      left: _availableWidthPx - 2 * _deltaWidthPx,
-      bottom: bottomPx,
-      child: Transform.translate(
-        offset: Offset(0, offsetPx),
-        child: Container(
-          height: 1,
-          width: min(widthPx, _deltaWidthPx),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.center,
-              end: Alignment.centerRight,
-              colors: [
-                Colors.grey,
-                Colors.grey.withValues(alpha: 0.25),
-              ],
+
+    // Middle solid zone
+    final double middleStart = max(2 * _deltaWidthPx, startPx);
+    final double middleEnd = min(_availableWidthPx - 2 * _deltaWidthPx, endPx);
+    if (middleEnd > middleStart) {
+      widgets.add(Positioned(
+        left: middleStart,
+        right: _availableWidthPx - middleEnd,
+        bottom: bottomPx,
+        child: Transform.translate(
+          offset: Offset(0, offsetPx),
+          child: Container(height: 1, color: color),
+        ),
+      ));
+    }
+
+    // Right fade zone: _availableWidthPx-2*_deltaWidthPx -> _availableWidthPx-_deltaWidthPx, opaque to transparent
+    final double rightFadeStart = max(_availableWidthPx - 2 * _deltaWidthPx, startPx);
+    final double rightFadeEnd = min(_availableWidthPx - _deltaWidthPx, endPx);
+    if (rightFadeEnd > rightFadeStart) {
+      widgets.add(Positioned(
+        left: rightFadeStart,
+        right: _availableWidthPx - rightFadeEnd,
+        bottom: bottomPx,
+        child: Transform.translate(
+          offset: Offset(0, offsetPx),
+          child: Container(
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [color, color.withValues(alpha: 0.25)],
+              ),
             ),
           ),
+        ),
+      ));
+    }
+
+    return widgets;
+  }
+
+  // Vertical line from startPx to endPx (relative to bottom of screen), at leftPx from the left.
+  // The line fades out as a whole when leftPx is near the screen's left or right boundary
+  // (between _deltaWidthPx and 2*_deltaWidthPx on each side), matching vertical pitch line behavior.
+  // offsetPx is applied as a vertical Transform.translate for animation.
+  Widget _verticalLineWithFadeOutBoundary({
+    required double startPx,
+    required double endPx,
+    required double leftPx,
+    double offsetPx = 0.0,
+    Color color = Colors.grey,
+  }) {
+    double opacity = 1.0;
+    if (leftPx < 2 * _deltaWidthPx) {
+      opacity = ((leftPx - _deltaWidthPx) / _deltaWidthPx).clamp(0.0, 1.0);
+    } else if (leftPx > (_availableWidthPx - 2 * _deltaWidthPx)) {
+      opacity = ((_availableWidthPx - _deltaWidthPx - leftPx) / _deltaWidthPx).clamp(0.0, 1.0);
+    }
+
+    return Positioned(
+      left: leftPx,
+      width: 1,
+      bottom: startPx,
+      top: _availableHeightPx - endPx,
+      child: Transform.translate(
+        offset: Offset(0, offsetPx),
+        child: Opacity(
+          opacity: opacity,
+          child: Container(width: 1, color: color),
         ),
       ),
     );
@@ -569,30 +676,29 @@ class ChromagramBuilder {
     return pitchLabels;
   }
 
-  Widget _currentLine() {
-    return Positioned(
-      // Align the center of the line with currentLinePx
-      bottom: _currentLinePx,
-      left: _deltaWidthPx,
-      right: _deltaWidthPx,
-      child: Container(
-        height: 1, // Originally 1
-        color: Colors.white,
-      ),
-    );
-  }
-
-  Widget _rightArrow() {
+  List<Widget> _currentLine() {
     double iconSize = 30;
-    return Positioned(
-      bottom: _currentLinePx - iconSize / 2 + 0.5, // +0.5 shift to center (experimentally determined)
-      left: _deltaWidthPx - iconSize / 2,
-      child: Icon(
-        Icons.play_arrow,
-        color: Colors.white,
-        size: iconSize,
+    return [
+      Positioned(
+        // Align the center of the line with currentLinePx
+        bottom: _currentLinePx,
+        left: _deltaWidthPx,
+        right: _deltaWidthPx,
+        child: Container(
+          height: 1,
+          color: Colors.white,
+        ),
       ),
-    );
+      Positioned(
+        bottom: _currentLinePx - iconSize / 2 + 0.5, // +0.5 shift to center (experimentally determined)
+        left: _deltaWidthPx - iconSize / 2,
+        child: Icon(
+          Icons.play_arrow,
+          color: Colors.white,
+          size: iconSize,
+        ),
+      ),
+    ];
   }
 
   // Widget to display current time and total duration aligned with slider ends
