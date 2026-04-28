@@ -56,6 +56,8 @@ class ChromagramBuilder {
       _tonicIndex = tonicIndex;
       _scale = scale;
       _numberOfNotesInScale = _computeNumberOfNotesInScale(tonicIndex, scale);
+      _portraitOctaveBarBinIndices = _computeOctaveBarBinIndices(tonicIndex, scale, isPortrait: true);
+      _landscapeOctaveBarBinIndices = _computeOctaveBarBinIndices(tonicIndex, scale, isPortrait: false);
     }
 
     _context = context;
@@ -68,8 +70,8 @@ class ChromagramBuilder {
     _isComplete = isComplete;
 
     // Update derived parameters
-    _numSecondsAboveCurrent = _isPortrait ? 5 : 4; // Number of seconds to display above current line
-    _numberOfNotesToDisplay = _isPortrait ? 13 : 35; // How many notes to display
+    _numSecondsAboveCurrent = _isPortrait ? 6 : 4; // Number of seconds to display above current line
+    _numberOfNotesToDisplay = _isPortrait ? 16 : 37; // How many notes to display
 
     _heightAboveCurrentPx = _isPortrait ? cnst.goldenFactorLarge * _availableHeightPx : 0.7 * _availableHeightPx; // Available height above current line
     _heightBelowCurrentPx = _isPortrait ? cnst.goldenFactorSmall * _availableHeightPx : 0.3 * _availableHeightPx; // Available height below current line
@@ -82,18 +84,15 @@ class ChromagramBuilder {
     _sliderLinePx = _isPortrait ? cnst.goldenFactorLarge * _heightBelowCurrentPx : 0.0; // Distance of slider line from bottom of screen (not used in landscape mode)
 
     _deltaWidthPx = _availableWidthPx / (2 + _numberOfNotesToDisplay - 1 + 2); // Horizontal offset for vertical lines 
-    _deltaHeightPx = _isPortrait ? 0.5 * (_currentLinePx - _sliderLinePx) : 0.5 * _heightBelowCurrentPx; // Vertical offset between current line and bottom line
-
-    _bottomLinePx = _currentLinePx - _deltaHeightPx; // Distance of bottom line from bottom of screen 
-    _chromaBlockerPx = _availableHeightPx - _bottomLinePx; // Height of chroma blocker from top of screen
+    _deltaHeightPx = _isPortrait ? 0.55 * (_currentLinePx - _sliderLinePx) : 0.5 * _heightBelowCurrentPx; // Vertical offset between current line and bottom line
 
     _playButtonPx = _isPortrait ? (_availableHeightPx - _sliderLinePx) + 0.15 * _sliderLinePx : 0.25 * _deltaWidthPx; // Distance of top of audio player to top of screen
     _timeDisplayPx = _isPortrait ? (_availableHeightPx - _sliderLinePx) + 0.05 * _sliderLinePx : 0.0; // Distance of top of time display to top of screen (not used in landscape mode)
 
-    _deltaHeightOctaveBarPx = _isPortrait ? 0.0 : 0.7 * _heightBelowCurrentPx; // Vertical offset between current line and octave bars
+    _deltaHeightOctaveBarPx = _isPortrait ? 0.8 * (_currentLinePx - _sliderLinePx) : 0.75 * _heightBelowCurrentPx; // Vertical offset between current line and octave bars
 
     _pitchLabelPx = (_availableHeightPx - _currentLinePx); // Distance of top of pitch labels from bottom of screen
-    _keyTextPx = _isPortrait ? (_availableHeightPx - _currentLinePx) + 0.3 * (_currentLinePx - _sliderLinePx) : (_availableHeightPx - _currentLinePx) + 0.35 * _currentLinePx; // Distance of key text from top of screen
+    _keyTextPx = _isPortrait ? (_availableHeightPx - _currentLinePx) + 0.375 * (_currentLinePx - _sliderLinePx) : (_availableHeightPx - _currentLinePx) + 0.375 * _currentLinePx; // Distance of key text from top of screen
     
     _leftShiftToPx =  ((_isPortrait ? _numberOfNotesInScale : _numBins) - _numberOfNotesToDisplay) * _deltaWidthPx; // Maximum horizontal shift in pixels (when leftShift = 1.0)
     _leftShiftPx = (leftShift != null) ? leftShift * _leftShiftToPx : _computeLeftShiftPx(); // Horizontal shift to the left (based on leftShift)
@@ -105,9 +104,9 @@ class ChromagramBuilder {
     chromagramWidgets.addAll(_bottomLine());
     chromagramWidgets.addAll(_topLine());
 
-    chromagramWidgets.add(_keyText());
-
     chromagramWidgets.add(_chromaBlocker());
+
+    chromagramWidgets.add(_keyText());
 
     chromagramWidgets.addAll(_pitchLabels());
     chromagramWidgets.addAll(_octaveBars());
@@ -139,6 +138,9 @@ class ChromagramBuilder {
   late int _numSecondsAboveCurrent; // Number of seconds to display above current line
   late int _numberOfNotesToDisplay;
 
+  late List<(int, int)> _landscapeOctaveBarBinIndices; // Bin index ranges for octave bars in landscape mode
+  late List<(int, int)> _portraitOctaveBarBinIndices; // Bin index ranges for octave bars in portrait mode, which depend on the musical key
+
   late double _heightAboveCurrentPx; // Available height above current line
   late double _heightBelowCurrentPx; // Available height below current line
 
@@ -154,9 +156,6 @@ class ChromagramBuilder {
 
   late double _playButtonPx; // Distance of top of audio player to top of screen
   late double _timeDisplayPx; // Distance of top of time display to top of screen (not used in landscape mode)
-
-  late double _bottomLinePx; // Distance of bottom line from bottom of screen
-  late double _chromaBlockerPx; // Distance of chroma blocker from top of screen
 
   late double _deltaHeightOctaveBarPx; // Distance of octave bars from bottom of screen
 
@@ -176,22 +175,68 @@ class ChromagramBuilder {
     return count;
   }
 
+  List<(int, int)> _computeOctaveBarBinIndices(int tonicIndex, String scale, {required bool isPortrait}) {
+    List<(int, int)> octaveBarBinIndices = [];
+    // Landscape mode: octave bars are fixed every 12 bins, since all notes are shown
+    if (!isPortrait) {
+      int startIndex = 0; 
+      while (true) {
+        int endIndex = startIndex + cnst.numPitches;
+        if (endIndex > _numBins) break;
+        octaveBarBinIndices.add((startIndex, endIndex - 1));
+        startIndex = endIndex;
+      }
+      // Last octave
+      if (startIndex < _numBins) {
+        octaveBarBinIndices.add((startIndex, _numBins - 1));
+      }
+      return octaveBarBinIndices;
+    }
+    // Portrait mode: octave bars depend on the musical key, since only notes in the scale are shown. 
+    final scalePattern = cnst.scalePatterns[scale];
+    if (scalePattern == null) return [];
+    int startIndex = 0;
+    int numberOfNotesInCurrentOctave = 0;
+    int currentOctave = 0; 
+    for (int i = 0; i < _numBins; i++) {
+      int octave = i ~/ cnst.numPitches;
+      if (octave > currentOctave) {
+        int endIndex = startIndex + numberOfNotesInCurrentOctave;
+        octaveBarBinIndices.add((startIndex, endIndex - 1)); // Add octave bar for previous octave
+        startIndex = endIndex;
+        numberOfNotesInCurrentOctave = 0;
+        currentOctave = octave;
+      }
+      final isInScale = scalePattern[(i - tonicIndex) % cnst.numPitches] == 1;
+      if (isInScale) {
+        numberOfNotesInCurrentOctave++;
+      }
+    }
+    // Add last octave
+    if (numberOfNotesInCurrentOctave > 0) {
+      int endIndex = startIndex + numberOfNotesInCurrentOctave;
+      octaveBarBinIndices.add((startIndex, endIndex - 1));
+    }
+    return octaveBarBinIndices;
+  }
+
   double _computeLeftShiftPx() {
     if (!_isPortrait) {
-      double leftShiftPx = _tonicIndex * _deltaWidthPx; // In landscape, shift so that tonic (C3 - B3) is the left most note
+      double leftShiftPx = _tonicIndex * _deltaWidthPx; // In landscape, shift so that tonic (C2 - B2) is the left most note
       _leftShift = leftShiftPx / _leftShiftToPx; // Update leftShift based on leftShiftPx
       return leftShiftPx; 
     }
-    // In portrait, shift so that tonic in range (C3 - B3) is the left most note
+    // In portrait shift so that tonic is left most note and falls in the (E2 - D3) range
     double leftShiftPx = 0.0;
     final scalePattern = cnst.scalePatterns[_scale];
     for (int i = 0; i < _numBins; i++) {
-      if (i == _tonicIndex + 12) break; // Index at tonic in range (C3 - B3)
+      if ((i - _tonicIndex) % 12 == 0 && i > 3) break; // Index at tonic in range (E2 - D3)
       final bool isInScale = scalePattern != null && scalePattern[(i - _tonicIndex) % cnst.numPitches] == 1;
       if (isInScale) {
         leftShiftPx += _deltaWidthPx; // Increase leftShiftPx for each note in scale until we reach the tonic in range (C3 - B3)
       }
     }
+
     leftShiftPx -= 0.5 * _deltaWidthPx;
     _leftShift = leftShiftPx / _leftShiftToPx; // Update leftShift based on leftShiftPx
     return leftShiftPx;
@@ -314,42 +359,15 @@ class ChromagramBuilder {
     );
   }
 
-  // Horizontal line for the start and end of the chromagram
-  Widget _horizontalLine({required String position}) {
-    late double bottomPx;
-    late double offsetPx;
-    double leftPx = 2 * _deltaWidthPx - _leftShiftPx;
-    double rightPx = _availableWidthPx - (2 * _deltaWidthPx - _leftShiftPx + ((_isPortrait ? _numberOfNotesInScale : _numBins) - 1) * _deltaWidthPx);
-    if (position == 'start'){
-      bottomPx = _currentLinePx;
-      offsetPx = min(_currentTimePx, _deltaHeightPx);
-    } else if (position == 'end') {
-      bottomPx = _currentLinePx + _durationPx;
-      offsetPx = _currentTimePx;
-    } else {
-      throw ArgumentError('Invalid position for horizontal line: $position');
-    }
-    return Positioned(
-      left: max(leftPx, 2 * _deltaWidthPx),
-      right: max(rightPx, 2 * _deltaWidthPx) - 1, // -1 to align the lines at the top right corner perfectly
-      bottom: bottomPx,
-      child: Transform.translate(
-        offset: Offset(0, offsetPx), 
-        child: Container(
-          height: 1,
-          color: Colors.grey,
-        ),
-      ),
-    );
-  }
-
   List<Widget> _octaveBars() {
-    int leftBinIndex = 36;
-    int rightBinIndex = 47;
-    int octaveNumber = 2;
     List<Widget> octaveBars = [];
 
-    octaveBars.addAll(_octaveBar(leftBinIndex: leftBinIndex, rightBinIndex: rightBinIndex, octaveNumber: octaveNumber));
+    int octaveNumber = 2; // We start with the octave of C2
+    final binIndices = _isPortrait ? _portraitOctaveBarBinIndices : _landscapeOctaveBarBinIndices;
+    for (final (leftBinIndex, rightBinIndex) in binIndices) {
+      octaveBars.addAll(_octaveBar(leftBinIndex: leftBinIndex, rightBinIndex: rightBinIndex, octaveNumber: octaveNumber));
+      octaveNumber++;
+    }
     return octaveBars;
   }
 
@@ -359,140 +377,64 @@ class ChromagramBuilder {
     double bottomPx = _currentLinePx - (_deltaHeightOctaveBarPx - _deltaHeightPx); // Initial bottom position of octave bars (currentTimePx = 0)
     double offsetPx = min(_currentTimePx, _deltaHeightPx); // Vertical offset, depending on currentTimePx, capped at _deltaHeightPx
 
-    double startPx = 2 * _deltaWidthPx + leftBinIndex * _deltaWidthPx - _leftShiftPx; // Start position of octave bars (distance from left edge of screen)
-    double endPx = 2 * _deltaWidthPx + rightBinIndex * _deltaWidthPx - _leftShiftPx; // End position of octave bars (distance from left edge of screen)
+    double startPx = 2 * _deltaWidthPx + leftBinIndex * _deltaWidthPx - _leftShiftPx; // Start position of octave bar
+    double endPx = 2 * _deltaWidthPx + rightBinIndex * _deltaWidthPx - _leftShiftPx; // End position of octave bar
 
-    double leftBoundaryStartPx = min(max(startPx, _deltaWidthPx), 2 * _deltaWidthPx); // Start of left boundary, where octave bars start to fade in
-    double leftBoundaryEndPx = min(2 * _deltaWidthPx, endPx); // End of left boundary, where octave bars are fully visible
-
-    double middleStartPx = max(2 * _deltaWidthPx, startPx); // Start of middle section
-    double middleEndPx = min(_availableWidthPx - 2 * _deltaWidthPx, endPx); // End of middle section
-
-    double rightBoundaryStartPx = max(_availableWidthPx - 2 * _deltaWidthPx, startPx); // Start of right boundary, where octave bars start to fade out
-    double rightBoundaryEndPx = _availableWidthPx - min(max(_availableWidthPx - endPx, _deltaWidthPx), 2 * _deltaWidthPx); // End of right boundary, where octave bars end to fade out
-
-    // Calculate the center and gap width for the middle segment
+    // Gap at center for octave number
     double centerPx = (startPx + endPx) / 2;
-    double gapWidthPx = 32; // Width of the gap for the octave number
+    double gapWidthPx = 26;
     double middleLeftEndPx = centerPx - gapWidthPx / 2;
     double middleRightStartPx = centerPx + gapWidthPx / 2;
 
-    // Left boundary
-    Widget octaveBarLeft = Positioned(
-      left: leftBoundaryStartPx,
-      right: _availableWidthPx - leftBoundaryEndPx,
-      bottom: bottomPx,
-      child: Transform.translate(
-        offset: Offset(0, offsetPx),
-        child: Container(
-          height: 1,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [
-                Colors.orange.withValues(alpha: 0.25),
-                Colors.orange,
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-    octaveBar.add(octaveBarLeft);
+    if (leftBinIndex < rightBinIndex) {
+      // Left segment (start to gap)
+      octaveBar.addAll(_horizontalLineWithFadeOutBoundary(
+        startPx: startPx,
+        endPx: middleLeftEndPx,
+        bottomPx: bottomPx,
+        offsetPx: offsetPx,
+        color: Colors.white,
+      ));
 
-    // Right boundary
-    Widget octaveBarRight = Positioned(
-      left: rightBoundaryStartPx,
-      right: _availableWidthPx - rightBoundaryEndPx,
-      bottom: bottomPx,
-      child: Transform.translate(
-        offset: Offset(0, offsetPx),
-        child: Container(
-          height: 1,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.centerRight,
-              end: Alignment.centerLeft,
-              colors: [
-                Colors.orange.withValues(alpha: 0.25),
-                Colors.orange,
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-    octaveBar.add(octaveBarRight);
+      // Right segment (gap to end)
+      octaveBar.addAll(_horizontalLineWithFadeOutBoundary(
+        startPx: middleRightStartPx,
+        endPx: endPx,
+        bottomPx: bottomPx,
+        offsetPx: offsetPx,
+        color: Colors.white,
+      ));
 
-    // Middle left segment (before gap)
-    if (middleLeftEndPx > middleStartPx) {
-      Widget octaveBarMiddleLeft = Positioned(
-        left: middleStartPx,
-        right: _availableWidthPx - middleLeftEndPx,
-        bottom: bottomPx,
-        child: Transform.translate(
-          offset: Offset(0, offsetPx),
-          child: Container(
-            height: 1,
-            color: Colors.white,
-          ),
-        ),
-      );
-      octaveBar.add(octaveBarMiddleLeft);
+      // Small vertical tick at start
+      double tickHeightPx = 10.0;
+      octaveBar.add(_verticalLineWithFadeOutBoundary(
+        startPx: bottomPx,
+        endPx: bottomPx + tickHeightPx,
+        leftPx: startPx,
+        offsetPx: offsetPx,
+        color: Colors.white,
+      ));
+
+      // Small vertical tick at end
+      octaveBar.add(_verticalLineWithFadeOutBoundary(
+        startPx: bottomPx,
+        endPx: bottomPx + tickHeightPx,
+        leftPx: endPx,
+        offsetPx: offsetPx,
+        color: Colors.white,
+      ));
     }
 
-    // Middle right segment (after gap)
-    if (middleRightStartPx < middleEndPx) {
-      Widget octaveBarMiddleRight = Positioned(
-        left: middleRightStartPx,
-        right: _availableWidthPx - middleEndPx,
-        bottom: bottomPx,
-        child: Transform.translate(
-          offset: Offset(0, offsetPx),
-          child: Container(
-            height: 1,
-            color: Colors.white,
-          ),
-        ),
-      );
-      octaveBar.add(octaveBarMiddleRight);
-    }
-
-
-    // Octave number in the gap, styled and faded like notes in the scale
-    double opacityOfOctaveNumber = 1.0;
-    double centerOfOctaveNumberPx = centerPx;
-    // Fade out at boundaries, similar to _pitchLabels
-    if (centerOfOctaveNumberPx < 2 * _deltaWidthPx) {
-      opacityOfOctaveNumber = ((centerOfOctaveNumberPx - _deltaWidthPx) / _deltaWidthPx).clamp(0.0, 1.0);
-    } else if (centerOfOctaveNumberPx > (_availableWidthPx - 2 * _deltaWidthPx)) {
-      opacityOfOctaveNumber = ((_availableWidthPx - _deltaWidthPx - centerOfOctaveNumberPx) / _deltaWidthPx).clamp(0.0, 1.0);
-    }
-
+    // Octave number in the gap
     const double textHeight = 14.0;
-    Widget octaveNumberWidget = Positioned(
-      left: centerPx - gapWidthPx / 2,
+    octaveBar.add(_textWithFadeOutBoundary(
+      text: octaveNumber.toString(),
+      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: Colors.white),
+      centerPx: centerPx,
       width: gapWidthPx,
-      bottom: bottomPx - textHeight / 4, // Center text vertically on the horizontal line
-      child: Transform.translate(
-        offset: Offset(0, offsetPx),
-        child: SizedBox(
-          height: textHeight,
-          child: Center(
-            child: Text(
-              octaveNumber.toString(),
-              style: TextStyle(
-                color: Colors.grey[200]!.withValues(alpha: opacityOfOctaveNumber),
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    octaveBar.add(octaveNumberWidget);
+      bottom: bottomPx - textHeight / 2,
+      offsetPx: offsetPx,
+    ));
 
     return octaveBar;
   }
@@ -576,6 +518,39 @@ class ChromagramBuilder {
     return widgets;
   }
 
+  // Text widget centered at centerPx horizontally, with opacity that fades out near screen boundaries.
+  // top or bottom specifies the vertical position (from top or bottom of screen respectively).
+  // offsetPx is applied as a vertical Transform.translate for animation.
+  Widget _textWithFadeOutBoundary({
+    required String text,
+    required TextStyle style,
+    required double centerPx,
+    required double width,
+    double? top,
+    double? bottom,
+    double offsetPx = 0.0,
+  }) {
+    double opacity = 1.0;
+    if (centerPx < 2 * _deltaWidthPx) {
+      opacity = ((centerPx - _deltaWidthPx) / _deltaWidthPx).clamp(0.0, 1.0);
+    } else if (centerPx > (_availableWidthPx - 2 * _deltaWidthPx)) {
+      opacity = ((_availableWidthPx - _deltaWidthPx - centerPx) / _deltaWidthPx).clamp(0.0, 1.0);
+    }
+    return Positioned(
+      left: centerPx - width / 2,
+      width: width,
+      top: top,
+      bottom: bottom,
+      child: Transform.translate(
+        offset: Offset(0, offsetPx),
+        child: Opacity(
+          opacity: opacity,
+          child: Center(child: Text(text, style: style)),
+        ),
+      ),
+    );
+  }
+
   // Vertical line from startPx to endPx (relative to bottom of screen), at leftPx from the left.
   // The line fades out as a whole when leftPx is near the screen's left or right boundary
   // (between _deltaWidthPx and 2*_deltaWidthPx on each side), matching vertical pitch line behavior.
@@ -611,7 +586,7 @@ class ChromagramBuilder {
 
   Widget _chromaBlocker() {
     return Positioned(
-      top: _chromaBlockerPx,
+      top: _availableHeightPx - (_currentLinePx - _deltaHeightPx),
       bottom: 0,
       left: 0,
       right: 0,
@@ -632,7 +607,7 @@ class ChromagramBuilder {
       final int pitchClassIndex = i % cnst.numPitches; // Pitch class index (0-11)
       final bool isInScale = scalePattern != null && scalePattern[(i - _tonicIndex) % cnst.numPitches] == 1; // Determine if note is in scale
       final bool isTonic = (i - _tonicIndex) % cnst.numPitches == 0; // Determine if note is tonic
-      final String absoluteNoteName = noteNames[pitchClassIndex] + octaveNumber.toString(); // Absolute note name (e.g., C4, G#3)]
+      final String noteName = noteNames[pitchClassIndex]; // Note name (e.g., C, G#)
 
       if (_isPortrait && !isInScale) continue; // In portrait mode, only show pitch classes in the scale to reduce clutter
       currentNumberOfPitchLabels++;
@@ -642,36 +617,21 @@ class ChromagramBuilder {
         continue; // Skip drawing pitch labels that are completely outside of the visual window
       }
 
-      double opacityOfPitchLabel = 1.0; // Opacity fades out at boundary
-      if (centerOfPitchLabelPx < 2 * _deltaWidthPx) {
-        opacityOfPitchLabel = ((centerOfPitchLabelPx - _deltaWidthPx) / _deltaWidthPx).clamp(0.0, 1.0);
-      } else if (centerOfPitchLabelPx > (_availableWidthPx - 2 * _deltaWidthPx)) {
-        opacityOfPitchLabel = ((_availableWidthPx - _deltaWidthPx - centerOfPitchLabelPx) / _deltaWidthPx).clamp(0.0, 1.0);
-      }
-
-      Widget pitchLabel = Positioned(
-        left: centerOfPitchLabelPx - 16, // Center label under line
-        top: _pitchLabelPx,
-        child: Transform.translate(
-          offset: Offset(0, min(_currentTimePx, _deltaHeightPx)),
-          child: SizedBox(
-            width: 32,
-            child: Center(
-              child: Text(
-                absoluteNoteName,
-                style: TextStyle(
-                  color: isInScale && isTonic ? Colors.white.withValues(alpha: opacityOfPitchLabel) : 
-                         isInScale ? Colors.grey[200]!.withValues(alpha: opacityOfPitchLabel) : 
-                         Colors.grey[700]!.withValues(alpha: opacityOfPitchLabel),
-                  fontSize: 12,
-                  fontWeight: isTonic ? FontWeight.w900 : FontWeight.w400,
-                ),
-              ),
-            ),
-          ),
+      final Color labelColor = isInScale && isTonic ? Colors.white
+          : isInScale ? Colors.grey[200]!
+          : Colors.grey[700]!;
+      pitchLabels.add(_textWithFadeOutBoundary(
+        text: noteName,
+        style: TextStyle(
+          color: labelColor,
+          fontSize: 12,
+          fontWeight: isTonic ? FontWeight.w900 : FontWeight.w400,
         ),
-      );
-      pitchLabels.add(pitchLabel);
+        centerPx: centerOfPitchLabelPx,
+        width: 32,
+        top: _pitchLabelPx,
+        offsetPx: min(_currentTimePx, _deltaHeightPx),
+      ));
     }
     return pitchLabels;
   }
