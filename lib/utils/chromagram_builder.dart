@@ -271,7 +271,7 @@ class ChromagramBuilder {
     double pitchBarWidthPx = 0.5 * _deltaWidthPx; // Width of each pitch intensity bar in pixels
     final scalePattern = cnst.scalePatterns[_scale];
     for (int i = 0; i < _numBins; i++) {
-      final isInScale = scalePattern != null && scalePattern[(i - _tonicIndex) % cnst.numPitches] == 1; // Determine if pitch class is in scale
+      final isInScale = scalePattern != null && scalePattern[(i - _tonicIndex) % cnst.numPitches] == 1;
       if (_isPortrait && !isInScale) continue; // In portrait mode, only show pitch classes in the scale to reduce clutter
       currentNumberOfPitchBars++;
       double centerOfPitchBarPx = (currentNumberOfPitchBars + 1) * _deltaWidthPx - _leftShiftPx; // Center of pitch bar in pixels
@@ -315,7 +315,7 @@ class ChromagramBuilder {
     int currentNumberOfNotes = 0;
     final scalePattern = cnst.scalePatterns[_scale];
     for (int i = 0; i < _numBins; i++) {
-      final isInScale = scalePattern != null && scalePattern[(i - _tonicIndex) % cnst.numPitches] == 1; // Determine if pitch class is in scale
+      final isInScale = scalePattern != null && scalePattern[(i - _tonicIndex) % cnst.numPitches] == 1;
       if (_isPortrait && !isInScale) continue; // In portrait mode, only show pitch classes in the scale to reduce clutter
       currentNumberOfNotes++;
       double centerOfVerticalPitchLinePx = (currentNumberOfNotes + 1) * _deltaWidthPx - _leftShiftPx;
@@ -619,7 +619,6 @@ class ChromagramBuilder {
     final scalePattern = cnst.scalePatterns[_scale]; // Scale pattern of current musical key 
     final noteNames = cnst.noteNames[_scale]![_tonicIndex]!; // Note names for current musical key
     for (int i = 0; i < _numBins; i++) {
-      final int octaveNumber = (i / cnst.numPitches).floor() + 2; // Octave number based on index (C2 starts at index 0)
       final int pitchClassIndex = i % cnst.numPitches; // Pitch class index (0-11)
       final bool isInScale = scalePattern != null && scalePattern[(i - _tonicIndex) % cnst.numPitches] == 1; // Determine if note is in scale
       final bool isTonic = (i - _tonicIndex) % cnst.numPitches == 0; // Determine if note is tonic
