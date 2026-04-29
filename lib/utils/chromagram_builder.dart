@@ -452,9 +452,9 @@ class ChromagramBuilder {
   }) {
     List<Widget> widgets = [];
 
-    // Left fade zone: startPx.._deltaWidthPx -> 2*_deltaWidthPx, transparent to opaque
+    // Left fade zone: startPx.._deltaWidthPx -> 1.75*_deltaWidthPx, transparent to opaque
     final double leftFadeStart = max(startPx, _deltaWidthPx);
-    final double leftFadeEnd = min(2 * _deltaWidthPx, endPx);
+    final double leftFadeEnd = min(1.75 * _deltaWidthPx, endPx);
     if (leftFadeEnd > leftFadeStart) {
       widgets.add(Positioned(
         left: leftFadeStart,
@@ -484,8 +484,8 @@ class ChromagramBuilder {
     }
 
     // Middle solid zone
-    final double middleStart = max(2 * _deltaWidthPx, startPx);
-    final double middleEnd = min(_availableWidthPx - 2 * _deltaWidthPx, endPx);
+    final double middleStart = max(1.75 * _deltaWidthPx, startPx);
+    final double middleEnd = min(_availableWidthPx - 1.75 * _deltaWidthPx, endPx);
     if (middleEnd > middleStart) {
       widgets.add(Positioned(
         left: middleStart,
@@ -498,8 +498,8 @@ class ChromagramBuilder {
       ));
     }
 
-    // Right fade zone: _availableWidthPx-2*_deltaWidthPx -> _availableWidthPx-_deltaWidthPx, opaque to transparent
-    final double rightFadeStart = max(_availableWidthPx - 2 * _deltaWidthPx, startPx);
+    // Right fade zone: _availableWidthPx-1.75*_deltaWidthPx -> _availableWidthPx-_deltaWidthPx, opaque to transparent
+    final double rightFadeStart = max(_availableWidthPx - 1.75 * _deltaWidthPx, startPx);
     final double rightFadeEnd = min(_availableWidthPx - _deltaWidthPx, endPx);
     if (rightFadeEnd > rightFadeStart) {
       widgets.add(Positioned(
