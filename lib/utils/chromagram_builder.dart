@@ -70,7 +70,7 @@ class ChromagramBuilder {
     _isComplete = isComplete;
 
     // Update derived parameters
-    _numSecondsAboveCurrent = _isPortrait ? 6 : 4; // Number of seconds to display above current line
+    _numSecondsAboveCurrent = _isPortrait ? 8 : 5; // Number of seconds to display above current line
     _numberOfNotesToDisplay = _isPortrait ? 16 : 37; // How many notes to display
 
     _heightAboveCurrentPx = _isPortrait ? cnst.goldenFactorLarge * _availableHeightPx : 0.7 * _availableHeightPx; // Available height above current line
@@ -89,10 +89,10 @@ class ChromagramBuilder {
     _playButtonPx = _isPortrait ? (_availableHeightPx - _sliderLinePx) + 0.15 * _sliderLinePx : 0.25 * _deltaWidthPx; // Distance of top of audio player to top of screen
     _timeDisplayPx = _isPortrait ? (_availableHeightPx - _sliderLinePx) + 0.05 * _sliderLinePx : 0.0; // Distance of top of time display to top of screen (not used in landscape mode)
 
-    _deltaHeightOctaveBarPx = _isPortrait ? 0.8 * (_currentLinePx - _sliderLinePx) : 0.75 * _heightBelowCurrentPx; // Vertical offset between current line and octave bars
+    _deltaHeightOctaveBarPx = _deltaHeightPx + 27; // Vertical offset between current line and octave bars (a little further down than bottom line)
 
     _pitchLabelPx = (_availableHeightPx - _currentLinePx); // Distance of top of pitch labels from bottom of screen
-    _keyTextPx = _isPortrait ? (_availableHeightPx - _currentLinePx) + 0.375 * (_currentLinePx - _sliderLinePx) : (_availableHeightPx - _currentLinePx) + 0.375 * _currentLinePx; // Distance of key text from top of screen
+    _keyTextPx = _availableHeightPx - _currentLinePx + 36; // Distance of key text from top of screen (a little further down than octave bars)
     
     _leftShiftToPx =  ((_isPortrait ? _numberOfNotesInScale : _numBins) - _numberOfNotesToDisplay) * _deltaWidthPx; // Maximum horizontal shift in pixels (when leftShift = 1.0)
     _leftShiftPx = (leftShift != null) ? leftShift * _leftShiftToPx : _computeLeftShiftPx(); // Horizontal shift to the left (based on leftShift)
@@ -406,7 +406,7 @@ class ChromagramBuilder {
       ));
 
       // Small vertical tick at start
-      double tickHeightPx = 10.0;
+      double tickHeightPx = 9.0;
       octaveBar.add(_verticalLineWithFadeOutBoundary(
         startPx: bottomPx,
         endPx: bottomPx + tickHeightPx,
@@ -468,7 +468,14 @@ class ChromagramBuilder {
               gradient: LinearGradient(
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
-                colors: [color.withValues(alpha: 0.25), color],
+                colors: [
+                  color.withValues(alpha: 0.0),
+                  color.withValues(alpha: 0.5),
+                  color.withValues(alpha: 0.71),
+                  color.withValues(alpha: 0.87),
+                  color,
+                ],
+                stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
               ),
             ),
           ),
@@ -507,7 +514,14 @@ class ChromagramBuilder {
               gradient: LinearGradient(
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
-                colors: [color, color.withValues(alpha: 0.25)],
+                colors: [
+                  color,
+                  color.withValues(alpha: 0.87),
+                  color.withValues(alpha: 0.71),
+                  color.withValues(alpha: 0.5),
+                  color.withValues(alpha: 0.0),
+                ],
+                stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
               ),
             ),
           ),
@@ -564,9 +578,11 @@ class ChromagramBuilder {
   }) {
     double opacity = 1.0;
     if (leftPx < 2 * _deltaWidthPx) {
-      opacity = ((leftPx - _deltaWidthPx) / _deltaWidthPx).clamp(0.0, 1.0);
+      final double t = ((leftPx - _deltaWidthPx) / _deltaWidthPx).clamp(0.0, 1.0);
+      opacity = t * t * t;
     } else if (leftPx > (_availableWidthPx - 2 * _deltaWidthPx)) {
-      opacity = ((_availableWidthPx - _deltaWidthPx - leftPx) / _deltaWidthPx).clamp(0.0, 1.0);
+      final double t = ((_availableWidthPx - _deltaWidthPx - leftPx) / _deltaWidthPx).clamp(0.0, 1.0);
+      opacity = t * t * t;
     }
 
     return Positioned(
