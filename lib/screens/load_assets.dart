@@ -5,14 +5,16 @@ import 'package:music_app/screens/visualize.dart';
 
 // Available options for backend simulator:
 const List<String> audioNames = [
-  'c_major_scale',
-  'cant_help_falling_in_love',
-  'dont_stop_believing',
-  'heathens',
-  'hey_jude',
-  'nur_ein_wort',
-  'on_the_nature_of_daylight',
-  'rolling_in_the_deep',
+  'c_major_scale.m4a',
+  'cant_help_falling_in_love.m4a',
+  'dont_stop_believing.m4a',
+  'heathens.m4a',
+  'hey_jude.m4a',
+  'nur_ein_wort.m4a',
+  'on_the_nature_of_daylight.m4a',
+  'rolling_in_the_deep.m4a',
+  'every_note_piano.mp3',
+  'g_major_scale_cello.wav',
 ];
 
 class LoadAssets extends StatefulWidget {
@@ -32,11 +34,14 @@ class _LoadAssetsState extends State<LoadAssets> {
 
     // ================ SIMULATING ESSENTIA =====================
     // Path to audio
-    String assetPath = 'assets/analyzed_examples/input/$audioName.m4a';
+    String assetPath = 'assets/analyzed_examples/input/$audioName';
     print(assetPath);
 
+    // Strip extension for output folder name
+    final baseName = audioName.contains('.') ? audioName.substring(0, audioName.lastIndexOf('.')) : audioName;
+
     // Get key and duration of audio
-    String meta = await rootBundle.loadString('assets/analyzed_examples/output/$audioName/meta.csv');
+    String meta = await rootBundle.loadString('assets/analyzed_examples/output/$baseName/meta.csv');
     String musicalKey = '';
     double duration = 0.0;
 
@@ -58,7 +63,7 @@ class _LoadAssetsState extends State<LoadAssets> {
     }
 
     // Load chromagram
-    String chromagramStr = await rootBundle.loadString('assets/analyzed_examples/output/$audioName/chromagram.csv');
+    String chromagramStr = await rootBundle.loadString('assets/analyzed_examples/output/$baseName/chromagram.csv');
     final List<List<double>> chromagram = [];
 
     final rows = chromagramStr.split('\n');

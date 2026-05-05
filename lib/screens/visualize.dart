@@ -12,7 +12,7 @@ import 'package:music_app/utils/chromagram_builder.dart' as cb; // Chromagram bu
 import 'package:music_app/utils/conversion.dart' as conv; // Conversion utilities
 import 'package:music_app/utils/constants.dart' as cnst; // Import constants
 
-const bool showLogs = false; // Set to true to enable logs for debugging
+const bool showLogs = true; // Set to true to enable logs for debugging
 
 // Screen for visualizing the chromagram of an audio file. Users can control playback via scroll, fling gestures or a slider. 
 class Visualizer extends StatefulWidget {
@@ -29,8 +29,8 @@ class Visualizer extends StatefulWidget {
     if (chromagram.isEmpty) {
       throw ArgumentError('Chromagram must not be empty.');
     }
-    if (numBins != 49) {
-      throw ArgumentError('Chromagram must have 49 bins, got $numBins.');
+    if (numBins != 48) {
+      throw ArgumentError('Chromagram must have 48 bins, got $numBins.');
     }
   }
   
@@ -207,7 +207,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
     }
 
     // Guard against out of sync UI 
-    if (newTime > minTimeForAudioSync && deltaToAudio > maxDeltaToAudio) {
+    if (elapsedTime > minTimeForAudioSync && deltaToAudio > maxDeltaToAudio) {
       _timeTicker.stop();
       _initialTime = playerPosition; // Resync with audio player position
       _timeTicker.start();
