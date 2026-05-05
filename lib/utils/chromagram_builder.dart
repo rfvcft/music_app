@@ -92,7 +92,7 @@ class ChromagramBuilder {
     _deltaHeightOctaveBarPx = _deltaHeightPx + 27; // Vertical offset between current line and octave bars (a little further down than bottom line)
 
     _pitchLabelPx = (_availableHeightPx - _currentLinePx); // Distance of top of pitch labels from bottom of screen
-    _keyTextPx = _availableHeightPx - _currentLinePx + 36; // Distance of key text from top of screen (a little further down than octave bars)
+    _keyTextPx = _availableHeightPx - _currentLinePx + 38; // Distance of key text from top of screen (a little further down than octave bars)
     
     _leftShiftToPx =  ((_isPortrait ? _numberOfNotesInScale : _numBins) - _numberOfNotesToDisplay) * _deltaWidthPx; // Maximum horizontal shift in pixels (when leftShift = 1.0)
     _leftShiftPx = (leftShift != null) ? leftShift * _leftShiftToPx : _computeLeftShiftPx(); // Horizontal shift to the left (based on leftShift)
