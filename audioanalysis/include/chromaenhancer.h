@@ -14,7 +14,8 @@ public:
         float localMaxWindowSizeInSeconds, // Parameter: window size for local maximum in seconds (0 to use global maximum) (Default: 2.0)
         float lowAmplitudeThreshold, // Parameter: Relative threshold for dropping low amplitudes (0.0 = no drop, 1.0 = drop all). (Default: 0.90)
         float medianLengthInSeconds, // Parameter: Window size for median filtering in seconds (0 to bypass this) (Default: ?)
-        float minDurationInSeconds // Parameter: Minimum duration for a chroma excitation to be kept in seconds (0 to bypass this) (Default: ?)
+        float minDurationInSeconds, // Parameter: Minimum duration for a chroma excitation to be kept in seconds (0 to bypass this) (Default: ?)
+        bool deactive // Parameter: If true, chroma enhancement is deactivated (chromaMatrix = enhancedChromaMatrix)
     );
 
     void computeEnhancement();
@@ -28,7 +29,7 @@ private:
     float lowAmplitudeThreshold;
     float medianLengthInSeconds;
     float minDurationInSeconds;
-    bool normalize;
+    bool deactive;
 
     int localMaxWindowSizeInFrames; // Window size (in frames) for sliding maximum in time 
     int medianLengthInFrames; // Window size (in frames) for median filtering in time (must be odd)

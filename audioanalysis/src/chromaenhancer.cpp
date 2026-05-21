@@ -18,7 +18,8 @@ ChromaEnhancer::ChromaEnhancer(
     float localMaxWindowSizeInSeconds,
     float lowAmplitudeThreshold,
     float medianLengthInSeconds,
-    float minDurationInSeconds
+    float minDurationInSeconds,
+    bool deactive
 ): 
     chromaMatrix(chromaMatrix), 
     enhancedChromaMatrix(enhancedChromaMatrix),
@@ -27,7 +28,8 @@ ChromaEnhancer::ChromaEnhancer(
     localMaxWindowSizeInSeconds(localMaxWindowSizeInSeconds),
     lowAmplitudeThreshold(lowAmplitudeThreshold),
     medianLengthInSeconds(medianLengthInSeconds),
-    minDurationInSeconds(minDurationInSeconds)
+    minDurationInSeconds(minDurationInSeconds),
+    deactive(deactive)
 {
     // Convert median filter window size and minimum duration from seconds to frames
     localMaxWindowSizeInFrames = secondsToFrames(localMaxWindowSizeInSeconds, sampleRate, hopSize);
@@ -43,6 +45,10 @@ ChromaEnhancer::ChromaEnhancer(
 
 // Enhance inputChroma and write to outputChroma
 void ChromaEnhancer::computeEnhancement() {
+    if (deactive) {
+        enhancedChromaMatrix = chromaMatrix; // bypass
+        return;
+    }
     convertToLogScale();
     normalizeByLocalMaximaInTime();
     dropLowAmplitudes(lowAmplitudeThreshold);

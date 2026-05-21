@@ -1,6 +1,8 @@
 #define DR_WAV_IMPLEMENTATION
+#define DR_MP3_IMPLEMENTATION
 
 #include "audioloader.h"
+#include <cstring>
 
 
 AudioLoader::AudioLoader(
@@ -12,6 +14,23 @@ AudioLoader::AudioLoader(
     sampleRate(sampleRate),
     audio_buffer(audio_buffer) 
 {}
+
+// Mix interleaved multi-channel buffer down to mono
+static void mixdown_to_mono(const std::vector<float>& in, std::vector<float>& out, int channels) {
+    if (channels == 1) {
+        out = in;
+        return;
+    }
+    size_t frames = in.size() / channels;
+    out.resize(frames);
+    float inv = 1.0f / channels;
+    for (size_t i = 0; i < frames; ++i) {
+        float sum = 0.0f;
+        for (int ch = 0; ch < channels; ++ch)
+            sum += in[i * channels + ch];
+        out[i] = sum * inv;
+    }
+}
 
 void AudioLoader::load_wav() {
     drwav wav;
@@ -25,36 +44,80 @@ void AudioLoader::load_wav() {
     int channels = wav.channels;
     drwav_uninit(&wav);
 
+    std::vector<float> mono_buffer;
+    mixdown_to_mono(temp_buffer, mono_buffer, channels);
+
     if (in_sr != sampleRate) {
-        resample(temp_buffer, audio_buffer, in_sr, sampleRate, channels);
+        resample(mono_buffer, audio_buffer, in_sr, sampleRate);
     } else {
-        audio_buffer = std::move(temp_buffer);
+        audio_buffer = std::move(mono_buffer);
     }
 }
 
-// Simple linear interpolation resampler (per channel)
-void AudioLoader::resample(const std::vector<float>& in, std::vector<float>& out, int in_sr, int out_sr, int channels) {
+// Simple linear interpolation resampler (mono)
+void AudioLoader::resample(const std::vector<float>& in, std::vector<float>& out, int in_sr, int out_sr) {
     if (in_sr == out_sr) {
         out = in;
         return;
     }
-    size_t in_frames = in.size() / channels;
+    size_t in_frames = in.size();
     size_t out_frames = static_cast<size_t>(static_cast<double>(in_frames) * out_sr / in_sr);
-    out.resize(out_frames * channels);
-    for (int ch = 0; ch < channels; ++ch) {
-        for (size_t i = 0; i < out_frames; ++i) {
-            double pos = static_cast<double>(i) * in_sr / out_sr;
-            size_t idx = static_cast<size_t>(pos);
-            double frac = pos - idx;
-            float s0 = in[channels * std::min(idx, in_frames - 1) + ch];
-            float s1 = in[channels * std::min(idx + 1, in_frames - 1) + ch];
-            out[channels * i + ch] = static_cast<float>(s0 + (s1 - s0) * frac);
-        }
+    out.resize(out_frames);
+    for (size_t i = 0; i < out_frames; ++i) {
+        double pos = static_cast<double>(i) * in_sr / out_sr;
+        size_t idx = static_cast<size_t>(pos);
+        double frac = pos - idx;
+        float s0 = in[std::min(idx, in_frames - 1)];
+        float s1 = in[std::min(idx + 1, in_frames - 1)];
+        out[i] = static_cast<float>(s0 + (s1 - s0) * frac);
     }
 }
 
 
+void AudioLoader::load_mp3() {
+    drmp3 mp3;
+    if (!drmp3_init_file(&mp3, file_path, nullptr)) {
+        // TODO: Handle decoding error
+        return;
+    }
+    int in_sr = static_cast<int>(mp3.sampleRate);
+    int channels = static_cast<int>(mp3.channels);
+
+    const drmp3_uint64 chunkFrames = 4096;
+    std::vector<float> temp_buffer;
+    std::vector<float> chunk(chunkFrames * channels);
+    drmp3_uint64 framesRead;
+    while ((framesRead = drmp3_read_pcm_frames_f32(&mp3, chunkFrames, chunk.data())) > 0) {
+        temp_buffer.insert(temp_buffer.end(), chunk.begin(), chunk.begin() + framesRead * channels);
+    }
+    drmp3_uninit(&mp3);
+
+    std::vector<float> mono_buffer;
+    mixdown_to_mono(temp_buffer, mono_buffer, channels);
+
+    if (in_sr != sampleRate) {
+        resample(mono_buffer, audio_buffer, in_sr, sampleRate);
+    } else {
+        audio_buffer = std::move(mono_buffer);
+    }
+}
+
+static bool ends_with(const char* str, const char* suffix) {
+    size_t slen = strlen(str);
+    size_t sflen = strlen(suffix);
+    if (sflen > slen) return false;
+    for (size_t i = 0; i < sflen; ++i) {
+        char c = str[slen - sflen + i];
+        if (c >= 'A' && c <= 'Z') c += 32; // tolower
+        if (c != suffix[i]) return false;
+    }
+    return true;
+}
+
 void AudioLoader::load() {
-    // TODO: Decide which file format to try
-    load_wav();
+    if (ends_with(file_path, ".mp3")) {
+        load_mp3();
+    } else {
+        load_wav();
+    }
 }

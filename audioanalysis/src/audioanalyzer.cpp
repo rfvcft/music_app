@@ -71,7 +71,6 @@ void AudioAnalyzer::analyze() {
         chroma, // Output
         chromaConverterMinFrequency, // Parameter
         chromaConverterMaxFrequency, // Parameter
-        chromaConverterOctaveReduced, // Parameter
         chromaConverterNumBins, // Parameter
         chromaConverterUseSmoothTransition, // Parameter
         chromaConverterOvertoneFilter // Parameter
@@ -87,7 +86,8 @@ void AudioAnalyzer::analyze() {
         chromaEnhancerLocalMaxWindowSizeInSeconds, // Parameter
         chromaEnhancerLowAmplitudeThreshold, // Parameter
         chromaEnhancerMedianLengthInSeconds, // Parameter
-        chromaEnhancerMinDurationInSeconds // Parameter
+        chromaEnhancerMinDurationInSeconds, // Parameter
+        chromaEnhancerDeactive // Parameter
     );
 
     std::vector<std::string> musicalKeys;
@@ -97,7 +97,7 @@ void AudioAnalyzer::analyze() {
         keyFinderMajorProfile, // Parameter
         keyFinderMinorProfile // Parameter
     );
-
+    float debugTimeBreakPoint = 4.1f; // in seconds, for debugging purposes
     // Process audio buffer frame by frame
     while (true) {
         frameCutter.computeNextFrame();
@@ -109,6 +109,10 @@ void AudioAnalyzer::analyze() {
 
         peakFinder.computePeaks();
         chromaConverter.computeChroma();
+        float currentTime = samplesToSeconds(static_cast<int>(chromaMatrix.size()) * hopSize, sampleRate);
+        if (currentTime >= debugTimeBreakPoint) {
+            volatile int debugBreak = 0; // set breakpoint here
+        }
         chromaMatrix.push_back(chroma); // Collect chroma vectors into chroma matrix (time frames x chroma bins)
     }
 

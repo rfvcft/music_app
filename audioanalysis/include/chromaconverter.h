@@ -12,11 +12,10 @@ class ChromaConverter {
 public:
     ChromaConverter(
         std::vector<Peak>& peaks, // Input: peaks (magnitude and frequency) 
-        std::vector<float>& chroma, // Output: chroma vector (pitch classes)
+        std::vector<float>& chroma, // Output: chroma vector (chroma bin 0 corresponds to C2 = MIDI 36)
         float minFrequency, // Parameter: minimum frequency to consider, in Hz (Default: 40 Hz)
         float maxFrequency, // Parameter: maximum frequency to consider, in Hz (Default: 3500 Hz)
-        bool octaveReduced, // Parameter: If true, output chroma vector will be octave reduced and numBins will be set to 12. If false bin 0 corresponds to C2 = MIDI 36 (Default: true) 
-        int numBins, // Parameter: Number of chroma bins (set to 12 if octaveReduced = true) (Default: 12)
+        int numBins, // Parameter: Number of chroma bins, bin 0 corresponds to C2 = MIDI 36 (Default: 48)
         bool useSmoothTransition, // Parameter: Use smooth transition at semitone boundaries (Default: true)
         std::string overtoneFilter // Parameter: What type of overtone filter we want to use. ("none", "basic", "nnls") (Default: "basic")
     );
@@ -28,18 +27,13 @@ private:
     std::vector<float>& chroma; 
     float minFrequency;
     float maxFrequency;
-    bool octaveReduced;
     int numBins;
     bool useSmoothTransition;
     std::string overtoneFilter;
 
-    // Octave reduced case
-    float referenceFrequency = 220.0f; // reference frequency for A3, in Hz
-    int referencePitchClass = 9; // reference pitch class for A (0=C, 1=C#, ..., 9=A, ..., 11=B)
 
     // Non-octave reduced case
-    int midiNoteC2 = 36; // MIDI note number corresponding to C2, which is the start of our chroma bins if octaveReduced = false
-    int midiNoteC6 = 84; // MIDI note number corresponding to C6
+    int midiNoteC2 = 36; // MIDI note number corresponding to C2, which is the start of our chroma bins
     int minOutputMIDI;; // MIDI note corresponding to chroma bin 0
     int maxOutputMIDI; // MIDI numBins above minOutputMIDI
 
@@ -48,11 +42,11 @@ private:
 
     // NNLS related
     int numCandidates = 10; // Number of fundamental frequencies candidates we consider
-    float decayFactor = 0.8f; // For overtone weights
     std::vector<int> overtonePattern = {0, 12, 19, 24, 28, 31}; // Pattern of overtones in semitones (5 harmonics)
-    std::vector<float> overtoneWeights = {1.0f, decayFactor, decayFactor * decayFactor, decayFactor * decayFactor * decayFactor, decayFactor * decayFactor * decayFactor * decayFactor, decayFactor * decayFactor * decayFactor * decayFactor * decayFactor}; 
+    std::vector<float> overtoneWeights = {1.000f, 1.163f, 0.461f, 0.355f, 0.341f, 0.200f}; 
     int minComputationMIDI; // MIDI range in which we do computations (derived from minFrequency)
     int maxComputationMIDI; // MIDI range in which we do computations (derived from maxFrequency)
+    int numBinsComputation; // maxComputationMIDI - minComputationMIDI
     int minFundamentalMIDI; // MIDI range for fundamental candidates
     int maxFundamentalMIDI; // MIDI range for fundamental candidates
     std::vector<std::pair<float, int>> largestElements; // pair of (magnitude, MIDI note)

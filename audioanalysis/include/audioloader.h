@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "../third_party/dr_libs/dr_wav.h"
+#include "../third_party/dr_libs/dr_mp3.h"
 
 class AudioLoader {
 
@@ -20,5 +21,6 @@ private:
     int sampleRate;
     std::vector<float>& audio_buffer;
     void load_wav();
-    void resample(const std::vector<float>& in, std::vector<float>& out, int in_sr, int out_sr, int channels);
+    void load_mp3();
+    void resample(const std::vector<float>& in, std::vector<float>& out, int in_sr, int out_sr);
 };
