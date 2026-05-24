@@ -222,7 +222,7 @@ class ChromagramBuilder {
 
   double _computeLeftShiftPx() {
     if (!_isPortrait) {
-      double leftShiftPx = _tonicIndex * _deltaWidthPx; // In landscape, shift so that tonic (C2 - B2) is the left most note
+      double leftShiftPx = (_tonicIndex + cnst.numPitches) * _deltaWidthPx; // In landscape, shift so that tonic (C2 - B2) is the left most note
       _leftShift = leftShiftPx / _leftShiftToPx; // Update leftShift based on leftShiftPx
       return leftShiftPx; 
     }
@@ -230,10 +230,10 @@ class ChromagramBuilder {
     double leftShiftPx = 0.0;
     final scalePattern = cnst.scalePatterns[_scale];
     for (int i = 0; i < _numBins; i++) {
-      if ((i - _tonicIndex) % 12 == 0 && i > 3) break; // Index at tonic in range (E2 - D3)
+      if ((i - _tonicIndex) % 12 == 0 && i > cnst.numPitches + 3) break; // Index at tonic in range (E2 - D3)
       final bool isInScale = scalePattern != null && scalePattern[(i - _tonicIndex) % cnst.numPitches] == 1;
       if (isInScale) {
-        leftShiftPx += _deltaWidthPx; // Increase leftShiftPx for each note in scale until we reach the tonic in range (C3 - B3)
+        leftShiftPx += _deltaWidthPx; // Increase leftShiftPx for each note in scale 
       }
     }
 
@@ -362,7 +362,7 @@ class ChromagramBuilder {
   List<Widget> _octaveBars() {
     List<Widget> octaveBars = [];
 
-    int octaveNumber = 2; // We start with the octave of C2
+    int octaveNumber = 1; // We start with the octave of C1
     final binIndices = _isPortrait ? _portraitOctaveBarBinIndices : _landscapeOctaveBarBinIndices;
     for (final (leftBinIndex, rightBinIndex) in binIndices) {
       octaveBars.addAll(_octaveBar(leftBinIndex: leftBinIndex, rightBinIndex: rightBinIndex, octaveNumber: octaveNumber));
