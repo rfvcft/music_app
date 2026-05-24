@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:music_app/audio/audio_tile.dart';
+import 'package:music_app/utils/conversion.dart' as conv;
 
 class ImportPage extends StatefulWidget {
   const ImportPage({super.key});
@@ -77,10 +78,65 @@ class _ImportPageState extends State<ImportPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Import Audio"),
-      ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (didPop) return;
+        if (_importedFiles.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              duration: const Duration(seconds: 6),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              padding: EdgeInsets.zero,
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(height: 2, color: conv.infernoColormap(0.7)),
+                  Container(
+                    width: double.infinity,
+                    color: const Color.fromARGB(255, 18, 18, 18),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Files have been saved to  ',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 16,
+                            fontWeight: FontWeight.w300,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        Icon(Icons.archive, color: Colors.grey[400], size: 20),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Archive',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 16,
+                            fontWeight: FontWeight.w300,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        Navigator.of(context).pop(result);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text("Import Audio"),
+        ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isLandscape = constraints.maxWidth > constraints.maxHeight;
@@ -215,6 +271,7 @@ class _ImportPageState extends State<ImportPage> {
           );
         },
       ),
+    ),
     );
   }
 }

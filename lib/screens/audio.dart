@@ -42,12 +42,7 @@ class _AudioPageState extends State<AudioPage> {
                   Container(
                     width: double.infinity,
                     color: const Color.fromARGB(255, 18, 18, 18),
-                    padding: EdgeInsets.only(
-                      left: 16,
-                      right: 16,
-                      top: 12,
-                      bottom: 12 + MediaQuery.of(context).padding.bottom,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
