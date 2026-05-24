@@ -24,7 +24,7 @@ class _AudioPageState extends State<AudioPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Record audio"),
+        title: Text("Record Audio"),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {

@@ -393,6 +393,17 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
   }
 
   Widget _buildTimer() {
+    if (_recordState == RecordState.stop) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 32.0),
+        child: Text(
+          'Analysis depends on recording quality.\nImporting a studio recording is preferred.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.grey, fontSize: 13),
+        ),
+      );
+    }
+
     final int totalMs = _recordDurationMs;
     final String minutes = _formatNumber(totalMs ~/ 60000);
     final String seconds = _formatNumber((totalMs ~/ 1000) % 60);
