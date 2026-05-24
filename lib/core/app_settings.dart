@@ -6,7 +6,7 @@ class AppSettings {
   AppSettings._internal();
 
   // Settings variables
-  bool showPitchClasses = true;
+  bool someExampleVariable = true;
 
   // Add more settings as needed
 }
