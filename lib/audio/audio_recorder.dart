@@ -14,10 +14,11 @@ import 'platform/audio_recorder_platform.dart';
 class Recorder extends StatefulWidget {
   final void Function(String path) onStop;
 
-  const Recorder({super.key, required this.onStop, required this.width, required this.height});
+  const Recorder({super.key, required this.onStop, required this.width, required this.height, this.isLandscape = false});
 
   final double width;
   final double height;
+  final bool isLandscape;
 
   @override
   State<Recorder> createState() => _RecorderState();
@@ -242,7 +243,8 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
       height: widget.height,
       child: Stack(
         children: [
-          Center(
+          Align(
+            alignment: widget.isLandscape ? const Alignment(0, -1/3) : Alignment.center,
             child: _buildRecordStopControl(),
           ),
           Align(
@@ -397,7 +399,7 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
       return const Padding(
         padding: EdgeInsets.symmetric(horizontal: 32.0),
         child: Text(
-          'Analysis depends on recording quality.\nImporting a studio recording is preferred.',
+          'Recording quality affects analysis.\nImporting a studio recording is preferred.',
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.grey, fontSize: 13),
         ),

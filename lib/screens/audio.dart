@@ -6,8 +6,9 @@ import 'package:music_app/utils/conversion.dart' as conv;
 import 'dart:io';
 
 class AudioPage extends StatefulWidget {
-  const AudioPage({super.key});
+  const AudioPage({super.key, this.showSavedMessage = true});
 
+  final bool showSavedMessage;
   @override
   State<AudioPage> createState() => _AudioPageState();
 }
@@ -27,7 +28,7 @@ class _AudioPageState extends State<AudioPage> {
       canPop: false,
       onPopInvokedWithResult: (bool didPop, Object? result) {
         if (didPop) return;
-        if (_sessionFiles.isNotEmpty) {
+        if (_sessionFiles.isNotEmpty && widget.showSavedMessage) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               duration: const Duration(seconds: 6),
@@ -93,6 +94,7 @@ class _AudioPageState extends State<AudioPage> {
                   key: _recorderKey,
                   width: recorderSize,
                   height: recorderSize,
+                  isLandscape: true,
                   onStop: (path) {
                     if (kDebugMode) print('Recorded file path: $path');
                     setState(() {
