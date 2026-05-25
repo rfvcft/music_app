@@ -6,6 +6,9 @@ import 'package:music_app/screens/home.dart';
 /// navigation events like pushing or popping routes.
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
+/// Holds any active "files saved to archive" notification overlay entry so it can be dismissed globally.
+OverlayEntry? activeNotificationEntry;
+
 void main() {
   runApp(const MusicApp());
 }
