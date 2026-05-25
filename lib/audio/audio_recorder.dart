@@ -36,7 +36,6 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
       RecordState.stop; // Current state of the recorder (record, pause, stop)
   StreamSubscription<Amplitude>?
   _amplitudeSub; // Subscription to amplitude (volume) changes
-  Amplitude? _amplitude; // Current amplitude (volume) data
   double? _smoothedAmplitude; // Smoothed amplitude for visual display
   static const double _smoothingFactor = 0.25; // 0 = no change, 1 = instant
 
@@ -55,7 +54,6 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
         .onAmplitudeChanged(const Duration(milliseconds: 50))
         .listen((amp) {
           setState(() {
-            _amplitude = amp;
             if (_smoothedAmplitude == null) {
               _smoothedAmplitude = amp.current;
             } else {
@@ -162,7 +160,6 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
         widget.onStop(path);
       }
     }
-    _amplitude = null; // Reset amplitude data for next recording
     _smoothedAmplitude = null; // Reset smoothed amplitude for next recording
     // Clear the next recording name after stopping
     if (mounted) {
