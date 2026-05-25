@@ -49,9 +49,11 @@ class _ArchivePageState extends State<ArchivePage> {
     });
   }
 
-  Widget _actionButton(BuildContext context, IconData icon, VoidCallback onPressed) {
+  Widget _actionButton(BuildContext context, IconData icon, String tooltip, VoidCallback onPressed) {
     const double size = 56;
-    return SizedBox(
+    return Tooltip(
+      message: tooltip,
+      child: SizedBox(
       width: size,
       height: size,
       child: Container(
@@ -76,6 +78,7 @@ class _ArchivePageState extends State<ArchivePage> {
           child: Icon(icon, color: Colors.grey[400], size: 24),
         ),
       ),
+    ),
     );
   }
 
@@ -88,11 +91,11 @@ class _ArchivePageState extends State<ArchivePage> {
       floatingActionButton: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _actionButton(context, Icons.mic,
+          _actionButton(context, Icons.mic, 'Record audio',
               () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AudioPage(showSavedMessage: false)))
                   .then((_) => _loadAudioFiles())),
           const SizedBox(width: 16),
-          _actionButton(context, Icons.file_upload,
+          _actionButton(context, Icons.file_upload, 'Import audio',
               () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ImportPage(showSavedMessage: false)))
                   .then((_) => _loadAudioFiles())),
         ],
