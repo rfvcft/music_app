@@ -29,8 +29,8 @@ class Visualizer extends StatefulWidget {
     if (chromagram.isEmpty) {
       throw ArgumentError('Chromagram must not be empty.');
     }
-    if (numBins != 48) {
-      throw ArgumentError('Chromagram must have 48 bins, got $numBins.');
+    if (numBins != 60) {
+      throw ArgumentError('Chromagram must have 60 bins, got $numBins.');
     }
   }
   

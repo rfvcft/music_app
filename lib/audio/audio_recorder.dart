@@ -14,10 +14,11 @@ import 'platform/audio_recorder_platform.dart';
 class Recorder extends StatefulWidget {
   final void Function(String path) onStop;
 
-  const Recorder({super.key, required this.onStop, required this.width, required this.height});
+  const Recorder({super.key, required this.onStop, required this.width, required this.height, this.isLandscape = false});
 
   final double width;
   final double height;
+  final bool isLandscape;
 
   @override
   State<Recorder> createState() => _RecorderState();
@@ -35,7 +36,6 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
       RecordState.stop; // Current state of the recorder (record, pause, stop)
   StreamSubscription<Amplitude>?
   _amplitudeSub; // Subscription to amplitude (volume) changes
-  Amplitude? _amplitude; // Current amplitude (volume) data
   double? _smoothedAmplitude; // Smoothed amplitude for visual display
   static const double _smoothingFactor = 0.25; // 0 = no change, 1 = instant
 
@@ -54,7 +54,6 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
         .onAmplitudeChanged(const Duration(milliseconds: 50))
         .listen((amp) {
           setState(() {
-            _amplitude = amp;
             if (_smoothedAmplitude == null) {
               _smoothedAmplitude = amp.current;
             } else {
@@ -161,7 +160,6 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
         widget.onStop(path);
       }
     }
-    _amplitude = null; // Reset amplitude data for next recording
     _smoothedAmplitude = null; // Reset smoothed amplitude for next recording
     // Clear the next recording name after stopping
     if (mounted) {
@@ -242,7 +240,8 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
       height: widget.height,
       child: Stack(
         children: [
-          Center(
+          Align(
+            alignment: widget.isLandscape ? const Alignment(0, -1/3) : Alignment.center,
             child: _buildRecordStopControl(),
           ),
           Align(
@@ -393,6 +392,17 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
   }
 
   Widget _buildTimer() {
+    if (_recordState == RecordState.stop) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 32.0),
+        child: Text(
+          'Recording quality affects analysis.\nImporting a studio recording is preferred.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.grey, fontSize: 13),
+        ),
+      );
+    }
+
     final int totalMs = _recordDurationMs;
     final String minutes = _formatNumber(totalMs ~/ 60000);
     final String seconds = _formatNumber((totalMs ~/ 1000) % 60);

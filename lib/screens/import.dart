@@ -4,10 +4,13 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:music_app/audio/audio_tile.dart';
+import 'package:music_app/utils/conversion.dart' as conv;
+import 'package:music_app/main.dart' show activeNotificationEntry;
 
 class ImportPage extends StatefulWidget {
-  const ImportPage({super.key});
+  const ImportPage({super.key, this.showSavedMessage = true});
 
+  final bool showSavedMessage;
   @override
   State<ImportPage> createState() => _ImportPageState();
 }
@@ -77,10 +80,77 @@ class _ImportPageState extends State<ImportPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Import Audio"),
-      ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (didPop) return;
+        if (_importedFiles.isNotEmpty && widget.showSavedMessage) {
+          final bottomPadding = MediaQuery.of(context).padding.bottom;
+          final overlayState = Navigator.of(context).overlay!;
+          late OverlayEntry entry;
+          entry = OverlayEntry(
+            builder: (_) => Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Material(
+                color: Colors.transparent,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(height: 2, color: conv.infernoColormap(0.7)),
+                    Container(
+                      width: double.infinity,
+                      color: const Color.fromARGB(255, 18, 18, 18),
+                      padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + bottomPadding),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Files have been saved to  ',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 16,
+                              fontWeight: FontWeight.w300,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          Icon(Icons.archive, color: Colors.grey[400], size: 20),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Archive',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 16,
+                              fontWeight: FontWeight.w300,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+          overlayState.insert(entry);
+          activeNotificationEntry = entry;
+          Future.delayed(const Duration(seconds: 6), () {
+            if (activeNotificationEntry == entry) {
+              entry.remove();
+              activeNotificationEntry = null;
+            }
+          });
+        }
+        Navigator.of(context).pop(result);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text("Import Audio"),
+        ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isLandscape = constraints.maxWidth > constraints.maxHeight;
@@ -100,17 +170,26 @@ class _ImportPageState extends State<ImportPage> {
                         alignment: Alignment.bottomCenter,
                         child: Padding(
                           padding: const EdgeInsets.only(bottom: 60),
-                          child: const Column(
+                          child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
+                              const Text(
                                 'Import audio files',
                                 style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                               ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Only .wav, .mp3 and .m4a files supported',
-                                style: TextStyle(color: Colors.grey, fontSize: 12),
+                              const SizedBox(height: 4),
+                          Text.rich(
+                                TextSpan(
+                                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                  children: [
+                                    const TextSpan(text: 'Supported files: '),
+                                    TextSpan(text: '.wav', style: TextStyle(color: Colors.grey[500], fontFamily: 'monospace')),
+                                    const TextSpan(text: ', '),
+                                    TextSpan(text: '.mp3', style: TextStyle(color: Colors.grey[500], fontFamily: 'monospace')),
+                                    const TextSpan(text: ' and '),
+                                    TextSpan(text: '.m4a', style: TextStyle(color: Colors.grey[500], fontFamily: 'monospace')),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
@@ -170,9 +249,18 @@ class _ImportPageState extends State<ImportPage> {
                             style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
-                            'Only .wav, .mp3 and .m4a files supported',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          Text.rich(
+                            TextSpan(
+                              style: const TextStyle(color: Colors.grey, fontSize: 12),
+                              children: [
+                                const TextSpan(text: 'Supported files: '),
+                                TextSpan(text: '.wav', style: TextStyle(color: Colors.grey[500], fontFamily: 'monospace')),
+                                const TextSpan(text: ', '),
+                                TextSpan(text: '.mp3', style: TextStyle(color: Colors.grey[500], fontFamily: 'monospace')),
+                                const TextSpan(text: ' and '),
+                                TextSpan(text: '.m4a', style: TextStyle(color: Colors.grey[500], fontFamily: 'monospace')),
+                              ],
+                            ),
                           ),
                           const SizedBox(height: 10),
                           const SizedBox(height: 60),
@@ -215,6 +303,7 @@ class _ImportPageState extends State<ImportPage> {
           );
         },
       ),
+    ),
     );
   }
 }
