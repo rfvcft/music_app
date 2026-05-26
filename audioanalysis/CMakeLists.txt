@@ -22,6 +22,7 @@ set(AUDIOANALYSIS_SOURCES
     src/fouriertransformer.cpp
     src/framecutter.cpp
     src/keyfinder.cpp
+    src/parameters.cpp
     src/peakfinder.cpp
     src/percussionremover.cpp
 )

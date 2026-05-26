@@ -1,4 +1,3 @@
-#include "audioloader.h"
 #include "capi.h"
 
 #include <iostream>
@@ -7,50 +6,16 @@
 #include <sstream>
 #include <map>
 
-
-// Load .raw file to audio buffer. 
-std::vector<float> loadRawFile(const std::string& filePath) {
-    std::ifstream inFile(filePath, std::ios::binary | std::ios::ate);
-    if (!inFile) {
-        throw std::runtime_error("Failed to open file for reading: " + filePath);
-    }
-
-    std::streamsize fileSize = inFile.tellg();
-    inFile.seekg(0, std::ios::beg);
-
-    if (fileSize % sizeof(float) != 0) {
-        throw std::runtime_error("Invalid file size (not aligned to float): " + filePath);
-    }
-
-    std::vector<float> buffer(fileSize / sizeof(float));
-    if (!inFile.read(reinterpret_cast<char*>(buffer.data()), fileSize)) {
-        throw std::runtime_error("Failed to read data from file: " + filePath);
-    }
-
-    return buffer;
-}
-
 // This is a simple example of using the C API to analyze an audio buffer
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " audio.wav \n";
+        std::cerr << "Usage: " << argv[0] << " audio.wav | audio.mp3 | audio.flac \n";
         return 1;
     }
-    int sampleRate = 44100; // sample rate in Hz
-
-    // Load audio buffer to memory
-    //std::vector<float> audio = loadRawFile(argv[1]);  // Uncomment to load .raw files
-    std::vector<float> audio;
-    AudioLoader audioLoader(argv[1], sampleRate, audio);
-    audioLoader.load();
-
-    // Convert to float* for C API
-    float* audio_buffer = audio.data();
-    int audio_buffer_length = audio.size();
-    std::cout << "Loaded audio buffer with " << audio_buffer_length << " samples." << std::endl;
+    char *inputPath = argv[1];
 
     // Analyze
-    CAudioAnalysisResult* resultPtr = analyze_audio_buffer(audio_buffer, audio_buffer_length); 
+    CAudioAnalysisResult* resultPtr = analyze_audio_file(inputPath); 
 
     // Log results
     std::cout << "Detected Key: " << (resultPtr->key[0] ? resultPtr->key : "Unknown") << std::endl;

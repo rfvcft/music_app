@@ -1,5 +1,6 @@
 #define DR_WAV_IMPLEMENTATION
 #define DR_MP3_IMPLEMENTATION
+#define DR_FLAC_IMPLEMENTATION
 
 #include "audioloader.h"
 #include <cstring>
@@ -114,10 +115,36 @@ static bool ends_with(const char* str, const char* suffix) {
     return true;
 }
 
+void AudioLoader::load_flac() {
+    drflac* pFlac = drflac_open_file(file_path, nullptr);
+    if (!pFlac) {
+        // TODO: Handle decoding error
+        return;
+    }
+    std::vector<float> temp_buffer(static_cast<size_t>(pFlac->totalPCMFrameCount) * pFlac->channels);
+    drflac_read_pcm_frames_f32(pFlac, pFlac->totalPCMFrameCount, temp_buffer.data());
+    int in_sr = static_cast<int>(pFlac->sampleRate);
+    int channels = static_cast<int>(pFlac->channels);
+    drflac_close(pFlac);
+
+    std::vector<float> mono_buffer;
+    mixdown_to_mono(temp_buffer, mono_buffer, channels);
+
+    if (in_sr != sampleRate) {
+        resample(mono_buffer, audio_buffer, in_sr, sampleRate);
+    } else {
+        audio_buffer = std::move(mono_buffer);
+    }
+}
+
 void AudioLoader::load() {
     if (ends_with(file_path, ".mp3")) {
         load_mp3();
-    } else {
+    } else if (ends_with(file_path, ".flac")) {
+        load_flac();
+    } else if (ends_with(file_path, ".wav")) {
         load_wav();
+    } else {
+        audio_buffer.clear(); // Unsupported format, return empty buffer
     }
 }

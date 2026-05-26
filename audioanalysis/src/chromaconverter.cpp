@@ -38,11 +38,10 @@ ChromaConverter::ChromaConverter(
     chroma.resize(numBins, 0.0f); 
 
     // MIDI range for our chroma output
-    minOutputMIDI = midiNoteC2; // MIDI note corresponding to chroma bin 0
-    maxOutputMIDI = midiNoteC2 + numBins; 
+    minOutputMIDI = midiNoteC1; // MIDI note corresponding to chroma bin 0
+    maxOutputMIDI = midiNoteC1 + numBins; 
 
     // Assign new values to member variables (parameters shadow member variables)
-    this->numBins = numBins;
     this->minFrequency = minFrequency;
 
     if (overtoneFilter == "nnls") setupNNLS(); // Preallocate space for NNLS
@@ -181,7 +180,7 @@ void ChromaConverter::setupNNLS() {
     maxComputationMIDI = static_cast<int>(std::round(frequencyToMIDI(maxFrequency))); 
 
     // MIDI range in which we search for fundamental frequencies
-    minFundamentalMIDI = std::max(minComputationMIDI, minOutputMIDI); // possibly lower than minOutputMIDI
+    minFundamentalMIDI = std::max(midiNoteA1, minOutputMIDI); // Starting at A1, lower frequencies are to difficult to distinguish
     maxFundamentalMIDI = std::min(maxOutputMIDI, maxComputationMIDI); // up to output, capped by maxComputationMIDI
 
     // Preallocate space for NNLS
@@ -196,7 +195,7 @@ void ChromaConverter::setupNNLS() {
 void ChromaConverter::computeChromaWithNNLSOvertoneFilter() {
     if (minFundamentalMIDI >= maxFundamentalMIDI) return; // should not happen
 
-    // Construct the rhs of the NNLS problem
+    // Construct the rhs b of the NNLS problem
     b.setZero();
     for (const Peak& peak : peaks) {
         float unroundedMIDINote = frequencyToMIDI(peak.freq);
@@ -208,25 +207,30 @@ void ChromaConverter::computeChromaWithNNLSOvertoneFilter() {
         }
     }
 
-    // Find largest entries in b within the fundamentalMIDI range
-    largestElements.clear();
-    for (int midiNote = minFundamentalMIDI; midiNote < maxFundamentalMIDI; ++midiNote) { // Add all candidates within fundamental MIDI range
+    // Find largest entries in b and store them in largestElements as pairs of (magnitude, MIDI note)
+    largestElements.clear(); 
+    for (int midiNote = minFundamentalMIDI; midiNote < maxFundamentalMIDI; ++midiNote) { // Only consider candidates within fundamental MIDI range
         int i = midiNote - minComputationMIDI;
         float magnitude = (i >= 0 && i < b.size()) ? b(i) : 0.0f;
-        largestElements.emplace_back(magnitude, midiNote);
+        if (magnitude > 0.0f) largestElements.emplace_back(magnitude, midiNote);
     }
+
     std::sort(largestElements.begin(), largestElements.end(), [](const std::pair<float, int>& a, const std::pair<float, int>& b) { // Sort by magnitude descending
         return a.first > b.first;  
     });
-    float relativeThreshold = 0.05f; // Only keep elements with sufficiently large relative magnitude
-    float largestMagnitude = largestElements.empty() ? 0.0f : largestElements[0].first;
+    
+    largestElements.resize(std::min(static_cast<int>(largestElements.size()), numCandidates)); // Keep only numCandidates elements at most
+
+    float relativeThreshold = 0.2f; // Only keep elements with sufficiently large magnitude compared to average of the largest elements
+    float totalMagnitude = 0.0f;
+    for (const auto& el : largestElements) totalMagnitude += el.first;
+    float averageMagnitude = largestElements.empty() ? 0.0f : totalMagnitude / largestElements.size();
     for (size_t i = 0; i < largestElements.size(); ++i) {
-        if (largestElements[i].first < relativeThreshold * largestMagnitude) {
+        if (largestElements[i].first < relativeThreshold * averageMagnitude) {
             largestElements.resize(i); // Keep only candidates above threshold
             break;
         }
     }
-    largestElements.resize(std::min(static_cast<int>(largestElements.size()), numCandidates)); // Keep only numCandidates elements at most
 
     // Construct the matrix of the NNLS problem
     A.setZero();
@@ -244,7 +248,7 @@ void ChromaConverter::computeChromaWithNNLSOvertoneFilter() {
     Eigen::NNLS<Eigen::MatrixXd> nnls(A);
     x = nnls.solve(b);
 
-    // Convert NNLS solution to MIDI chroma contributions
+    // Convert NNLS solution to chroma contributions
     for (size_t j = 0; j < largestElements.size(); ++j) {
         float magnitude = largestElements[j].first; // original magnitude of this candidate fundamental frequency (not needed below)
         int midiNote = largestElements[j].second; // MIDI note of this candidate fundamental frequency

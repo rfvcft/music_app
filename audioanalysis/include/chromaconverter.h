@@ -31,17 +31,17 @@ private:
     bool useSmoothTransition;
     std::string overtoneFilter;
 
-
     // Non-octave reduced case
-    int midiNoteC2 = 36; // MIDI note number corresponding to C2, which is the start of our chroma bins
-    int minOutputMIDI;; // MIDI note corresponding to chroma bin 0
+    int midiNoteC1 = 24; // MIDI note number corresponding to C1, which is the start of our chroma bins
+    int midiNoteA1 = 33; // MIDI note number corresponding to A1, which is the start of where we search for fundamental frequencies
+    int minOutputMIDI; // MIDI note corresponding to chroma bin 0
     int maxOutputMIDI; // MIDI numBins above minOutputMIDI
 
     void computeChromaWithoutOvertoneFilter();
     void computeChromaWithBasicOvertoneFilter();
 
     // NNLS related
-    int numCandidates = 10; // Number of fundamental frequencies candidates we consider
+    int numCandidates = 15; // Number of fundamental frequencies candidates we consider
     std::vector<int> overtonePattern = {0, 12, 19, 24, 28, 31}; // Pattern of overtones in semitones (5 harmonics)
     std::vector<float> overtoneWeights = {1.000f, 1.163f, 0.461f, 0.355f, 0.341f, 0.200f}; 
     int minComputationMIDI; // MIDI range in which we do computations (derived from minFrequency)
