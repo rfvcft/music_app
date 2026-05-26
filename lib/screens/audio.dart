@@ -2,11 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:music_app/audio/audio_recorder.dart';
 import 'package:music_app/audio/audio_tile.dart';
+import 'package:music_app/utils/conversion.dart' as conv;
+import 'package:music_app/main.dart' show activeNotificationEntry;
 import 'dart:io';
 
 class AudioPage extends StatefulWidget {
-  const AudioPage({super.key});
+  const AudioPage({super.key, this.showSavedMessage = true});
 
+  final bool showSavedMessage;
   @override
   State<AudioPage> createState() => _AudioPageState();
 }
@@ -22,10 +25,77 @@ class _AudioPageState extends State<AudioPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Record audio"),
-      ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (didPop) return;
+        if (_sessionFiles.isNotEmpty && widget.showSavedMessage) {
+          final bottomPadding = MediaQuery.of(context).padding.bottom;
+          final overlayState = Navigator.of(context).overlay!;
+          late OverlayEntry entry;
+          entry = OverlayEntry(
+            builder: (_) => Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Material(
+                color: Colors.transparent,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(height: 2, color: conv.infernoColormap(0.7)),
+                    Container(
+                      width: double.infinity,
+                      color: const Color.fromARGB(255, 18, 18, 18),
+                      padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + bottomPadding),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Files have been saved to  ',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 16,
+                              fontWeight: FontWeight.w300,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          Icon(Icons.archive, color: Colors.grey[400], size: 20),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Archive',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 16,
+                              fontWeight: FontWeight.w300,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+          overlayState.insert(entry);
+          activeNotificationEntry = entry;
+          Future.delayed(const Duration(seconds: 6), () {
+            if (activeNotificationEntry == entry) {
+              entry.remove();
+              activeNotificationEntry = null;
+            }
+          });
+        }
+        Navigator.of(context).pop(result);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text("Record Audio"),
+        ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isLandscape = constraints.maxWidth > constraints.maxHeight;
@@ -37,6 +107,7 @@ class _AudioPageState extends State<AudioPage> {
                   key: _recorderKey,
                   width: recorderSize,
                   height: recorderSize,
+                  isLandscape: true,
                   onStop: (path) {
                     if (kDebugMode) print('Recorded file path: $path');
                     setState(() {
@@ -123,6 +194,7 @@ class _AudioPageState extends State<AudioPage> {
           );
         },
       ),
-    );
+    ),
+  );
   }
 }
