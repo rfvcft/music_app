@@ -48,10 +48,6 @@ class _AudioTileState extends State<AudioTile> {
   }
 
   Future<void> _analyzeAndNavigate() async {
-    if (Platform.isAndroid) {
-      throw UnimplementedError('Audio analysis is not implemented on Android.');
-    }
-
     final audioUrl = widget.file.path;
     final audioName = p.basename(widget.file.path);
 
