@@ -22,26 +22,41 @@ typedef _LoadAudioBufferFromFile = ffi.Pointer<ffi.Float> Function(
 typedef _LoadAudioBufferFromFileDart = ffi.Pointer<ffi.Float> Function(
 	ffi.Pointer<ffi.Char> filePath, ffi.Pointer<ffi.Int32> outLength);
 
+// Function signature for freeing audio buffer
 typedef _FreeAudioBuffer = ffi.Void Function(ffi.Pointer<ffi.Float> buffer);
 typedef _FreeAudioBufferDart = void Function(ffi.Pointer<ffi.Float> buffer);
 
-// Function signatures for audio analysis
+// Function signatures for audio buffer analysis
 typedef _AnalyzeAudioBuffer = ffi.Pointer<CAudioAnalysisResult> Function(
 		ffi.Pointer<ffi.Float> buffer, ffi.Int32 bufferLength);
 typedef _AnalyzeAudioBufferDart = ffi.Pointer<CAudioAnalysisResult> Function(
 		ffi.Pointer<ffi.Float> buffer, int bufferLength);
 
-// Android signature for direct file analysis
+// Function signature for audio file analysis
 typedef _AnalyzeAudioFile = ffi.Pointer<CAudioAnalysisResult> Function(
 		ffi.Pointer<ffi.Char> filePath);
+typedef _AnalyzeAudioFileDart = ffi.Pointer<CAudioAnalysisResult> Function(
+		ffi.Pointer<ffi.Char> filePath);
 
+// Function signature for deleting analysis result
 typedef _DeleteAnalysisResult = ffi.Void Function(
 		ffi.Pointer<CAudioAnalysisResult> result);
 typedef _DeleteAnalysisResultDart = void Function(
 		ffi.Pointer<CAudioAnalysisResult> result);
 
+// Supported audio formats for iOS
+List<String> supportedAudioFormatsIOS = ['wav', 'mp3', 'flac', 'm4a', 'aac', 'opus'];
 
-/// Loads audio files to audio buffer (on iOS, .wav, .m4a, .mp3 are supported)
+// Supported audio formats for Android
+List<String> supportedAudioFormatsAndroid = ['wav', 'mp3', 'flac'];
+
+// Supported audio formats for C++ library dr_libs 
+List<String> supportedAudioFormatsDRLIBS = ['wav', 'mp3', 'flac'];
+
+
+/// Loads audio files to audio buffers. 
+/// On iOS most audio files are supported (e.g. .wav, .mp3, .flac, .m4a, .aac, .opus). The class uses AVFoundation internally, compiled from Objective C.
+/// Android is not implemented yet. Maybe we'll use ffmpeg, compiled from C++. 
 class AudioLoaderFfi {
 	late final ffi.DynamicLibrary _audioLoaderLib = _loadLibrary();
 	late final _LoadAudioBufferFromFileDart loadAudioBufferFromFile = _audioLoaderLib
@@ -84,37 +99,74 @@ class AudioLoaderFfi {
 	}
 }
   
-/// Analyzes audio buffers using our custom library "audioanalysis"
+/// Analyzes audio buffers and audio files using our custom library "audioanalysis". Direct file analysis uses internally "dr_libs" and works on .mp3, .wav or .flac only.
 class AudioAnalysisFfi {
-	late final ffi.DynamicLibrary _audioanalysisLib = _loadLibrary();
-	late final _AnalyzeAudioBufferDart analyzeAudioBuffer = _audioanalysisLib
+	static AudioAnalysisFfi? _cache;
+
+	final ffi.DynamicLibrary _audioanalysisLib;
+
+	late final _AnalyzeAudioBufferDart _analyzeAudioBuffer = _audioanalysisLib
 		.lookupFunction<_AnalyzeAudioBuffer, _AnalyzeAudioBufferDart>('analyze_audio_buffer');
-	late final _DeleteAnalysisResultDart deleteAnalysisResult = _audioanalysisLib
+	late final _AnalyzeAudioFileDart _analyzeAudioFile = _audioanalysisLib
+		.lookupFunction<_AnalyzeAudioFile, _AnalyzeAudioFileDart>('analyze_audio_file');
+	late final _DeleteAnalysisResultDart _deleteAnalysisResult = _audioanalysisLib
 		.lookupFunction<_DeleteAnalysisResult, _DeleteAnalysisResultDart>('delete_analysis_result');
 
-	AudioAnalysisFfi();
-
-	static ffi.DynamicLibrary _loadLibrary() {
+	factory AudioAnalysisFfi() {
 		if (Platform.isIOS) {
-			return ffi.DynamicLibrary.process();
+			_cache ??= AudioAnalysisFfi._internalIOS();
+			return _cache!;
 		} else if (Platform.isAndroid) {
-			throw UnimplementedError('AudioAnalysisFfi is not implemented for Android');
+			_cache ??= AudioAnalysisFfi._internalAndroid();
+			return _cache!;
 		} else {
 			throw UnsupportedError('AudioAnalysisFfi only supports iOS and Android');
 		}
 	}
 
+	AudioAnalysisFfi._internalIOS()
+			: _audioanalysisLib = ffi.DynamicLibrary.process();
+
+	AudioAnalysisFfi._internalAndroid()
+			: _audioanalysisLib = ffi.DynamicLibrary.open('libaudioanalysis.so');
+
+	bool supportsDirectFileAnalysis(String filePath) {
+		final lastDotIndex = filePath.lastIndexOf('.');
+		if (lastDotIndex == -1 || lastDotIndex == filePath.length - 1) {
+			return false;
+		}
+		final extension = filePath.substring(lastDotIndex + 1).toLowerCase();
+		return supportedAudioFormatsDRLIBS.contains(extension);
+	}
+
 	/// Analyzes an audio buffer and returns the analysis result pointer.
 	ffi.Pointer<CAudioAnalysisResult> analyzeBuffer(ffi.Pointer<ffi.Float> bufferPtr, int length) {
-		final resultPtr = analyzeAudioBuffer(bufferPtr, length);
+		final resultPtr = _analyzeAudioBuffer(bufferPtr, length);
 		if (resultPtr == ffi.Pointer<CAudioAnalysisResult>.fromAddress(0)) {
 			throw Exception('Audio analysis failed');
 		}
 		return resultPtr;
 	}
 
+	/// Analyzes an audio file directly via dr_libs-backed capi function analyze_audio_file.
+	ffi.Pointer<CAudioAnalysisResult> analyzeFile(String filePath) {
+		if (!supportsDirectFileAnalysis(filePath)) {
+			throw Exception('File is not supported');
+		}
+		final filePathCStr = filePath.toNativeUtf8().cast<ffi.Char>();
+		try {
+			final resultPtr = _analyzeAudioFile(filePathCStr);
+			if (resultPtr == ffi.Pointer<CAudioAnalysisResult>.fromAddress(0)) {
+				throw Exception('Audio analysis failed');
+			}
+			return resultPtr;
+		} finally {
+			calloc.free(filePathCStr);
+		}
+	}
+
 	void freeResult(ffi.Pointer<CAudioAnalysisResult> resultPtr) {
-		deleteAnalysisResult(resultPtr);
+		_deleteAnalysisResult(resultPtr);
 	}
 }
 
@@ -123,13 +175,8 @@ class AudioProcessingFfi {
 
 	static AudioProcessingFfi? _cache;
 
-	// for iOS
 	final AudioLoaderFfi? _audioLoader;
-	final AudioAnalysisFfi? _analyzer;
-
-	// for Android
-	late final _AnalyzeAudioFile? _analyzeAudioFile;
-	late final _DeleteAnalysisResultDart? _deleteAnalysisResult;
+	final AudioAnalysisFfi _analyzer;
 
 	factory AudioProcessingFfi({AudioLoaderFfi? audioLoader, AudioAnalysisFfi? analyzer}) {
 		if (Platform.isIOS) {
@@ -139,7 +186,9 @@ class AudioProcessingFfi {
 				);
 			return _cache!;
 		} else if (Platform.isAndroid) {
-			_cache ??= AudioProcessingFfi._internalAndroid();
+			_cache ??= AudioProcessingFfi._internalAndroid(
+					analyzer: analyzer,
+				);
 			return _cache!;
 		} else {
 			throw UnsupportedError('AudioProcessingFfi only supports iOS and Android');
@@ -148,38 +197,36 @@ class AudioProcessingFfi {
 
 	AudioProcessingFfi._internalIOS({AudioLoaderFfi? audioLoader, AudioAnalysisFfi? analyzer})
 			: _audioLoader = audioLoader ?? AudioLoaderFfi(),
-				_analyzer = analyzer ?? AudioAnalysisFfi(),
-				_analyzeAudioFile = null;
+				_analyzer = analyzer ?? AudioAnalysisFfi();
 
-	AudioProcessingFfi._internalAndroid()
+	AudioProcessingFfi._internalAndroid({AudioAnalysisFfi? analyzer})
 			: _audioLoader = null,
-				_analyzer = null {
-		final ffi.DynamicLibrary audioanalysis = ffi.DynamicLibrary.open('libaudioanalysis.so');
-		_analyzeAudioFile = audioanalysis
-				.lookupFunction<_AnalyzeAudioFile, _AnalyzeAudioFile>("analyze_audio_file");
-		_deleteAnalysisResult = audioanalysis
-				.lookupFunction<_DeleteAnalysisResult, _DeleteAnalysisResultDart>("delete_analysis_result");
-	}
+				_analyzer = analyzer ?? AudioAnalysisFfi();
 
 	/// Loads an audio file and analyzes it. Returns a Dart map with results.
+  /// If the audio file is supported by dr_libs, we analyze it directly. Otherwise we load the audio buffer platform-specifically and analyze the buffer.
 	Map<String, dynamic> loadAndAnalyze(String filePath) {
 		ffi.Pointer<CAudioAnalysisResult>? resultPtr;
 		ffi.Pointer<ffi.Float>? bufferPtr;
-		if (Platform.isIOS) {
-			// Load audio buffer
-			final audio = _audioLoader!.loadAudio(filePath);
-			bufferPtr = audio['bufferPtr'] as ffi.Pointer<ffi.Float>;
-			final length = audio['length'] as int;
+		final shouldAnalyzeFileDirectly = _analyzer.supportsDirectFileAnalysis(filePath); 
 
-			// Analyze buffer
-			resultPtr = _analyzer!.analyzeBuffer(bufferPtr, length);
-		} else if (Platform.isAndroid) {
-			final filePathCStr = filePath.toNativeUtf8().cast<ffi.Char>();
-			try {
-				resultPtr = _analyzeAudioFile!(filePathCStr);
-			} finally {
-				calloc.free(filePathCStr);
+		if (Platform.isIOS) {
+			if (shouldAnalyzeFileDirectly) {
+				resultPtr = _analyzer.analyzeFile(filePath);
+			} else { 
+				// Load audio buffer
+				final audio = _audioLoader!.loadAudio(filePath);
+				bufferPtr = audio['bufferPtr'] as ffi.Pointer<ffi.Float>;
+				final length = audio['length'] as int;
+
+				// Analyze buffer
+				resultPtr = _analyzer.analyzeBuffer(bufferPtr, length);
 			}
+		} else if (Platform.isAndroid) {
+			if (!shouldAnalyzeFileDirectly) {
+				throw Exception('File is not supported');
+			}
+			resultPtr = _analyzer.analyzeFile(filePath);
 		}
 		if (resultPtr == null) {
 			throw Exception('Audio analysis failed');
@@ -213,11 +260,7 @@ class AudioProcessingFfi {
 		}
 
 		// Clean up
-		if (Platform.isIOS) {
-			_analyzer!.deleteAnalysisResult(resultPtr);
-		} else if (Platform.isAndroid) {
-			_deleteAnalysisResult!(resultPtr);
-		}
+		_analyzer.freeResult(resultPtr);
 		if (bufferPtr != null) {
 			_audioLoader?.freeAudioBuffer(bufferPtr);
 		}
