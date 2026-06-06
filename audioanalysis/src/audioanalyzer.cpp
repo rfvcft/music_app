@@ -95,7 +95,9 @@ void AudioAnalyzer::analyze() {
         enhancedChromaMatrix, // Input
         musicalKeys, // Output
         keyFinderMajorProfile, // Parameter
-        keyFinderMinorProfile // Parameter
+        keyFinderMinorProfile, // Parameter
+        keyFinderMinBin, // Parameter
+        keyFinderMaxBin // Parameter
     );
 
     // Process audio buffer frame by frame

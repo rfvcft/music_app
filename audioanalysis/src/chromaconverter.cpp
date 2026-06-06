@@ -221,7 +221,7 @@ void ChromaConverter::computeChromaWithNNLSOvertoneFilter() {
     
     largestElements.resize(std::min(static_cast<int>(largestElements.size()), numCandidates)); // Keep only numCandidates elements at most
 
-    float relativeThreshold = 0.2f; // Only keep elements with sufficiently large magnitude compared to average of the largest elements
+    float relativeThreshold = 0.3f; // Only keep elements with sufficiently large magnitude compared to average of the largest elements
     float totalMagnitude = 0.0f;
     for (const auto& el : largestElements) totalMagnitude += el.first;
     float averageMagnitude = largestElements.empty() ? 0.0f : totalMagnitude / largestElements.size();

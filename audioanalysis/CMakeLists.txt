@@ -16,6 +16,7 @@ include_directories(
 # Source files for audio analysis library (excluding main.cpp and audioloader.cpp)
 set(AUDIOANALYSIS_SOURCES
     src/audioanalyzer.cpp
+    src/audioloader.cpp
     src/capi.cpp
     src/chromaconverter.cpp
     src/chromaenhancer.cpp
@@ -29,7 +30,7 @@ set(AUDIOANALYSIS_SOURCES
 
 if (PLATFORM STREQUAL "macos")
     # Compile an executable for macOS
-    add_executable(analyze ${AUDIOANALYSIS_SOURCES} src/audioloader.cpp src/main.cpp)
+    add_executable(analyze ${AUDIOANALYSIS_SOURCES} src/main.cpp)
 
     # Link with Accelerate framework for fast FFT implementation
     target_link_libraries(analyze "-framework Accelerate")
@@ -40,7 +41,7 @@ elseif (PLATFORM STREQUAL "linux")
     #   2. running cmake -DPLATFORM=linux /path/to/audioanalysis
     #   3. running cmake --build .
     #   4. running cmake --install .
-    add_executable(analyze ${AUDIOANALYSIS_SOURCES} src/audioloader.cpp src/main.cpp)
+    add_executable(analyze ${AUDIOANALYSIS_SOURCES} src/main.cpp)
 
 elseif(PLATFORM STREQUAL "ios")
     # Get the path to the iOS SDK
@@ -72,7 +73,7 @@ elseif(PLATFORM STREQUAL "android")
         set(ANDROID_NATIVE_API_LEVEL 21)
     endif()
 
-    add_library(audioanalysis SHARED ${AUDIOANALYSIS_SOURCES} src/audioloader.cpp)
+    add_library(audioanalysis SHARED ${AUDIOANALYSIS_SOURCES})
 else() 
     message(FATAL_ERROR "Unknown platform: ${PLATFORM}. Supported platforms are: macos, ios, linux, android.")
     

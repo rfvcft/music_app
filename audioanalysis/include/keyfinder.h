@@ -11,7 +11,9 @@ public:
         const std::vector<std::vector<float>>& chromaMatrix, // Input: chroma matrix ( time frames x pitch classes)
         std::vector<std::string>& musicalKeys, // Output: detected musical keys, sorted by correlation score
         const std::vector<float>& majorProfile, // Parameter: major key template profile (size 12)
-        const std::vector<float>& minorProfile // Parameter: minor key template profile (size 12)
+        const std::vector<float>& minorProfile, // Parameter: minor key template profile (size 12)
+        int minBin, // Parameter: minimum bin range to consider (-1 to bypass)
+        int maxBin // Parameter: maximum bin range to consider (-1 to bypass)
     );
 
     // Music related parameters
@@ -24,6 +26,8 @@ private:
     std::vector<std::string>& musicalKeys; 
     const std::vector<float>& majorProfile; 
     const std::vector<float>& minorProfile; 
+    const int minBin;
+    const int maxBin;
 
     std::vector<float> computeAverageChroma() const;
     float computeCorrelation(const std::vector<float>& v1, float mean1, float stddev1,

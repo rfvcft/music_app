@@ -14,9 +14,10 @@ typedef struct {
 	int chroma_n_bins;    // Number of bins
 } CAudioAnalysisResult;
 
-// Analyze a float* buffer and return results. Must be freed with delete_analysis_result.
+// Analyze a float* buffer and return results. Result must be freed with delete_analysis_result.
 CAudioAnalysisResult* analyze_audio_buffer(const float* buffer, int buffer_length);
 
+// Analyze audio file (.wav, .mp3, .flac) and return results. Result must be freed with delete_analysis_result.
 CAudioAnalysisResult* analyze_audio_file(const char* file_path);
 
 // Free an CAudioAnalysisResult and all its heap-allocated fields

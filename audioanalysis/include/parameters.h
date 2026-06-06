@@ -40,3 +40,5 @@ extern bool chromaEnhancerDeactive;
 // KeyFinder parameters
 extern std::vector<float> keyFinderMajorProfile;
 extern std::vector<float> keyFinderMinorProfile;
+extern int keyFinderMinBin;
+extern int keyFinderMaxBin;

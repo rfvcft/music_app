@@ -10,12 +10,16 @@ KeyFinder::KeyFinder(
     const std::vector<std::vector<float>>& chromaMatrix, 
     std::vector<std::string>& musicalKeys,
     const std::vector<float>& majorProfile,
-    const std::vector<float>& minorProfile
+    const std::vector<float>& minorProfile,
+    int minBin,
+    int maxBin
 ): 
     chromaMatrix(chromaMatrix),     
     musicalKeys(musicalKeys),
     majorProfile(majorProfile),
-    minorProfile(minorProfile)
+    minorProfile(minorProfile),
+    minBin(minBin),
+    maxBin(maxBin)
 {}
 
 // Compute an average chroma vector across all time frames. Then compute its correlation with all templates (12 major, 12 minor).
@@ -79,11 +83,19 @@ std::vector<float> KeyFinder::computeAverageChroma() const {
     int numBins = static_cast<int>(chromaMatrix[0].size());
     if (numBins < 12) return avgChroma; // Not enough bins to compute chroma
 
-    // We want to weigh each pitch class the same number of times
-    int numBinsToConsider = numBins - numBins % 12; // Enforce multiple of 12
+    int startBin = 0;
+    int endBin = numBins - numBins % 12; // Default: weigh each pitch class the same number of times
+
+    // If both bounds are provided, only bins in [minBin, maxBin) are used.
+    if (minBin >= 0 && maxBin >= 0) {
+        startBin = std::max(0, minBin);
+        endBin = std::min(maxBin, numBins);
+    }
+
+    if (startBin >= endBin) return avgChroma;
 
     for (const auto& frame : chromaMatrix) {
-        for (int bin = 0; bin < numBinsToConsider; ++bin) {
+        for (int bin = startBin; bin < endBin; ++bin) {
             avgChroma[bin % 12] += frame[bin];
         }
     }
