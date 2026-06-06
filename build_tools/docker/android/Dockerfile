@@ -4,12 +4,12 @@
 # Install Docker or Podman (replace 'docker' with 'podman' in the commands below if using Podman).
 #
 # Build the image once by running:
-#   docker build -t "audioanalysis_builder" /path/to/directory/containing/this/Dockerfile
+#   docker build --platform linux/amd64 -t "audioanalysis_builder" /path/to/directory/containing/this/Dockerfile
 # Repeat this step only when this file has been modified. This can take a few minutes requires
 # approximately 2.5GB of disk space.
 #
 # Cross-compile audioanalysis for android by running:
-#   docker run --rm -v /path/to/music_app:/app -v /build_audioanalysis audioanalysis_builder:latest
+#   docker run --rm --platform linux/amd64 -v /path/to/music_app:/app -v /build_audioanalysis audioanalysis_builder:latest
 # Specify a build type (Debug or Release, default: Debug) and whether to clean old make files before
 # building (default: false) by adding the following flags to the above command:
 #   -e BUILD_TYPE=Release
@@ -55,8 +55,6 @@ ENV CLEAN_BUILD=false
 
 # directory containing native source code
 ENV SOURCE_DIR=/app/audioanalysis
-# directory of third party source code
-ENV THIRD_PARTY_DIR=/app/third_party
 # directory to be used by cmake and make for build files
 ENV BUILD_DIR=/build_audioanalysis
 # output directory for built libraries
