@@ -3,6 +3,7 @@
 *.log
 *.pyc
 *.swp
+*.so
 .DS_Store
 .atom/
 .build/
@@ -43,3 +44,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# audioanalyis related
+/audioanalysis/build/
+
+# WAV music files are large and should not be versioned
+*.wav

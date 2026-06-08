@@ -18,10 +18,45 @@ class ImportPage extends StatefulWidget {
 class _ImportPageState extends State<ImportPage> {
   final List<File> _importedFiles = [];
 
+  List<String> get _allowedExtensions {
+    if (Platform.isIOS) {
+      return ['wav', 'mp3', 'flac', 'm4a', 'aac', 'opus'];
+    }
+    if (Platform.isAndroid) {
+      return ['wav', 'mp3', 'flac'];
+    }
+    return ['wav', 'mp3', 'flac'];
+  }
+
+  Widget _buildSupportedFilesText() {
+    final extensionSpans = <InlineSpan>[];
+    for (var i = 0; i < _allowedExtensions.length; i++) {
+      extensionSpans.add(
+        TextSpan(
+          text: '.${_allowedExtensions[i]}',
+          style: TextStyle(color: Colors.grey[500], fontFamily: 'monospace'),
+        ),
+      );
+      if (i < _allowedExtensions.length - 1) {
+        extensionSpans.add(const TextSpan(text: ', '));
+      }
+    }
+
+    return Text.rich(
+      TextSpan(
+        style: const TextStyle(color: Colors.grey, fontSize: 12),
+        children: [
+          const TextSpan(text: 'Supported files: '),
+          ...extensionSpans,
+        ],
+      ),
+    );
+  }
+
   Future<void> _pickAndImportAudio() async {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['wav', 'mp3', 'm4a'],
+      allowedExtensions: _allowedExtensions,
       allowMultiple: true,
     );
     if (result == null || result.files.isEmpty) return;
@@ -178,19 +213,7 @@ class _ImportPageState extends State<ImportPage> {
                                 style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 4),
-                          Text.rich(
-                                TextSpan(
-                                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                  children: [
-                                    const TextSpan(text: 'Supported files: '),
-                                    TextSpan(text: '.wav', style: TextStyle(color: Colors.grey[500], fontFamily: 'monospace')),
-                                    const TextSpan(text: ', '),
-                                    TextSpan(text: '.mp3', style: TextStyle(color: Colors.grey[500], fontFamily: 'monospace')),
-                                    const TextSpan(text: ' and '),
-                                    TextSpan(text: '.m4a', style: TextStyle(color: Colors.grey[500], fontFamily: 'monospace')),
-                                  ],
-                                ),
-                              ),
+                              _buildSupportedFilesText(),
                             ],
                           ),
                         ),
@@ -249,19 +272,7 @@ class _ImportPageState extends State<ImportPage> {
                             style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
-                          Text.rich(
-                            TextSpan(
-                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                              children: [
-                                const TextSpan(text: 'Supported files: '),
-                                TextSpan(text: '.wav', style: TextStyle(color: Colors.grey[500], fontFamily: 'monospace')),
-                                const TextSpan(text: ', '),
-                                TextSpan(text: '.mp3', style: TextStyle(color: Colors.grey[500], fontFamily: 'monospace')),
-                                const TextSpan(text: ' and '),
-                                TextSpan(text: '.m4a', style: TextStyle(color: Colors.grey[500], fontFamily: 'monospace')),
-                              ],
-                            ),
-                          ),
+                          _buildSupportedFilesText(),
                           const SizedBox(height: 10),
                           const SizedBox(height: 60),
                         ],

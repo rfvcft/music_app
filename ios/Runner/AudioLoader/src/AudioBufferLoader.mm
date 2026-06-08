@@ -1,0 +1,69 @@
+
+#import <AVFoundation/AVFoundation.h>
+#include <vector>
+#include <stdlib.h>
+
+extern "C" {
+// Loads an audio file at filePath (.wav, .m4a, .mp3), converts to mono, 44.1kHz, float32, and returns a malloc'd buffer. Length is set in outLength.
+float* loadAudioBufferFromFile(const char* filePath, int* outLength) {
+	@autoreleasepool {
+		NSString* nsPath = [NSString stringWithUTF8String:filePath];
+		NSURL* url = [NSURL fileURLWithPath:nsPath];
+		NSError* error = nil;
+		AVAudioFile* audioFile = [[AVAudioFile alloc] initForReading:url error:&error];
+		if (error || !audioFile) {
+			*outLength = 0;
+			return nullptr;
+		}
+
+		// Set up format: mono, 44.1kHz, float32
+		AVAudioFormat* desiredFormat = [[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatFloat32
+																	   sampleRate:44100.0
+																		 channels:1
+																	  interleaved:NO];
+		// Calculate expected number of frames for the new sample rate
+		double originalDuration = (double)audioFile.length / audioFile.fileFormat.sampleRate;
+		AVAudioFrameCount expectedFrames = (AVAudioFrameCount)(originalDuration * desiredFormat.sampleRate);
+		AVAudioPCMBuffer* pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:desiredFormat frameCapacity:expectedFrames];
+		AVAudioConverter* converter = [[AVAudioConverter alloc] initFromFormat:audioFile.processingFormat toFormat:desiredFormat];
+		AVAudioPCMBuffer* tempBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:audioFile.processingFormat frameCapacity:(AVAudioFrameCount)audioFile.length];
+		[audioFile readIntoBuffer:tempBuffer error:&error];
+		if (error) {
+			*outLength = 0;
+			return nullptr;
+		}
+
+		AVAudioConverterInputBlock inputBlock = ^AVAudioBuffer *(AVAudioPacketCount inNumberOfPackets, AVAudioConverterInputStatus *outStatus) {
+			*outStatus = AVAudioConverterInputStatus_HaveData;
+			return tempBuffer;
+		};
+		[converter convertToBuffer:pcmBuffer error:&error withInputFromBlock:inputBlock];
+		if (error) {
+			*outLength = 0;
+			return nullptr;
+		}
+
+		float* floatData = pcmBuffer.floatChannelData[0];
+		int length = (int)pcmBuffer.frameLength;
+		// Updated logging for clarity
+		NSLog(@"Original frame count (audioFile.length): %lld", audioFile.length);
+		NSLog(@"Converted buffer frame count: %d", length);
+		NSLog(@"Original sample rate: %.2f Hz", audioFile.fileFormat.sampleRate);
+		double originalDurationSec = (double)audioFile.length / audioFile.fileFormat.sampleRate;
+		NSLog(@"Original duration: %.3f seconds", originalDurationSec);
+		double convertedDurationSec = (double)length / desiredFormat.sampleRate;
+		NSLog(@"Converted duration (using new sample rate): %.3f seconds", convertedDurationSec);
+		// end updated logging
+		float* outBuffer = (float*)malloc(sizeof(float) * length);
+		memcpy(outBuffer, floatData, sizeof(float) * length);
+		*outLength = length;
+		return outBuffer;
+	}
+}
+
+// Free the buffer allocated by loadAudioBufferFromM4A
+void freeAudioBuffer(float* buffer) {
+	NSLog(@"freeAudioBuffer called for address: %p", buffer);
+	free(buffer);
+}
+}

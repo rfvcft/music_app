@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
-import 'package:music_app/screens/analyze.dart';
+
+import 'package:music_app/screens/visualize.dart';
+import 'package:music_app/ffi/audioanalysis_ffi.dart' as audioffi;
 
 
 
@@ -45,6 +47,35 @@ class _AudioTileState extends State<AudioTile> {
     });
   }
 
+  Future<void> _analyzeAndNavigate() async {
+    final audioUrl = widget.file.path;
+    final audioName = p.basename(widget.file.path);
+
+    try {
+      final result = audioffi.AudioProcessingFfi().loadAndAnalyze(audioUrl);
+      if (result['key'] == null || result['duration'] == null || result['chromagram'] == null) {
+        throw Exception('Analysis failed or incomplete.');
+      }
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Visualizer(
+            audioName: audioName,
+            audioUrl: audioUrl,
+            duration: result['duration'] as double,
+            musicalKey: result['key'] as String,
+            chromagram: result['chromagram'] as List<List<double>>,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Analysis failed: $e')),
+      );
+    }
+  }
   @override
   Widget build(BuildContext context) {
     final name = p.basename(widget.file.path);
@@ -108,16 +139,7 @@ class _AudioTileState extends State<AudioTile> {
         await widget.onDelete();
       },
       child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AnalyzePage(
-                audioUrl: audioUrl,
-              ),
-            ),
-          );
-        },
+        onTap: _analyzeAndNavigate,
         onLongPress: () async {
           final result = await showModalBottomSheet<String>(
             context: context,
