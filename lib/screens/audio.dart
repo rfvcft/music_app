@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:music_app/audio/audio_recorder.dart' as rec;
 import 'package:music_app/audio/audio_tile.dart' as at;
+import 'package:music_app/core/custom_app_bar.dart' as cab;
 import 'package:music_app/utils/conversion.dart' as conv;
 import 'package:music_app/main.dart' show activeNotificationEntry;
 import 'dart:io';
@@ -93,9 +94,7 @@ class _AudioPageState extends State<AudioPage> {
         Navigator.of(context).pop(result);
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text("Record Audio"),
-        ),
+        appBar: const cab.CustomAppBar(title: 'Record Audio'),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isLandscape = constraints.maxWidth > constraints.maxHeight;

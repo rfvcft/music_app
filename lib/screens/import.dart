@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:music_app/audio/audio_tile.dart' as at;
+import 'package:music_app/core/custom_app_bar.dart' as cab;
 import 'package:music_app/utils/conversion.dart' as conv;
 import 'package:music_app/main.dart' show activeNotificationEntry;
 
@@ -183,9 +184,7 @@ class _ImportPageState extends State<ImportPage> {
         Navigator.of(context).pop(result);
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text("Import Audio"),
-        ),
+        appBar: const cab.CustomAppBar(title: 'Import Audio'),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isLandscape = constraints.maxWidth > constraints.maxHeight;

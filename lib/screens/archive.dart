@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:music_app/screens/audio.dart';
 import 'package:music_app/screens/import.dart';
+import 'package:music_app/core/custom_app_bar.dart' as cab;
 import 'package:path_provider/path_provider.dart';
 import 'package:music_app/main.dart' show activeNotificationEntry;
 import 'package:music_app/audio/audio_tile.dart' as at;
@@ -83,9 +84,7 @@ class _ArchivePageState extends State<ArchivePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Archive"),
-      ),
+      appBar: const cab.CustomAppBar(title: 'Archive'),
       floatingActionButton: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
