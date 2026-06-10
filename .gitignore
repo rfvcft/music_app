@@ -47,6 +47,7 @@ app.*.map.json
 
 # audioanalyis related
 /audioanalysis/build/
+/build_audioanalysis/
 
 # WAV music files are large and should not be versioned
 *.wav
