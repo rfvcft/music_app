@@ -1,4 +1,3 @@
-import 'dart:io'; // For platform checks 
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -6,7 +5,6 @@ import 'package:flutter/scheduler.dart';
 
 import 'package:just_audio/just_audio.dart' as ja; // Audio player package
 
-import 'package:music_app/core/app_settings.dart'; // App settings
 import 'package:music_app/screens/settings.dart'; // Settings page
 import 'package:music_app/utils/chromagram_builder.dart' as cb; // Chromagram builder for visualization
 import 'package:music_app/utils/conversion.dart' as conv; // Conversion utilities

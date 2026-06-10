@@ -730,7 +730,7 @@ class ChromagramBuilder {
   Widget _keyText() {
 
     final noteNames = cnst.noteNames[_scale]![_tonicIndex]!; // Note names for current musical key
-    final String musicalKey = noteNames[_tonicIndex]! + ' ' + _scale; // Musical key (e.g., "C major")
+    final String musicalKey = '${noteNames[_tonicIndex]} $_scale'; // Musical key (e.g., "C major")
     double fadeOutTime = 0.5 * (_deltaHeightPx / _oneSecondPx); // Time in seconds over which text fades out
     double keyTextOpacity = (1 - (_currentTime / fadeOutTime)).clamp(0.0, 1.0);
     Widget keyText = Positioned(

@@ -1,11 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:music_app/screens/analyze.dart';
 import 'package:music_app/screens/audio.dart';
 import 'package:music_app/screens/import.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
 import 'package:music_app/main.dart' show activeNotificationEntry;
 import 'package:music_app/audio/audio_tile.dart';
 import 'package:music_app/utils/conversion.dart' as conv;
