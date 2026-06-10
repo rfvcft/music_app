@@ -5,7 +5,7 @@ import 'package:music_app/screens/audio.dart';
 import 'package:music_app/screens/import.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:music_app/main.dart' show activeNotificationEntry;
-import 'package:music_app/audio/audio_tile.dart';
+import 'package:music_app/audio/audio_tile.dart' as at;
 import 'package:music_app/utils/conversion.dart' as conv;
 
 
@@ -115,7 +115,7 @@ class _ArchivePageState extends State<ArchivePage> {
               itemBuilder: (context, index) {
                 return Container(
                   height: 60,
-                  child: AudioTile(
+                  child: at.AudioTile(
                     file: _audioFiles[index],
                     onRename: (renamedFile) async {
                       // Reload the file list after rename

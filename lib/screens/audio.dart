@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:music_app/audio/audio_recorder.dart';
-import 'package:music_app/audio/audio_tile.dart';
+import 'package:music_app/audio/audio_recorder.dart' as rec;
+import 'package:music_app/audio/audio_tile.dart' as at;
 import 'package:music_app/utils/conversion.dart' as conv;
 import 'package:music_app/main.dart' show activeNotificationEntry;
 import 'dart:io';
@@ -103,7 +103,7 @@ class _AudioPageState extends State<AudioPage> {
             final recorderSize = constraints.maxHeight;
             return Row(
               children: [
-                Recorder(
+                rec.Recorder(
                   key: _recorderKey,
                   width: recorderSize,
                   height: recorderSize,
@@ -124,7 +124,7 @@ class _AudioPageState extends State<AudioPage> {
                         final file = _sessionFiles[index];
                         return SizedBox(
                           height: 60,
-                          child: AudioTile(
+                          child: at.AudioTile(
                           file: file,
                           onRename: (renamedFile) async {
                             if (renamedFile != null) {
@@ -150,7 +150,7 @@ class _AudioPageState extends State<AudioPage> {
           return Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Recorder(
+              rec.Recorder(
                 key: _recorderKey,
                 width: size,
                 height: size,
@@ -171,7 +171,7 @@ class _AudioPageState extends State<AudioPage> {
                       final file = _sessionFiles[index];
                       return SizedBox(
                         height: 60,
-                        child: AudioTile(
+                        child: at.AudioTile(
                         file: file,
                         onRename: (renamedFile) async {
                           if (renamedFile != null) {

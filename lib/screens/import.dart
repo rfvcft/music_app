@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
-import 'package:music_app/audio/audio_tile.dart';
+import 'package:music_app/audio/audio_tile.dart' as at;
 import 'package:music_app/utils/conversion.dart' as conv;
 import 'package:music_app/main.dart' show activeNotificationEntry;
 
@@ -230,7 +230,7 @@ class _ImportPageState extends State<ImportPage> {
                         final file = _importedFiles[index];
                         return SizedBox(
                           height: 60,
-                          child: AudioTile(
+                          child: at.AudioTile(
                             file: file,
                             onRename: (renamedFile) async {
                               if (renamedFile != null) {
@@ -291,7 +291,7 @@ class _ImportPageState extends State<ImportPage> {
                       final file = _importedFiles[index];
                       return SizedBox(
                         height: 60,
-                        child: AudioTile(
+                        child: at.AudioTile(
                           file: file,
                           onRename: (renamedFile) async {
                             if (renamedFile != null) {
