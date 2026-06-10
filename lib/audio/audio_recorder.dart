@@ -11,6 +11,14 @@ import 'package:music_app/utils/conversion.dart' as conv;
 import 'package:music_app/main.dart' show routeObserver;
 import 'platform/audio_recorder_platform.dart';
 
+/// A widget that provides audio recording functionality.
+/// 
+/// Displays a microphone button that starts and stops recording when tapped.
+/// While recording, a radial gradient ring pulses with the microphone amplitude.
+/// Recordings are saved as .m4a files (AAC-LC encoder) to the app's documents
+/// directory with auto-incremented names (e.g. "New Recording 1.m4a").
+/// The [onStop] callback is invoked with the saved file path when recording stops.
+/// Recording is automatically stopped if the user navigates away from the screen.
 class Recorder extends StatefulWidget {
   final void Function(String path) onStop;
 
