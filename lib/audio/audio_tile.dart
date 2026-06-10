@@ -277,7 +277,12 @@ class _AudioTileState extends State<AudioTile> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: Theme.of(context).textTheme.titleMedium, overflow: TextOverflow.ellipsis, maxLines: 1),
+                Text(
+                  name,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey[250]),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
                 Text(dateStr, style: const TextStyle(color: Colors.grey)),
               ],
             ),

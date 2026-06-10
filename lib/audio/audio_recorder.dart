@@ -301,13 +301,12 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
     double startIntensity = initialStartIntensity + normalizedAmplitude * (1.0 - initialStartIntensity); // Intensity for the innermost color of the ring, increases with amplitude
     double endIntensity = initialEndIntensity + sqrt(normalizedAmplitude) * (0.0 - initialEndIntensity); // Intensity for the outermost color of the ring, decreases with amplitude 
 
-    const Color iconColor = Colors.white;
     late Icon icon;
 
     if (_recordState != RecordState.stop) {
-      icon = Icon(Icons.graphic_eq, color: iconColor, size: iconSize);
+      icon = Icon(Icons.graphic_eq, color: Colors.grey[250], size: iconSize);
     } else {
-      icon = Icon(Icons.mic, color: iconColor, size: iconSize);
+      icon = Icon(Icons.mic, color: Colors.grey[400], size: iconSize);
     }
     
     int numberOfStops = 10;
@@ -348,7 +347,7 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
                 height: 2 * (diskRadius + minRingWidth),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.grey, width: ringWidth),
+                  border: Border.all(color: Colors.grey[700]!, width: ringWidth),
                 ),
               ),
             // Disk with icon
@@ -387,11 +386,11 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
         ),
       );
     } else if (_recordState == RecordState.stop) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.only(top: 12.0),
         child: Text(
           'Waiting to record',
-          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.grey[250], fontSize: 16, fontWeight: FontWeight.bold),
         ),
       );
     } else {

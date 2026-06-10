@@ -103,7 +103,7 @@ class _ImportPageState extends State<ImportPage> {
             height: 2 * (diskRadius + ringWidth),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey, width: ringWidth),
+              border: Border.all(color: Colors.grey[700]!, width: ringWidth),
             ),
             child: const Center(
               child: Icon(Icons.file_upload, color: Colors.white, size: iconSize),
@@ -224,7 +224,9 @@ class _ImportPageState extends State<ImportPage> {
                   Expanded(
                     child: ListView.separated(
                       itemCount: _importedFiles.length,
-                      separatorBuilder: (context, index) => const Divider(),
+                      separatorBuilder: (context, index) => const Divider(
+                        color: Color.fromARGB(255, 80, 80, 80),
+                      ),
                       itemBuilder: (context, index) {
                         final file = _importedFiles[index];
                         return SizedBox(
@@ -285,7 +287,9 @@ class _ImportPageState extends State<ImportPage> {
                 Expanded(
                   child: ListView.separated(
                     itemCount: _importedFiles.length,
-                    separatorBuilder: (context, index) => const Divider(),
+                    separatorBuilder: (context, index) => const Divider(
+                      color: Color.fromARGB(255, 80, 80, 80),
+                    ),
                     itemBuilder: (context, index) {
                       final file = _importedFiles[index];
                       return SizedBox(

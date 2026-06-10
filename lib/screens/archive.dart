@@ -131,7 +131,9 @@ class _ArchivePageState extends State<ArchivePage> {
                   ),
                 );
               },
-              separatorBuilder: (context, index) => const Divider(),
+              separatorBuilder: (context, index) => const Divider(
+                color: Color.fromARGB(255, 80, 80, 80),
+              ),
               itemCount: _audioFiles.length,
             ),
     );

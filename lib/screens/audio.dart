@@ -118,7 +118,9 @@ class _AudioPageState extends State<AudioPage> {
                   Expanded(
                     child: ListView.separated(
                       itemCount: _sessionFiles.length,
-                      separatorBuilder: (context, index) => const Divider(),
+                      separatorBuilder: (context, index) => const Divider(
+                        color: Color.fromARGB(255, 80, 80, 80),
+                      ),
                       itemBuilder: (context, index) {
                         final file = _sessionFiles[index];
                         return SizedBox(
@@ -165,7 +167,9 @@ class _AudioPageState extends State<AudioPage> {
                 Expanded(
                   child: ListView.separated(
                     itemCount: _sessionFiles.length,
-                    separatorBuilder: (context, index) => const Divider(),
+                    separatorBuilder: (context, index) => const Divider(
+                      color: Color.fromARGB(255, 80, 80, 80),
+                    ),
                     itemBuilder: (context, index) {
                       final file = _sessionFiles[index];
                       return SizedBox(
