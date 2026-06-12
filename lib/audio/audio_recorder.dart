@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 
 import 'package:path_provider/path_provider.dart';
+import 'package:music_app/utils/constants.dart' as cnst;
 import 'package:music_app/utils/conversion.dart' as conv;
 import 'package:music_app/main.dart' show routeObserver;
 import 'platform/audio_recorder_platform.dart';
@@ -304,9 +305,9 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
     late Icon icon;
 
     if (_recordState != RecordState.stop) {
-      icon = Icon(Icons.graphic_eq, color: Colors.grey[250], size: iconSize);
+      icon = const Icon(Icons.graphic_eq, color: cnst.recordIconColor, size: iconSize);
     } else {
-      icon = Icon(Icons.mic, color: Colors.grey[400], size: iconSize);
+      icon = const Icon(Icons.mic, color: cnst.recordIconColor, size: iconSize);
     }
     
     int numberOfStops = 10;

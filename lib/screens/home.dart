@@ -5,6 +5,7 @@ import 'package:music_app/screens/archive.dart';
 import 'package:music_app/screens/audio.dart';
 import 'package:music_app/screens/import.dart';
 import 'package:music_app/screens/load_assets.dart';
+import 'package:music_app/utils/constants.dart' as cnst;
 import 'package:music_app/utils/conversion.dart' as conv;
 
 class HomePage extends StatelessWidget {
@@ -72,7 +73,7 @@ class HomePage extends StatelessWidget {
                 fontSize: 21,
                 fontWeight: FontWeight.w400,
                 letterSpacing: 4,
-                color: Colors.grey[400],
+                color: cnst.homeSubtitleColor,
               ),
               textAlign: TextAlign.center,
             ),
@@ -130,7 +131,7 @@ class HomePage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18, 
                       //fontFamily: GoogleFonts.raleway().fontFamily,
-                      color: Colors.grey[400]!, 
+                      color: cnst.homeButtonTitleColor,
                       fontWeight: FontWeight.w300, 
                       letterSpacing: 2
                     ),

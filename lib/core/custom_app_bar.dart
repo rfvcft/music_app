@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:music_app/utils/constants.dart' as cnst;
 import 'package:music_app/utils/conversion.dart' as conv;
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -12,13 +13,13 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: const Color.fromARGB(255, 12, 12, 12),
-      iconTheme: IconThemeData(color: Colors.grey[400]),
+      backgroundColor: cnst.customAppBarBackgroundColor,
+      iconTheme: const IconThemeData(color: cnst.customAppBarTitleColor),
       elevation: 8,
       shadowColor: Colors.grey[700],
       title: Text(
         title,
-        style: TextStyle(color: Colors.grey[400]),
+        style: const TextStyle(color: cnst.customAppBarTitleColor),
       ),
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(2),

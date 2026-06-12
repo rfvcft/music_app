@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:music_app/screens/audio.dart';
 import 'package:music_app/screens/import.dart';
 import 'package:music_app/core/custom_app_bar.dart' as cab;
+import 'package:music_app/utils/constants.dart' as cnst;
 import 'package:path_provider/path_provider.dart';
 import 'package:music_app/main.dart' show activeNotificationEntry;
 import 'package:music_app/audio/audio_tile.dart' as at;
@@ -48,7 +49,7 @@ class _ArchivePageState extends State<ArchivePage> {
     });
   }
 
-  Widget _actionButton(BuildContext context, IconData icon, String tooltip, VoidCallback onPressed) {
+  Widget _actionButton(BuildContext context, IconData icon, Color iconColor, String tooltip, VoidCallback onPressed) {
     const double size = 56;
     return Tooltip(
       message: tooltip,
@@ -74,7 +75,7 @@ class _ArchivePageState extends State<ArchivePage> {
             padding: EdgeInsets.zero,
           ),
           onPressed: onPressed,
-          child: Icon(icon, color: Colors.grey[400], size: 24),
+          child: Icon(icon, color: iconColor, size: 24),
         ),
       ),
     ),
@@ -88,11 +89,11 @@ class _ArchivePageState extends State<ArchivePage> {
       floatingActionButton: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _actionButton(context, Icons.mic, 'Record audio',
+          _actionButton(context, Icons.mic, cnst.recordIconColor, 'Record audio',
               () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AudioPage(showSavedMessage: false)))
                   .then((_) => _loadAudioFiles())),
           const SizedBox(width: 16),
-          _actionButton(context, Icons.file_upload, 'Import audio',
+          _actionButton(context, Icons.file_upload, cnst.importIconColor, 'Import audio',
               () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ImportPage(showSavedMessage: false)))
                   .then((_) => _loadAudioFiles())),
         ],

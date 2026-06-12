@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
+import 'package:music_app/utils/constants.dart' as cnst;
 import 'package:music_app/screens/visualize.dart';
 import 'package:music_app/ffi/audioanalysis_ffi.dart' as audioffi;
 
@@ -279,11 +280,11 @@ class _AudioTileState extends State<AudioTile> {
               children: [
                 Text(
                   name,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey[250]),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: cnst.audioTileNameColor),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
-                Text(dateStr, style: const TextStyle(color: Colors.grey)),
+                Text(dateStr, style: const TextStyle(color: cnst.audioTileDateColor)),
               ],
             ),
           ),

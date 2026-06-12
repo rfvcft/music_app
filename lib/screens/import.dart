@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:music_app/audio/audio_tile.dart' as at;
 import 'package:music_app/core/custom_app_bar.dart' as cab;
+import 'package:music_app/utils/constants.dart' as cnst;
 import 'package:music_app/utils/conversion.dart' as conv;
 import 'package:music_app/main.dart' show activeNotificationEntry;
 
@@ -106,7 +107,7 @@ class _ImportPageState extends State<ImportPage> {
               border: Border.all(color: Colors.grey[700]!, width: ringWidth),
             ),
             child: const Center(
-              child: Icon(Icons.file_upload, color: Colors.white, size: iconSize),
+              child: Icon(Icons.file_upload, color: cnst.importIconColor, size: iconSize),
             ),
           ),
         ),
