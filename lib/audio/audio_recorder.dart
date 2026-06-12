@@ -289,6 +289,7 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
 
     const double iconSize = 36; // Size of the mic/stop icon in the center
     final double diskRadius = screenRadius * 0.25; // Radius of the static inner disk with the icon
+    final double inactiveRingWidth = screenRadius * 0.009; // Match import page standby ring width
 
     final double minRingWidth = screenRadius * 0.025; // Minimum width for the ring to ensure visibility even at low amplitudes
     final double maxRingWidth = screenRadius * 0.3; // Max ring width based on available space
@@ -344,11 +345,11 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
               )
             else
               Container(
-                width: 2 * (diskRadius + minRingWidth), // Static ring size when not recording
-                height: 2 * (diskRadius + minRingWidth),
+                width: 2 * (diskRadius + inactiveRingWidth), // Match import page standby ring size
+                height: 2 * (diskRadius + inactiveRingWidth),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.grey[700]!, width: ringWidth),
+                  border: Border.all(color: cnst.importIconColor, width: inactiveRingWidth),
                 ),
               ),
             // Disk with icon

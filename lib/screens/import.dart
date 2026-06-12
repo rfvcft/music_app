@@ -92,7 +92,7 @@ class _ImportPageState extends State<ImportPage> {
   Widget _buildImportControl(double screenRadius) {
     const double iconSize = 36;
     final double diskRadius = screenRadius * 0.25;
-    final double ringWidth = screenRadius * 0.025;
+    final double ringWidth = screenRadius * 0.009;
 
     return ClipOval(
       child: Material(
@@ -104,7 +104,7 @@ class _ImportPageState extends State<ImportPage> {
             height: 2 * (diskRadius + ringWidth),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey[700]!, width: ringWidth),
+              border: Border.all(color: cnst.importIconColor, width: ringWidth),
             ),
             child: const Center(
               child: Icon(Icons.file_upload, color: cnst.importIconColor, size: iconSize),
