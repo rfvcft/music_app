@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:music_app/screens/audio.dart';
 import 'package:music_app/screens/import.dart';
-import 'package:music_app/core/custom_app_bar.dart' as cab;
+import 'package:music_app/utils/custom_app_bar.dart' as cab;
 import 'package:music_app/utils/constants.dart' as cnst;
 import 'package:path_provider/path_provider.dart';
 import 'package:music_app/main.dart' show activeNotificationEntry;
