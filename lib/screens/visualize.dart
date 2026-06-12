@@ -5,7 +5,7 @@ import 'package:flutter/scheduler.dart';
 
 import 'package:just_audio/just_audio.dart' as ja; // Audio player package
 
-import 'package:music_app/screens/settings.dart'; // Settings page
+import 'package:music_app/screens/help.dart';
 import 'package:music_app/utils/chromagram_builder.dart' as cb; // Chromagram builder for visualization
 import 'package:music_app/utils/conversion.dart' as conv; // Conversion utilities
 import 'package:music_app/utils/constants.dart' as cnst; // Import constants
@@ -426,18 +426,18 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings),
-            tooltip: 'Settings',
+            icon: const Icon(Icons.live_help_outlined),
+            tooltip: 'Help',
             onPressed: () async {
-              // Abort fling and pause playback before navigating to settings
+              // Abort fling and pause playback before navigating to help
               if (isFlinging) _abortFling();
               if (isPlaying) pause();
               await Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => SettingsPage()),
+                MaterialPageRoute(builder: (context) => const HelpPage()),
               );
-              // After returning, call setState to rebuild with new settings
+              // Rebuild after returning from help page
               setState(() {});
-              if (showLogs) print('setState: after returning from SettingsPage');
+              if (showLogs) print('setState: after returning from HelpPage');
             },
           ),
         ],
