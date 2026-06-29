@@ -19,7 +19,8 @@ ChromaEnhancer::ChromaEnhancer(
     float lowAmplitudeThreshold,
     float medianLengthInSeconds,
     float minDurationInSeconds,
-    bool deactive
+    bool deactive,
+    int resolutionFactor
 ): 
     chromaMatrix(chromaMatrix), 
     enhancedChromaMatrix(enhancedChromaMatrix),
@@ -29,7 +30,8 @@ ChromaEnhancer::ChromaEnhancer(
     lowAmplitudeThreshold(lowAmplitudeThreshold),
     medianLengthInSeconds(medianLengthInSeconds),
     minDurationInSeconds(minDurationInSeconds),
-    deactive(deactive)
+    deactive(deactive),
+    resolutionFactor(resolutionFactor)
 {
     // Convert median filter window size and minimum duration from seconds to frames
     localMaxWindowSizeInFrames = secondsToFrames(localMaxWindowSizeInSeconds, sampleRate, hopSize);
@@ -41,6 +43,8 @@ ChromaEnhancer::ChromaEnhancer(
     } else if ((medianLengthInFrames % 2) == 0) { 
         ++medianLengthInFrames; // Force odd 
     }
+
+    if (this->resolutionFactor < 1) this->resolutionFactor = 1;
 }
 
 // Enhance inputChroma and write to outputChroma
@@ -53,7 +57,8 @@ void ChromaEnhancer::computeEnhancement() {
     normalizeByLocalMaximaInTime();
     dropLowAmplitudes(lowAmplitudeThreshold);
     medianTimeFilterSliding(medianLengthInFrames);
-    dropShortTimeExcitations(minDurationInFrames); 
+    dropShortTimeExcitations(minDurationInFrames);
+    interpolateInTime(resolutionFactor);
 }
 
 // Convert chroma values to log scale 
@@ -257,4 +262,33 @@ void ChromaEnhancer::medianTimeFilterSliding(int windowSize) {
         }
     }
     enhancedChromaMatrix.swap(outMatrix);
+}
+
+// Linear interpolation in time by an integer upsampling factor.
+// factor = 1 leaves the matrix unchanged.
+void ChromaEnhancer::interpolateInTime(int factor) {
+    if (factor <= 1) return;
+
+    size_t numFrames = enhancedChromaMatrix.size();
+    if (numFrames < 2) return;
+    size_t numBins = enhancedChromaMatrix[0].size();
+
+    size_t upsampledFrames = (numFrames - 1) * static_cast<size_t>(factor) + 1;
+    std::vector<std::vector<float>> out(upsampledFrames, std::vector<float>(numBins, 0.0f));
+
+    size_t outFrame = 0;
+    for (size_t t = 0; t + 1 < numFrames; ++t) {
+        const std::vector<float>& a = enhancedChromaMatrix[t];
+        const std::vector<float>& b = enhancedChromaMatrix[t + 1];
+        for (int k = 0; k < factor; ++k) {
+            float alpha = static_cast<float>(k) / static_cast<float>(factor);
+            for (size_t bin = 0; bin < numBins; ++bin) {
+                out[outFrame][bin] = (1.0f - alpha) * a[bin] + alpha * b[bin];
+            }
+            ++outFrame;
+        }
+    }
+
+    out[outFrame] = enhancedChromaMatrix.back();
+    enhancedChromaMatrix.swap(out);
 }

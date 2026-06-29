@@ -15,7 +15,8 @@ public:
         float lowAmplitudeThreshold, // Parameter: Relative threshold for dropping low amplitudes (0.0 = no drop, 1.0 = drop all). (Default: 0.90)
         float medianLengthInSeconds, // Parameter: Window size for median filtering in seconds (0 to bypass this) (Default: ?)
         float minDurationInSeconds, // Parameter: Minimum duration for a chroma excitation to be kept in seconds (0 to bypass this) (Default: ?)
-        bool deactive // Parameter: If true, chroma enhancement is deactivated (chromaMatrix = enhancedChromaMatrix)
+        bool deactive, // Parameter: If true, chroma enhancement is deactivated (chromaMatrix = enhancedChromaMatrix)
+        int resolutionFactor = 1 // Parameter: Temporal upsampling factor (1 = no interpolation, 2 = double frames, ...)
     );
 
     void computeEnhancement();
@@ -29,6 +30,7 @@ private:
     float lowAmplitudeThreshold;
     float medianLengthInSeconds;
     float minDurationInSeconds;
+    int resolutionFactor;
     bool deactive;
 
     int localMaxWindowSizeInFrames; // Window size (in frames) for sliding maximum in time 
@@ -42,5 +44,6 @@ private:
     void dropLowAmplitudes(float threshold);
     void dropShortTimeExcitations(int minDurationFrames);
     void medianTimeFilterSliding(int windowSize);
+    void interpolateInTime(int factor);
     void normalizeChroma(bool normalize);
 };

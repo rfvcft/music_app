@@ -35,6 +35,7 @@ extern float chromaEnhancerLocalMaxWindowSizeInSeconds;
 extern float chromaEnhancerLowAmplitudeThreshold;
 extern float chromaEnhancerMedianLengthInSeconds;
 extern float chromaEnhancerMinDurationInSeconds;
+extern int chromaEnhancerResolutionFactor;
 extern bool chromaEnhancerDeactive;
 
 // KeyFinder parameters

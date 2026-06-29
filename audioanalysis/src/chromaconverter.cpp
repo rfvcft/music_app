@@ -5,6 +5,7 @@
 #include <cfloat>
 #include "../third_party/eigen/unsupported/Eigen/NNLS"
 
+
 // For debugging
 //#define DEBUG_CHROMA
 #ifdef DEBUG_CHROMA
@@ -15,6 +16,58 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+
+// Function to solve: min ||Ax - b||_2^2 + lambda * ||x||_1 under x >= 0
+Eigen::VectorXd solve_nnls_l1(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, double lambda, double tol = 1e-6, int max_iter = 1000) {
+    int n = A.cols();
+    Eigen::VectorXd x = Eigen::VectorXd::Zero(n); // Start vector of zeros
+
+    if (n == 0) return x;
+    if (lambda < 0.0) { // Call built in solver for min ||Ax - b||_2^2 under x >= 0
+        Eigen::NNLS<Eigen::MatrixXd> nnls(A);
+        x = nnls.solve(b);
+        return x;
+    }
+    
+    // Precompute the gradient terms
+    Eigen::MatrixXd AtA = A.transpose() * A;
+    Eigen::VectorXd Atb = A.transpose() * b;
+    
+    // Compute the Lipschitz constant (largest eigenvalue of AtA) for the step size.
+    // For a quick estimate, we could use the Frobenius norm or power iteration.
+    // Here we use the maximum column sum norm as a conservative estimate for L.
+    double L = 2.0 * AtA.operatorNorm();
+    if (L <= 1e-12) return x;
+    double step = 1.0 / L;
+    
+    Eigen::VectorXd c = -2.0 * Atb;
+    Eigen::MatrixXd Q = 2.0 * AtA;
+    
+    Eigen::VectorXd x_old;
+    
+    for (int iter = 0; iter < max_iter; ++iter) {
+        x_old = x;
+        
+        // 1. Gradient step: x = x - step * (Q*x + c)
+        Eigen::VectorXd grad = Q * x + c;
+        x = x - step * grad;
+        
+        // 2. Proximal operator for L1 regularization and non-negativity (x >= 0).
+        // Since x must be non-negative, the negative soft-thresholding part drops out.
+        double thresh = lambda * step;
+        for (int i = 0; i < n; ++i) {
+            x(i) = std::max(0.0, x(i) - thresh);
+        }
+        
+        // Konvergenzprüfung
+        if ((x - x_old).norm() < tol) {
+            break;
+        }
+    }
+    
+    return x;
+}
+
 
 ChromaConverter::ChromaConverter(
     std::vector<Peak>& peaks,
@@ -180,8 +233,8 @@ void ChromaConverter::setupNNLS() {
     maxComputationMIDI = static_cast<int>(std::round(frequencyToMIDI(maxFrequency))); 
 
     // MIDI range in which we search for fundamental frequencies
-    minFundamentalMIDI = std::max(midiNoteA1, minOutputMIDI); // Starting at A1, lower frequencies are to difficult to distinguish
-    maxFundamentalMIDI = std::min(maxOutputMIDI, maxComputationMIDI); // up to output, capped by maxComputationMIDI
+    minFundamentalMIDI = std::max(midiNoteA1, minOutputMIDI); // Starting at A1, lower frequencies are to difficult to distinguish, capped by minOutputMIDI
+    maxFundamentalMIDI = std::min(maxComputationMIDI, maxOutputMIDI); // up to output, capped by maxComputationMIDI
 
     // Preallocate space for NNLS
     numBinsComputation = maxComputationMIDI - minComputationMIDI;
@@ -221,16 +274,18 @@ void ChromaConverter::computeChromaWithNNLSOvertoneFilter() {
     
     largestElements.resize(std::min(static_cast<int>(largestElements.size()), numCandidates)); // Keep only numCandidates elements at most
 
-    float relativeThreshold = 0.3f; // Only keep elements with sufficiently large magnitude compared to average of the largest elements
-    float totalMagnitude = 0.0f;
+    float totalMagnitude = 0.0f; // Only keep elements with sufficiently large magnitude compared to average of the largest elements
     for (const auto& el : largestElements) totalMagnitude += el.first;
     float averageMagnitude = largestElements.empty() ? 0.0f : totalMagnitude / largestElements.size();
+    float magnitudeThreshold = relativeThresholdForCandidateSelection * averageMagnitude;
     for (size_t i = 0; i < largestElements.size(); ++i) {
-        if (largestElements[i].first < relativeThreshold * averageMagnitude) {
+        if (largestElements[i].first < magnitudeThreshold) {
             largestElements.resize(i); // Keep only candidates above threshold
             break;
         }
     }
+
+    if (largestElements.empty()) return;
 
     // Construct the matrix of the NNLS problem
     A.setZero();
@@ -245,8 +300,7 @@ void ChromaConverter::computeChromaWithNNLSOvertoneFilter() {
     }
     
     // Solve NNLS problem
-    Eigen::NNLS<Eigen::MatrixXd> nnls(A);
-    x = nnls.solve(b);
+    x = solve_nnls_l1(A, b, lambdaL1);
 
     // Convert NNLS solution to chroma contributions
     for (size_t j = 0; j < largestElements.size(); ++j) {
