@@ -280,9 +280,11 @@ class ChromagramBuilder {
       }
       double opacityOfPitchBar = 1.0; // Fade out pitch bar at boundary 
       if (centerOfPitchBarPx < 2 * _deltaWidthPx) {
-        opacityOfPitchBar = ((centerOfPitchBarPx - _deltaWidthPx) / _deltaWidthPx).clamp(0.0, 1.0);
+        final double t = ((centerOfPitchBarPx - _deltaWidthPx) / _deltaWidthPx).clamp(0.0, 1.0);
+        opacityOfPitchBar = t * t * t;
       } else if (centerOfPitchBarPx > (_availableWidthPx - 2 * _deltaWidthPx)) {
-        opacityOfPitchBar = ((_availableWidthPx - _deltaWidthPx - centerOfPitchBarPx) / _deltaWidthPx).clamp(0.0, 1.0);
+        final double t = ((_availableWidthPx - _deltaWidthPx - centerOfPitchBarPx) / _deltaWidthPx).clamp(0.0, 1.0);
+        opacityOfPitchBar = t * t * t;
       }
       Widget pitchIntensityBar = Positioned(
         left: centerOfPitchBarPx - pitchBarWidthPx / 2,

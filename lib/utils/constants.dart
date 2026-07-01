@@ -22,6 +22,9 @@ const Color homeSubtitleColor = Color(0xFFE7E7E7);
 const Color customAppBarTitleColor = Colors.white;
 const Color customAppBarBackgroundColor = Color.fromARGB(255, 8, 8, 8);
 
+// App bar used in visualizer
+const Color visualizerAppBarBackgroundColor = Color.fromARGB(255, 16, 16, 16);
+
 // Record screen colors
 const Color recordIconColor = Colors.white;
 const Color recordTextColor = Colors.white;

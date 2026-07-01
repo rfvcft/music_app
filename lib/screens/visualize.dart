@@ -420,8 +420,10 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: cnst.visualizerAppBarBackgroundColor,
+        elevation: 8,
         title: Text(
-          widget.audioName,
+          widget.audioName.replaceFirst(RegExp(r'\.[^.]+$'), ''),
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
