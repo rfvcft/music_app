@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import 'package:just_audio/just_audio.dart' as ja; // Audio player package
+import 'package:marquee/marquee.dart';
 
 import 'package:music_app/screens/help.dart';
 import 'package:music_app/utils/chromagram_builder.dart' as cb; // Chromagram builder for visualization
@@ -47,6 +48,8 @@ class Visualizer extends StatefulWidget {
 }
 
 class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateMixin {
+
+  String get _displayTitle => widget.audioName.replaceFirst(RegExp(r'\.[^.]+$'), '');
   
   double currentTime = 0.0; // Current time in seconds. Visuals are based on this variable.
   late double _initialTime; // Auxilliary variable used for starting tickers
@@ -422,10 +425,7 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
       appBar: AppBar(
         backgroundColor: cnst.visualizerAppBarBackgroundColor,
         elevation: 8,
-        title: Text(
-          widget.audioName.replaceFirst(RegExp(r'\.[^.]+$'), ''),
-          overflow: TextOverflow.ellipsis,
-        ),
+        title: _buildAnimatedAppBarTitle(context),
         actions: [
           IconButton(
             icon: const Icon(Icons.live_help_outlined),
@@ -572,6 +572,45 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           );
         },
       ),
+    );
+  }
+
+  Widget _buildAnimatedAppBarTitle(BuildContext context) {
+    final titleStyle = Theme.of(context).appBarTheme.titleTextStyle ??
+        Theme.of(context).textTheme.titleLarge;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textPainter = TextPainter(
+          text: TextSpan(text: _displayTitle, style: titleStyle),
+          maxLines: 1,
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout(maxWidth: constraints.maxWidth);
+
+        if (!textPainter.didExceedMaxLines) {
+          return Text(
+            _displayTitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: titleStyle,
+          );
+        }
+
+        return SizedBox(
+          height: kToolbarHeight,
+          child: Marquee(
+            text: _displayTitle,
+            style: titleStyle,
+            blankSpace: 48,
+            velocity: 30,
+            startPadding: 8,
+            pauseAfterRound: const Duration(milliseconds: 900),
+            accelerationDuration: const Duration(milliseconds: 250),
+            decelerationDuration: const Duration(milliseconds: 250),
+          ),
+        );
+      },
     );
   }
 }

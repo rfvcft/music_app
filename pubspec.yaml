@@ -39,6 +39,7 @@ dependencies:
   just_audio: ^0.9.36 # replaced by media_kit
   path_provider: ^2.1.5
   file_picker: ^11.0.1
+  marquee: ^2.3.0
 
 dev_dependencies:
   flutter_test:
