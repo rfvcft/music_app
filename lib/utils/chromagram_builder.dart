@@ -70,8 +70,8 @@ class ChromagramBuilder {
     _isComplete = isComplete;
 
     // Update derived parameters
-    _numSecondsAboveCurrent = _isPortrait ? 8 : 5; // Number of seconds to display above current line
-    _numberOfNotesToDisplay = _isPortrait ? 16 : 37; // How many notes to display
+    _numSecondsAboveCurrent = _isPortrait ? 8 : 4; // Number of seconds to display above current line
+    _numberOfNotesToDisplay = _isPortrait ? 16 : 37 + 12; // How many notes to display
 
     _heightAboveCurrentPx = _isPortrait ? cnst.goldenFactorLarge * _availableHeightPx : 0.7 * _availableHeightPx; // Available height above current line
     _heightBelowCurrentPx = _isPortrait ? cnst.goldenFactorSmall * _availableHeightPx : 0.3 * _availableHeightPx; // Available height below current line
