@@ -48,6 +48,20 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
   double? _smoothedAmplitude; // Smoothed amplitude for visual display
   static const double _smoothingFactor = 0.25; // 0 = no change, 1 = instant
 
+  AudioEncoder _preferredEncoder() {
+    // Use WAV on Android for better compatibility with the analysis pipeline.
+    return Platform.isAndroid ? AudioEncoder.wav : AudioEncoder.aacLc;
+  }
+
+  String _fileExtensionForEncoder(AudioEncoder encoder) {
+    switch (encoder) {
+      case AudioEncoder.wav:
+        return 'wav';
+      default:
+        return 'm4a';
+    }
+  }
+
   @override
   void initState() {
     // Initialize the audio recorder instance
@@ -105,28 +119,30 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
   /// Starts a new audio recording session if permissions and encoder support are available.
   /// Configures the recorder, resets the timer, and begins recording to a file.
   Future<void> _start() async {
-    // Compute and set the next recording name before starting
-    final newName = await _findNextRecordingName();
-    setState(() {
-      _nextRecordingName = newName;
-    });
     try {
       // Check for audio recording permission
       if (await _audioRecorder.hasPermission()) {
-        // Set the audio encoder to AAC-LC
-        const encoder = AudioEncoder.aacLc;
+        final encoder = _preferredEncoder();
 
         // Check if the encoder is supported on this device
         if (!await _isEncoderSupported(encoder)) {
           return;
         }
 
+        // Compute and set the next recording name before starting
+        final newName = await _findNextRecordingName(
+          extension: _fileExtensionForEncoder(encoder),
+        );
+        setState(() {
+          _nextRecordingName = newName;
+        });
+
         // List available input devices (microphones) and print for debugging
         final devs = await _audioRecorder.listInputDevices();
         debugPrint(devs.toString());
 
         // Configure recording: use AAC-LC encoder and mono channel
-        const config = RecordConfig(encoder: encoder, numChannels: 1);
+        final config = RecordConfig(encoder: encoder, numChannels: 1);
 
         // Start recording to a file
         await recordFile(_audioRecorder, config);
