@@ -15,8 +15,8 @@ const List<Color> infernoColors = [ // Sampled inferno colormap (10 samples)
 ];
 
 // Home screen colors
-const Color homeButtonTitleColor = Color(0xFFE7E7E7);
-const Color homeSubtitleColor = Color(0xFFE7E7E7);
+const Color homeButtonTitleColor = Colors.white; 
+const Color homeSubtitleColor = Colors.white;
 
 // App bar used in record, import and archive screens
 const Color customAppBarTitleColor = Colors.white;
