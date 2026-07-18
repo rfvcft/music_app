@@ -142,7 +142,11 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
         debugPrint(devs.toString());
 
         // Configure recording: use AAC-LC encoder and mono channel
-        final config = RecordConfig(encoder: encoder, numChannels: 1);
+        final config = RecordConfig(
+          encoder: encoder,
+          numChannels: 1,
+          sampleRate: 44100,
+        );
 
         // Start recording to a file
         await recordFile(_audioRecorder, config);
