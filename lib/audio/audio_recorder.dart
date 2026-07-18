@@ -49,8 +49,8 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
   static const double _smoothingFactor = 0.25; // 0 = no change, 1 = instant
 
   AudioEncoder _preferredEncoder() {
-    // Use WAV on Android for better compatibility with the analysis pipeline.
-    return Platform.isAndroid ? AudioEncoder.wav : AudioEncoder.aacLc;
+    // Use WAV on both platforms for maximum recording fidelity.
+    return AudioEncoder.wav;
   }
 
   String _fileExtensionForEncoder(AudioEncoder encoder) {

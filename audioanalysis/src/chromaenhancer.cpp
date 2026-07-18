@@ -111,7 +111,7 @@ void ChromaEnhancer::normalizeByLocalMaximaInTime() {
 
     // Use local maximum in the window [frame - localMaxWindowSizeInFrames, frame] with zero-padding at the beginning. We cap from below with averageMax.
     for (int frame = numFrames - 1; frame >= 0; --frame) {
-        float localMax = averageMax; // start with average max as a floor
+        float localMax = 0.5f * averageMax; // start with half of average max as a floor
         for (int offset = 0; offset < localMaxWindowSizeInFrames; ++offset) {
             int idx = static_cast<int>(frame) - offset;
             if (idx < 0) break; // zero-padding at the beginning

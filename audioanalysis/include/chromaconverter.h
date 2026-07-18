@@ -44,8 +44,8 @@ private:
     int numCandidates = 15; // Number of fundamental frequencies candidates we consider
     float relativeThresholdForCandidateSelection = 0.3f; // We only admit midi notes with relative magnitude above this threshold (relative to average of the largest elements) as candidates for fundamental frequencies
     std::vector<int> overtonePattern = {0, 12, 19, 24, 28, 31}; // Pattern of overtones in semitones (5 harmonics)
-    std::vector<float> overtoneWeights = {1.000f, 1.163f, 0.457f, 0.254f, 0.156f, 0.125f}; // Average strength of overtones relative to fundamental (experimentally determined from recordings)
-    float lambdaL1 = 80.0f; // L1 regularization parameter
+    std::vector<float> overtoneWeights = {1.000f, 1.163f, 0.461f, 0.355f, 0.341f, 0.200f}; // Average strength of overtones relative to fundamental (experimentally determined from recordings)
+    float lambdaL1 = 0.0f; // L1 regularization parameter
     int minComputationMIDI; // MIDI range in which we do computations (derived from minFrequency)
     int maxComputationMIDI; // MIDI range in which we do computations (derived from maxFrequency)
     int numBinsComputation; // maxComputationMIDI - minComputationMIDI
