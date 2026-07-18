@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:music_app/audio/audio_recorder.dart';
-import 'package:music_app/audio/audio_tile.dart';
+import 'package:music_app/audio/audio_recorder.dart' as rec;
+import 'package:music_app/audio/audio_tile.dart' as at;
+import 'package:music_app/utils/custom_app_bar.dart' as cab;
 import 'package:music_app/utils/conversion.dart' as conv;
 import 'package:music_app/main.dart' show activeNotificationEntry;
 import 'dart:io';
@@ -93,9 +94,7 @@ class _AudioPageState extends State<AudioPage> {
         Navigator.of(context).pop(result);
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text("Record Audio"),
-        ),
+        appBar: const cab.CustomAppBar(title: 'Record Audio'),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isLandscape = constraints.maxWidth > constraints.maxHeight;
@@ -103,7 +102,7 @@ class _AudioPageState extends State<AudioPage> {
             final recorderSize = constraints.maxHeight;
             return Row(
               children: [
-                Recorder(
+                rec.Recorder(
                   key: _recorderKey,
                   width: recorderSize,
                   height: recorderSize,
@@ -119,12 +118,14 @@ class _AudioPageState extends State<AudioPage> {
                   Expanded(
                     child: ListView.separated(
                       itemCount: _sessionFiles.length,
-                      separatorBuilder: (context, index) => const Divider(),
+                      separatorBuilder: (context, index) => const Divider(
+                        color: Color.fromARGB(255, 80, 80, 80),
+                      ),
                       itemBuilder: (context, index) {
                         final file = _sessionFiles[index];
                         return SizedBox(
                           height: 60,
-                          child: AudioTile(
+                          child: at.AudioTile(
                           file: file,
                           onRename: (renamedFile) async {
                             if (renamedFile != null) {
@@ -150,7 +151,7 @@ class _AudioPageState extends State<AudioPage> {
           return Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Recorder(
+              rec.Recorder(
                 key: _recorderKey,
                 width: size,
                 height: size,
@@ -166,12 +167,14 @@ class _AudioPageState extends State<AudioPage> {
                 Expanded(
                   child: ListView.separated(
                     itemCount: _sessionFiles.length,
-                    separatorBuilder: (context, index) => const Divider(),
+                    separatorBuilder: (context, index) => const Divider(
+                      color: Color.fromARGB(255, 80, 80, 80),
+                    ),
                     itemBuilder: (context, index) {
                       final file = _sessionFiles[index];
                       return SizedBox(
                         height: 60,
-                        child: AudioTile(
+                        child: at.AudioTile(
                         file: file,
                         onRename: (renamedFile) async {
                           if (renamedFile != null) {

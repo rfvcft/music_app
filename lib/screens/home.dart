@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 
 import 'package:music_app/screens/archive.dart';
 import 'package:music_app/screens/audio.dart';
-import 'package:music_app/screens/backend.dart';
 import 'package:music_app/screens/import.dart';
 import 'package:music_app/screens/load_assets.dart';
+import 'package:music_app/utils/constants.dart' as cnst;
 import 'package:music_app/utils/conversion.dart' as conv;
 
 class HomePage extends StatelessWidget {
@@ -73,7 +73,7 @@ class HomePage extends StatelessWidget {
                 fontSize: 21,
                 fontWeight: FontWeight.w400,
                 letterSpacing: 4,
-                color: Colors.grey[400],
+                color: cnst.homeSubtitleColor,
               ),
               textAlign: TextAlign.center,
             ),
@@ -131,7 +131,7 @@ class HomePage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18, 
                       //fontFamily: GoogleFonts.raleway().fontFamily,
-                      color: Colors.grey[400]!, 
+                      color: cnst.homeButtonTitleColor,
                       fontWeight: FontWeight.w300, 
                       letterSpacing: 2
                     ),
@@ -143,18 +143,6 @@ class HomePage extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _iconButton(BuildContext context, IconData iconData, Widget route) {
-    return IconButton(
-      icon: Icon(iconData),
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => route),
-        );
-      },
     );
   }
 
@@ -177,8 +165,6 @@ class HomePage extends StatelessWidget {
               _pageButton(context, "Archive", ArchivePage(), icon: Icons.archive), // folder, archive
               const SizedBox(height: 12),
               _pageButton(context, "Frontend", LoadAssets(), icon: Icons.music_note),
-              const SizedBox(height: 12),
-              _pageButton(context, "Backend", BackendPage(), icon: Icons.music_note),
               const SizedBox(height: 32),
             ],
           ),

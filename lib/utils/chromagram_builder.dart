@@ -70,8 +70,8 @@ class ChromagramBuilder {
     _isComplete = isComplete;
 
     // Update derived parameters
-    _numSecondsAboveCurrent = _isPortrait ? 8 : 5; // Number of seconds to display above current line
-    _numberOfNotesToDisplay = _isPortrait ? 16 : 37; // How many notes to display
+    _numSecondsAboveCurrent = _isPortrait ? 8 : 4; // Number of seconds to display above current line
+    _numberOfNotesToDisplay = _isPortrait ? 16 : 37 + 12; // How many notes to display
 
     _heightAboveCurrentPx = _isPortrait ? cnst.goldenFactorLarge * _availableHeightPx : 0.7 * _availableHeightPx; // Available height above current line
     _heightBelowCurrentPx = _isPortrait ? cnst.goldenFactorSmall * _availableHeightPx : 0.3 * _availableHeightPx; // Available height below current line
@@ -280,9 +280,11 @@ class ChromagramBuilder {
       }
       double opacityOfPitchBar = 1.0; // Fade out pitch bar at boundary 
       if (centerOfPitchBarPx < 2 * _deltaWidthPx) {
-        opacityOfPitchBar = ((centerOfPitchBarPx - _deltaWidthPx) / _deltaWidthPx).clamp(0.0, 1.0);
+        final double t = ((centerOfPitchBarPx - _deltaWidthPx) / _deltaWidthPx).clamp(0.0, 1.0);
+        opacityOfPitchBar = t * t * t;
       } else if (centerOfPitchBarPx > (_availableWidthPx - 2 * _deltaWidthPx)) {
-        opacityOfPitchBar = ((_availableWidthPx - _deltaWidthPx - centerOfPitchBarPx) / _deltaWidthPx).clamp(0.0, 1.0);
+        final double t = ((_availableWidthPx - _deltaWidthPx - centerOfPitchBarPx) / _deltaWidthPx).clamp(0.0, 1.0);
+        opacityOfPitchBar = t * t * t;
       }
       Widget pitchIntensityBar = Positioned(
         left: centerOfPitchBarPx - pitchBarWidthPx / 2,
@@ -730,7 +732,7 @@ class ChromagramBuilder {
   Widget _keyText() {
 
     final noteNames = cnst.noteNames[_scale]![_tonicIndex]!; // Note names for current musical key
-    final String musicalKey = noteNames[_tonicIndex]! + ' ' + _scale; // Musical key (e.g., "C major")
+    final String musicalKey = '${noteNames[_tonicIndex]} $_scale'; // Musical key (e.g., "C major")
     double fadeOutTime = 0.5 * (_deltaHeightPx / _oneSecondPx); // Time in seconds over which text fades out
     double keyTextOpacity = (1 - (_currentTime / fadeOutTime)).clamp(0.0, 1.0);
     Widget keyText = Positioned(

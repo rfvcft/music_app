@@ -1,5 +1,6 @@
 import 'dart:ffi' as ffi;
 import 'dart:io';
+import 'dart:isolate';
 import 'package:ffi/ffi.dart';
 
 // C struct mapping for CAudioAnalysisResult from audioanalysis/include/capi.h
@@ -270,5 +271,14 @@ class AudioProcessingFfi {
 			'duration': duration,
 			'chromagram': chromagram,
 		};
+	}
+
+	/// Asynchronously loads and analyzes an audio file on a background isolate.
+	///
+	/// Use this in UI code to avoid blocking the main isolate during analysis.
+	static Future<Map<String, dynamic>> loadAndAnalyzeAsync(String filePath) async {
+		return Isolate.run(() {
+			return AudioProcessingFfi().loadAndAnalyze(filePath);
+		});
 	}
 }

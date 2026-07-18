@@ -1,13 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:music_app/screens/analyze.dart';
 import 'package:music_app/screens/audio.dart';
 import 'package:music_app/screens/import.dart';
+import 'package:music_app/utils/custom_app_bar.dart' as cab;
+import 'package:music_app/utils/constants.dart' as cnst;
 import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
 import 'package:music_app/main.dart' show activeNotificationEntry;
-import 'package:music_app/audio/audio_tile.dart';
+import 'package:music_app/audio/audio_tile.dart' as at;
 import 'package:music_app/utils/conversion.dart' as conv;
 
 
@@ -49,7 +49,7 @@ class _ArchivePageState extends State<ArchivePage> {
     });
   }
 
-  Widget _actionButton(BuildContext context, IconData icon, String tooltip, VoidCallback onPressed) {
+  Widget _actionButton(BuildContext context, IconData icon, Color iconColor, String tooltip, VoidCallback onPressed) {
     const double size = 56;
     return Tooltip(
       message: tooltip,
@@ -75,7 +75,7 @@ class _ArchivePageState extends State<ArchivePage> {
             padding: EdgeInsets.zero,
           ),
           onPressed: onPressed,
-          child: Icon(icon, color: Colors.grey[400], size: 24),
+          child: Icon(icon, color: iconColor, size: 24),
         ),
       ),
     ),
@@ -85,17 +85,15 @@ class _ArchivePageState extends State<ArchivePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Archive"),
-      ),
+      appBar: const cab.CustomAppBar(title: 'Archive'),
       floatingActionButton: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _actionButton(context, Icons.mic, 'Record audio',
+          _actionButton(context, Icons.mic, cnst.recordIconColor, 'Record audio',
               () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AudioPage(showSavedMessage: false)))
                   .then((_) => _loadAudioFiles())),
           const SizedBox(width: 16),
-          _actionButton(context, Icons.file_upload, 'Import audio',
+          _actionButton(context, Icons.file_upload, cnst.importIconColor, 'Import audio',
               () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ImportPage(showSavedMessage: false)))
                   .then((_) => _loadAudioFiles())),
         ],
@@ -117,7 +115,7 @@ class _ArchivePageState extends State<ArchivePage> {
               itemBuilder: (context, index) {
                 return Container(
                   height: 60,
-                  child: AudioTile(
+                  child: at.AudioTile(
                     file: _audioFiles[index],
                     onRename: (renamedFile) async {
                       // Reload the file list after rename
@@ -134,7 +132,9 @@ class _ArchivePageState extends State<ArchivePage> {
                   ),
                 );
               },
-              separatorBuilder: (context, index) => const Divider(),
+              separatorBuilder: (context, index) => const Divider(
+                color: Color.fromARGB(255, 80, 80, 80),
+              ),
               itemCount: _audioFiles.length,
             ),
     );

@@ -1,7 +1,7 @@
 #include "parameters.h"
 
 // Universal parameters
-int hopSize = 1024; // Hop size in samples
+int hopSize = 2048; // Hop size in samples
 int frameSize = 8192; // Frame size in samples. Must be a power of 2 for FFT efficiency.
 
 // FrameCutter parameters
@@ -23,7 +23,7 @@ int peakFinderMaxPeaks = 30; // Maximum number of peaks to return per frame
 float chromaConverterMinFrequency = 50.0f; // Range in which we do computations (in Hz)
 float chromaConverterMaxFrequency = 4400.0f;
 int chromaConverterNumBins = 72; // 6 octaves, bin 0 corresponds to C1 = MIDI 24
-bool chromaConverterUseSmoothTransition = true; // Use a smooth cutoff function at semitone boundaries
+bool chromaConverterUseSmoothTransition = false; // Use a smooth cutoff function at semitone boundaries
 std::string chromaConverterOvertoneFilter = "nnls"; // Type of overtone filter to use: "none", "basic", "nnls"
 
 // ChromaEnhancer parameters
@@ -31,6 +31,7 @@ float chromaEnhancerLocalMaxWindowSizeInSeconds = 4.0f; // Window size for local
 float chromaEnhancerLowAmplitudeThreshold = 0.89f; // Relative threshold for dropping low amplitudes (0.0 = no drop, 1.0 = drop all)
 float chromaEnhancerMedianLengthInSeconds = 0.1f; // Window size for median filtering in seconds (0 to bypass this)
 float chromaEnhancerMinDurationInSeconds = 0.1f; // Minimum duration for a chroma excitation to be kept in seconds (0 to bypass this)
+int chromaEnhancerResolutionFactor = 2; // Temporal upsampling factor (1 = no interpolation)
 bool chromaEnhancerDeactive = false; // If true, chroma enhancement is deactivated (chromaMatrix = enhancedChromaMatrix)
 
 // KeyFinder parameters

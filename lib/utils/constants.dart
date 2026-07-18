@@ -14,6 +14,29 @@ const List<Color> infernoColors = [ // Sampled inferno colormap (10 samples)
   Color(0xFFFFFCB0),
 ];
 
+// Home screen colors
+const Color homeButtonTitleColor = Colors.white; 
+const Color homeSubtitleColor = Colors.white;
+
+// App bar used in record, import and archive screens
+const Color customAppBarTitleColor = Colors.white;
+const Color customAppBarBackgroundColor = Color.fromARGB(255, 8, 8, 8);
+
+// App bar used in visualizer
+const Color visualizerAppBarBackgroundColor = Color.fromARGB(255, 16, 16, 16);
+
+// Record screen colors
+const Color recordIconColor = Colors.white;
+const Color recordTextColor = Colors.white;
+
+// Import screen colors
+const Color importIconColor = Colors.white;
+const Color importTextColor = Colors.white;
+
+// Audio tile colors
+const Color audioTileNameColor = Color(0xFFE7E7E7);
+const Color audioTileDateColor = Colors.grey;
+
 // GOLDEN RATIO
 const double goldenRatio = 1.6180339887; // Golden ratio = (1 + sqrt(5)) / 2
 const double goldenFactorSmall = 1 / (goldenRatio + 1); // Smaller golden section

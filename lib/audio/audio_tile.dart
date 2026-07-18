@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
+import 'package:music_app/utils/constants.dart' as cnst;
 import 'package:music_app/screens/visualize.dart';
 import 'package:music_app/ffi/audioanalysis_ffi.dart' as audioffi;
 
@@ -32,7 +33,10 @@ class AudioTile extends StatefulWidget {
 }
 
 class _AudioTileState extends State<AudioTile> {
+  static bool _globalAnalyzeInProgress = false;
+
   DateTime? _modified;
+  bool _isAnalyzing = false;
 
   @override
   void initState() {
@@ -48,11 +52,20 @@ class _AudioTileState extends State<AudioTile> {
   }
 
   Future<void> _analyzeAndNavigate() async {
+    if (_isAnalyzing || _globalAnalyzeInProgress) return;
+
+    _globalAnalyzeInProgress = true;
+
     final audioUrl = widget.file.path;
     final audioName = p.basename(widget.file.path);
 
+    if (!mounted) return;
+    setState(() {
+      _isAnalyzing = true;
+    });
+
     try {
-      final result = audioffi.AudioProcessingFfi().loadAndAnalyze(audioUrl);
+      final result = await audioffi.AudioProcessingFfi.loadAndAnalyzeAsync(audioUrl);
       if (result['key'] == null || result['duration'] == null || result['chromagram'] == null) {
         throw Exception('Analysis failed or incomplete.');
       }
@@ -74,6 +87,13 @@ class _AudioTileState extends State<AudioTile> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Analysis failed: $e')),
       );
+    } finally {
+      _globalAnalyzeInProgress = false;
+      if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+        });
+      }
     }
   }
   @override
@@ -96,7 +116,7 @@ class _AudioTileState extends State<AudioTile> {
             : '${_modified!.day} ${months[_modified!.month - 1]} ${_modified!.year}';
     return Dismissible(
       key: ValueKey(widget.file.path),
-      direction: DismissDirection.endToStart,
+      direction: _isAnalyzing ? DismissDirection.none : DismissDirection.endToStart,
       background: Row(
         children: [
           const Spacer(flex: 2),
@@ -139,8 +159,8 @@ class _AudioTileState extends State<AudioTile> {
         await widget.onDelete();
       },
       child: InkWell(
-        onTap: _analyzeAndNavigate,
-        onLongPress: () async {
+        onTap: _isAnalyzing ? null : _analyzeAndNavigate,
+        onLongPress: _isAnalyzing ? null : () async {
           final result = await showModalBottomSheet<String>(
             context: context,
             builder: (context) {
@@ -270,18 +290,37 @@ class _AudioTileState extends State<AudioTile> {
             }
           }
         },
-        child: SizedBox.expand(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: Theme.of(context).textTheme.titleMedium, overflow: TextOverflow.ellipsis, maxLines: 1),
-                Text(dateStr, style: const TextStyle(color: Colors.grey)),
-              ],
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            SizedBox.expand(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(color: cnst.audioTileNameColor),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                    Text(dateStr, style: const TextStyle(color: cnst.audioTileDateColor)),
+                  ],
+                ),
+              ),
             ),
-          ),
+            if (_isAnalyzing)
+              Positioned.fill(
+                child: ColoredBox(
+                  color: Colors.black38,
+                  child: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

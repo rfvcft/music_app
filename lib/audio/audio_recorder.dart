@@ -7,10 +7,19 @@ import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 
 import 'package:path_provider/path_provider.dart';
+import 'package:music_app/utils/constants.dart' as cnst;
 import 'package:music_app/utils/conversion.dart' as conv;
 import 'package:music_app/main.dart' show routeObserver;
 import 'platform/audio_recorder_platform.dart';
 
+/// A widget that provides audio recording functionality.
+/// 
+/// Displays a microphone button that starts and stops recording when tapped.
+/// While recording, a radial gradient ring pulses with the microphone amplitude.
+/// Recordings are saved as .m4a files (AAC-LC encoder) to the app's documents
+/// directory with auto-incremented names (e.g. "New Recording 1.m4a").
+/// The [onStop] callback is invoked with the saved file path when recording stops.
+/// Recording is automatically stopped if the user navigates away from the screen.
 class Recorder extends StatefulWidget {
   final void Function(String path) onStop;
 
@@ -38,6 +47,20 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
   _amplitudeSub; // Subscription to amplitude (volume) changes
   double? _smoothedAmplitude; // Smoothed amplitude for visual display
   static const double _smoothingFactor = 0.25; // 0 = no change, 1 = instant
+
+  AudioEncoder _preferredEncoder() {
+    // Use WAV on both platforms for maximum recording fidelity.
+    return AudioEncoder.wav;
+  }
+
+  String _fileExtensionForEncoder(AudioEncoder encoder) {
+    switch (encoder) {
+      case AudioEncoder.wav:
+        return 'wav';
+      default:
+        return 'm4a';
+    }
+  }
 
   @override
   void initState() {
@@ -96,28 +119,34 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
   /// Starts a new audio recording session if permissions and encoder support are available.
   /// Configures the recorder, resets the timer, and begins recording to a file.
   Future<void> _start() async {
-    // Compute and set the next recording name before starting
-    final newName = await _findNextRecordingName();
-    setState(() {
-      _nextRecordingName = newName;
-    });
     try {
       // Check for audio recording permission
       if (await _audioRecorder.hasPermission()) {
-        // Set the audio encoder to AAC-LC
-        const encoder = AudioEncoder.aacLc;
+        final encoder = _preferredEncoder();
 
         // Check if the encoder is supported on this device
         if (!await _isEncoderSupported(encoder)) {
           return;
         }
 
+        // Compute and set the next recording name before starting
+        final newName = await _findNextRecordingName(
+          extension: _fileExtensionForEncoder(encoder),
+        );
+        setState(() {
+          _nextRecordingName = newName;
+        });
+
         // List available input devices (microphones) and print for debugging
         final devs = await _audioRecorder.listInputDevices();
         debugPrint(devs.toString());
 
         // Configure recording: use AAC-LC encoder and mono channel
-        const config = RecordConfig(encoder: encoder, numChannels: 1);
+        final config = RecordConfig(
+          encoder: encoder,
+          numChannels: 1,
+          sampleRate: 44100,
+        );
 
         // Start recording to a file
         await recordFile(_audioRecorder, config);
@@ -280,6 +309,7 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
 
     const double iconSize = 36; // Size of the mic/stop icon in the center
     final double diskRadius = screenRadius * 0.25; // Radius of the static inner disk with the icon
+    final double inactiveRingWidth = screenRadius * 0.009; // Match import page standby ring width
 
     final double minRingWidth = screenRadius * 0.025; // Minimum width for the ring to ensure visibility even at low amplitudes
     final double maxRingWidth = screenRadius * 0.3; // Max ring width based on available space
@@ -293,13 +323,12 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
     double startIntensity = initialStartIntensity + normalizedAmplitude * (1.0 - initialStartIntensity); // Intensity for the innermost color of the ring, increases with amplitude
     double endIntensity = initialEndIntensity + sqrt(normalizedAmplitude) * (0.0 - initialEndIntensity); // Intensity for the outermost color of the ring, decreases with amplitude 
 
-    const Color iconColor = Colors.white;
     late Icon icon;
 
     if (_recordState != RecordState.stop) {
-      icon = Icon(Icons.graphic_eq, color: iconColor, size: iconSize);
+      icon = const Icon(Icons.graphic_eq, color: cnst.recordIconColor, size: iconSize);
     } else {
-      icon = Icon(Icons.mic, color: iconColor, size: iconSize);
+      icon = const Icon(Icons.mic, color: cnst.recordIconColor, size: iconSize);
     }
     
     int numberOfStops = 10;
@@ -336,11 +365,11 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
               )
             else
               Container(
-                width: 2 * (diskRadius + minRingWidth), // Static ring size when not recording
-                height: 2 * (diskRadius + minRingWidth),
+                width: 2 * (diskRadius + inactiveRingWidth), // Match import page standby ring size
+                height: 2 * (diskRadius + inactiveRingWidth),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.grey, width: ringWidth),
+                  border: Border.all(color: cnst.importIconColor, width: inactiveRingWidth),
                 ),
               ),
             // Disk with icon
@@ -379,11 +408,11 @@ class _RecorderState extends State<Recorder> with AudioRecorderMixin, RouteAware
         ),
       );
     } else if (_recordState == RecordState.stop) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.only(top: 12.0),
         child: Text(
           'Waiting to record',
-          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.grey[250], fontSize: 16, fontWeight: FontWeight.bold),
         ),
       );
     } else {

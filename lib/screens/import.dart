@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
-import 'package:music_app/audio/audio_tile.dart';
+import 'package:music_app/audio/audio_tile.dart' as at;
+import 'package:music_app/utils/custom_app_bar.dart' as cab;
+import 'package:music_app/utils/constants.dart' as cnst;
 import 'package:music_app/utils/conversion.dart' as conv;
 import 'package:music_app/main.dart' show activeNotificationEntry;
 
@@ -90,7 +92,7 @@ class _ImportPageState extends State<ImportPage> {
   Widget _buildImportControl(double screenRadius) {
     const double iconSize = 36;
     final double diskRadius = screenRadius * 0.25;
-    final double ringWidth = screenRadius * 0.025;
+    final double ringWidth = screenRadius * 0.009;
 
     return ClipOval(
       child: Material(
@@ -102,10 +104,10 @@ class _ImportPageState extends State<ImportPage> {
             height: 2 * (diskRadius + ringWidth),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey, width: ringWidth),
+              border: Border.all(color: cnst.importIconColor, width: ringWidth),
             ),
             child: const Center(
-              child: Icon(Icons.file_upload, color: Colors.white, size: iconSize),
+              child: Icon(Icons.file_upload, color: cnst.importIconColor, size: iconSize),
             ),
           ),
         ),
@@ -183,9 +185,7 @@ class _ImportPageState extends State<ImportPage> {
         Navigator.of(context).pop(result);
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text("Import Audio"),
-        ),
+        appBar: const cab.CustomAppBar(title: 'Import Audio'),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isLandscape = constraints.maxWidth > constraints.maxHeight;
@@ -225,12 +225,14 @@ class _ImportPageState extends State<ImportPage> {
                   Expanded(
                     child: ListView.separated(
                       itemCount: _importedFiles.length,
-                      separatorBuilder: (context, index) => const Divider(),
+                      separatorBuilder: (context, index) => const Divider(
+                        color: Color.fromARGB(255, 80, 80, 80),
+                      ),
                       itemBuilder: (context, index) {
                         final file = _importedFiles[index];
                         return SizedBox(
                           height: 60,
-                          child: AudioTile(
+                          child: at.AudioTile(
                             file: file,
                             onRename: (renamedFile) async {
                               if (renamedFile != null) {
@@ -286,12 +288,14 @@ class _ImportPageState extends State<ImportPage> {
                 Expanded(
                   child: ListView.separated(
                     itemCount: _importedFiles.length,
-                    separatorBuilder: (context, index) => const Divider(),
+                    separatorBuilder: (context, index) => const Divider(
+                      color: Color.fromARGB(255, 80, 80, 80),
+                    ),
                     itemBuilder: (context, index) {
                       final file = _importedFiles[index];
                       return SizedBox(
                         height: 60,
-                        child: AudioTile(
+                        child: at.AudioTile(
                           file: file,
                           onRename: (renamedFile) async {
                             if (renamedFile != null) {

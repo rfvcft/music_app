@@ -1,18 +1,17 @@
-import 'dart:io'; // For platform checks 
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import 'package:just_audio/just_audio.dart' as ja; // Audio player package
+import 'package:marquee/marquee.dart';
 
-import 'package:music_app/core/app_settings.dart'; // App settings
-import 'package:music_app/screens/settings.dart'; // Settings page
+import 'package:music_app/screens/help.dart';
 import 'package:music_app/utils/chromagram_builder.dart' as cb; // Chromagram builder for visualization
 import 'package:music_app/utils/conversion.dart' as conv; // Conversion utilities
 import 'package:music_app/utils/constants.dart' as cnst; // Import constants
 
-const bool showLogs = true; // Set to true to enable logs for debugging
+const bool showLogs = false; // Set to true to enable logs for debugging
 
 // Screen for visualizing the chromagram of an audio file. Users can control playback via scroll, fling gestures or a slider. 
 class Visualizer extends StatefulWidget {
@@ -49,6 +48,8 @@ class Visualizer extends StatefulWidget {
 }
 
 class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateMixin {
+
+  String get _displayTitle => widget.audioName.replaceFirst(RegExp(r'\.[^.]+$'), '');
   
   double currentTime = 0.0; // Current time in seconds. Visuals are based on this variable.
   late double _initialTime; // Auxilliary variable used for starting tickers
@@ -422,24 +423,23 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.audioName,
-          overflow: TextOverflow.ellipsis,
-        ),
+        backgroundColor: cnst.visualizerAppBarBackgroundColor,
+        elevation: 8,
+        title: _buildAnimatedAppBarTitle(context),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings),
-            tooltip: 'Settings',
+            icon: const Icon(Icons.live_help_outlined),
+            tooltip: 'Help',
             onPressed: () async {
-              // Abort fling and pause playback before navigating to settings
+              // Abort fling and pause playback before navigating to help
               if (isFlinging) _abortFling();
               if (isPlaying) pause();
               await Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => SettingsPage()),
+                MaterialPageRoute(builder: (context) => const HelpPage()),
               );
-              // After returning, call setState to rebuild with new settings
+              // Rebuild after returning from help page
               setState(() {});
-              if (showLogs) print('setState: after returning from SettingsPage');
+              if (showLogs) print('setState: after returning from HelpPage');
             },
           ),
         ],
@@ -572,6 +572,45 @@ class _VisualizerState extends State<Visualizer> with SingleTickerProviderStateM
           );
         },
       ),
+    );
+  }
+
+  Widget _buildAnimatedAppBarTitle(BuildContext context) {
+    final titleStyle = Theme.of(context).appBarTheme.titleTextStyle ??
+        Theme.of(context).textTheme.titleLarge;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textPainter = TextPainter(
+          text: TextSpan(text: _displayTitle, style: titleStyle),
+          maxLines: 1,
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout(maxWidth: constraints.maxWidth);
+
+        if (!textPainter.didExceedMaxLines) {
+          return Text(
+            _displayTitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: titleStyle,
+          );
+        }
+
+        return SizedBox(
+          height: kToolbarHeight,
+          child: Marquee(
+            text: _displayTitle,
+            style: titleStyle,
+            blankSpace: 48,
+            velocity: 30,
+            startPadding: 8,
+            pauseAfterRound: const Duration(milliseconds: 900),
+            accelerationDuration: const Duration(milliseconds: 250),
+            decelerationDuration: const Duration(milliseconds: 250),
+          ),
+        );
+      },
     );
   }
 }

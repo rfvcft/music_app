@@ -87,7 +87,8 @@ void AudioAnalyzer::analyze() {
         chromaEnhancerLowAmplitudeThreshold, // Parameter
         chromaEnhancerMedianLengthInSeconds, // Parameter
         chromaEnhancerMinDurationInSeconds, // Parameter
-        chromaEnhancerDeactive // Parameter
+        chromaEnhancerDeactive, // Parameter
+        chromaEnhancerResolutionFactor // Parameter
     );
 
     std::vector<std::string> musicalKeys;
